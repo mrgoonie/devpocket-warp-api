@@ -124,18 +124,59 @@ def create_env():
 def setup_db():
     """Set up database."""
     print("🗄️ Setting up database...")
-    print("⚠️  Make sure PostgreSQL is running and database exists")
+    print("⚠️  Make sure PostgreSQL is running")
     
-    # This will be implemented when we add Alembic migrations
     commands = [
-        "source venv/bin/activate && alembic upgrade head",
+        ("python3 scripts/db_utils.py create", "Create database"),
+        ("python3 scripts/db_utils.py init", "Initialize database tables"),
+        ("source venv/bin/activate && alembic upgrade head", "Run migrations"),
     ]
     
-    for cmd in commands:
-        if run_command(cmd, f"Running: {cmd}") != 0:
+    for cmd, desc in commands:
+        if run_command(cmd, desc) != 0:
+            print(f"❌ Failed: {desc}")
             return 1
     
+    print("✅ Database setup completed")
     return 0
+
+
+def db_create():
+    """Create database."""
+    return run_command("python3 scripts/db_utils.py create", "Creating database")
+
+
+def db_drop():
+    """Drop database."""
+    return run_command("python3 scripts/db_utils.py drop", "Dropping database")
+
+
+def db_reset():
+    """Reset database."""
+    return run_command("python3 scripts/db_utils.py reset", "Resetting database")
+
+
+def db_health():
+    """Check database health."""
+    return run_command("python3 scripts/db_utils.py health", "Checking database health")
+
+
+def migrate():
+    """Run database migrations."""
+    return run_command("source venv/bin/activate && alembic upgrade head", "Running migrations")
+
+
+def migration_create():
+    """Create new migration."""
+    print("📝 Creating new migration...")
+    migration_name = input("Enter migration name: ").strip()
+    if not migration_name:
+        print("❌ Migration name is required")
+        return 1
+    return run_command(
+        f"source venv/bin/activate && alembic revision --autogenerate -m '{migration_name}'",
+        f"Creating migration: {migration_name}"
+    )
 
 
 def clean():
@@ -167,22 +208,33 @@ def show_help():
 Usage: python scripts/dev.py <command>
 
 Commands:
-  start      Start the development server
-  install    Install dependencies
-  format     Format code with black
-  lint       Lint code with ruff
-  typecheck  Type check with mypy
-  test       Run tests with pytest
-  check      Run all checks (format, lint, typecheck, test)
-  env        Create .env file from template
-  db         Set up database
-  clean      Clean up generated files
-  help       Show this help message
+  start         Start the development server
+  install       Install dependencies
+  format        Format code with black
+  lint          Lint code with ruff
+  typecheck     Type check with mypy
+  test          Run tests with pytest
+  check         Run all checks (format, lint, typecheck, test)
+  env           Create .env file from template
+  
+Database Commands:
+  db            Set up database (create, init, migrate)
+  db-create     Create database
+  db-drop       Drop database
+  db-reset      Reset database (drop and recreate)
+  db-health     Check database health
+  migrate       Run database migrations
+  migration     Create new migration
+  
+Utility Commands:
+  clean         Clean up generated files
+  help          Show this help message
 
 Examples:
   python scripts/dev.py start
   python scripts/dev.py check
-  python scripts/dev.py install
+  python scripts/dev.py db-create
+  python scripts/dev.py migrate
 """)
 
 
@@ -204,6 +256,12 @@ def main():
         "check": check_all,
         "env": create_env,
         "db": setup_db,
+        "db-create": db_create,
+        "db-drop": db_drop,
+        "db-reset": db_reset,
+        "db-health": db_health,
+        "migrate": migrate,
+        "migration": migration_create,
         "clean": clean,
         "help": show_help,
     }
