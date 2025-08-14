@@ -1,0 +1,249 @@
+"""
+Configuration settings for DevPocket API.
+"""
+
+from typing import List, Optional, Union
+import os
+from pydantic import BaseModel, validator
+from pydantic_settings import BaseSettings
+
+
+class DatabaseSettings(BaseModel):
+    """Database configuration settings."""
+    url: str
+    host: str = "localhost"
+    port: int = 5432
+    name: str = "devpocket_warp_dev"
+    user: str = "devpocket_user"
+    password: str = "devpocket_password"
+
+
+class RedisSettings(BaseModel):
+    """Redis configuration settings."""
+    url: str
+    host: str = "localhost"
+    port: int = 6379
+    db: int = 0
+
+
+class JWTSettings(BaseModel):
+    """JWT configuration settings."""
+    secret_key: str
+    algorithm: str = "HS256"
+    expiration_hours: int = 24
+    refresh_expiration_days: int = 30
+
+
+class CORSSettings(BaseModel):
+    """CORS configuration settings."""
+    origins: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    allow_credentials: bool = True
+    allow_methods: List[str] = ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
+    allow_headers: List[str] = ["*"]
+
+
+class OpenRouterSettings(BaseModel):
+    """OpenRouter API configuration settings."""
+    base_url: str = "https://openrouter.ai/api/v1"
+    site_url: str = "https://devpocket.app"
+    app_name: str = "DevPocket"
+
+
+class SecuritySettings(BaseModel):
+    """Security configuration settings."""
+    bcrypt_rounds: int = 12
+    max_connections_per_ip: int = 100
+    rate_limit_per_minute: int = 60
+
+
+class SSHSettings(BaseModel):
+    """SSH configuration settings."""
+    timeout: int = 30
+    max_connections: int = 10
+    key_storage_path: str = "./ssh_keys"
+
+
+class TerminalSettings(BaseModel):
+    """Terminal configuration settings."""
+    timeout: int = 300
+    max_command_length: int = 1000
+    max_output_size: int = 1048576  # 1MB
+
+
+class Settings(BaseSettings):
+    """Application settings."""
+    
+    # Application settings
+    app_name: str = "DevPocket API"
+    app_version: str = "1.0.0"
+    app_debug: bool = False
+    app_host: str = "0.0.0.0"
+    app_port: int = 8000
+    
+    # Database settings
+    database_url: str
+    database_host: str = "localhost"
+    database_port: int = 5432
+    database_name: str = "devpocket_warp_dev"
+    database_user: str = "devpocket_user"
+    database_password: str = "devpocket_password"
+    
+    # Redis settings
+    redis_url: str = "redis://localhost:6379/0"
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_db: int = 0
+    
+    # JWT settings
+    jwt_secret_key: str
+    jwt_algorithm: str = "HS256"
+    jwt_expiration_hours: int = 24
+    jwt_refresh_expiration_days: int = 30
+    
+    # CORS settings
+    cors_origins: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000", "https://devpocket.app"]
+    cors_allow_credentials: bool = True
+    cors_allow_methods: List[str] = ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
+    cors_allow_headers: List[str] = ["*"]
+    
+    # OpenRouter settings
+    openrouter_base_url: str = "https://openrouter.ai/api/v1"
+    openrouter_site_url: str = "https://devpocket.app"
+    openrouter_app_name: str = "DevPocket"
+    
+    # Security settings
+    bcrypt_rounds: int = 12
+    max_connections_per_ip: int = 100
+    rate_limit_per_minute: int = 60
+    
+    # SSH settings
+    ssh_timeout: int = 30
+    ssh_max_connections: int = 10
+    ssh_key_storage_path: str = "./ssh_keys"
+    
+    # Terminal settings
+    terminal_timeout: int = 300
+    max_command_length: int = 1000
+    max_output_size: int = 1048576  # 1MB
+    
+    # Logging settings
+    log_level: str = "INFO"
+    log_format: str = "json"
+    
+    # Development settings
+    reload: bool = True
+    workers: int = 1
+    
+    @validator("jwt_secret_key")
+    def validate_jwt_secret(cls, v):
+        """Validate JWT secret key."""
+        if len(v) < 32:
+            raise ValueError("JWT secret key must be at least 32 characters long")
+        return v
+    
+    @validator("cors_origins", pre=True)
+    def validate_cors_origins(cls, v):
+        """Validate CORS origins."""
+        if isinstance(v, str):
+            return [x.strip() for x in v.split(",")]
+        return v
+    
+    @validator("cors_allow_methods", pre=True)
+    def validate_cors_methods(cls, v):
+        """Validate CORS methods."""
+        if isinstance(v, str):
+            return [x.strip() for x in v.split(",")]
+        return v
+    
+    @validator("cors_allow_headers", pre=True)
+    def validate_cors_headers(cls, v):
+        """Validate CORS headers."""
+        if isinstance(v, str):
+            return [x.strip() for x in v.split(",")]
+        return v
+    
+    @property
+    def database(self) -> DatabaseSettings:
+        """Get database settings."""
+        return DatabaseSettings(
+            url=self.database_url,
+            host=self.database_host,
+            port=self.database_port,
+            name=self.database_name,
+            user=self.database_user,
+            password=self.database_password,
+        )
+    
+    @property
+    def redis(self) -> RedisSettings:
+        """Get Redis settings."""
+        return RedisSettings(
+            url=self.redis_url,
+            host=self.redis_host,
+            port=self.redis_port,
+            db=self.redis_db,
+        )
+    
+    @property
+    def jwt(self) -> JWTSettings:
+        """Get JWT settings."""
+        return JWTSettings(
+            secret_key=self.jwt_secret_key,
+            algorithm=self.jwt_algorithm,
+            expiration_hours=self.jwt_expiration_hours,
+            refresh_expiration_days=self.jwt_refresh_expiration_days,
+        )
+    
+    @property
+    def cors(self) -> CORSSettings:
+        """Get CORS settings."""
+        return CORSSettings(
+            origins=self.cors_origins,
+            allow_credentials=self.cors_allow_credentials,
+            allow_methods=self.cors_allow_methods,
+            allow_headers=self.cors_allow_headers,
+        )
+    
+    @property
+    def openrouter(self) -> OpenRouterSettings:
+        """Get OpenRouter settings."""
+        return OpenRouterSettings(
+            base_url=self.openrouter_base_url,
+            site_url=self.openrouter_site_url,
+            app_name=self.openrouter_app_name,
+        )
+    
+    @property
+    def security(self) -> SecuritySettings:
+        """Get security settings."""
+        return SecuritySettings(
+            bcrypt_rounds=self.bcrypt_rounds,
+            max_connections_per_ip=self.max_connections_per_ip,
+            rate_limit_per_minute=self.rate_limit_per_minute,
+        )
+    
+    @property
+    def ssh(self) -> SSHSettings:
+        """Get SSH settings."""
+        return SSHSettings(
+            timeout=self.ssh_timeout,
+            max_connections=self.ssh_max_connections,
+            key_storage_path=self.ssh_key_storage_path,
+        )
+    
+    @property
+    def terminal(self) -> TerminalSettings:
+        """Get terminal settings."""
+        return TerminalSettings(
+            timeout=self.terminal_timeout,
+            max_command_length=self.max_command_length,
+            max_output_size=self.max_output_size,
+        )
+
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+
+
+# Global settings instance
+settings = Settings()
