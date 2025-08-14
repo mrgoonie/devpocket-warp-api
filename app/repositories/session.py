@@ -23,18 +23,41 @@ class SessionRepository(BaseRepository[Session]):
         user_id: str,
         active_only: bool = False,
         offset: int = 0,
-        limit: int = 100
+        limit: int = 100,
+        session_type: Optional[str] = None,
+        include_inactive: bool = False
     ) -> List[Session]:
         """Get all sessions for a user."""
         query = select(Session).where(Session.user_id == user_id)
         
-        if active_only:
+        if active_only and not include_inactive:
             query = query.where(Session.is_active == True)
+        
+        if session_type:
+            query = query.where(Session.session_type == session_type)
         
         query = query.order_by(desc(Session.created_at)).offset(offset).limit(limit)
         
         result = await self.session.execute(query)
         return result.scalars().all()
+    
+    async def get_user_active_sessions(self, user_id: str) -> List[Session]:
+        """Get all active sessions for a user."""
+        return await self.get_user_sessions(user_id, active_only=True)
+    
+    async def get_user_session_count(
+        self,
+        user_id: str,
+        session_type: Optional[str] = None
+    ) -> int:
+        """Get total session count for a user."""
+        query = select(func.count(Session.id)).where(Session.user_id == user_id)
+        
+        if session_type:
+            query = query.where(Session.session_type == session_type)
+        
+        result = await self.session.execute(query)
+        return result.scalar()
 
     async def get_active_sessions(
         self,

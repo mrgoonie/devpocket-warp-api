@@ -3,15 +3,32 @@ Main FastAPI application for DevPocket API.
 """
 
 from contextlib import asynccontextmanager
+from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 import redis.asyncio as aioredis
 
+from app.auth.security import set_redis_client
+from app.auth.router import router as auth_router
+from app.api.ssh import router as ssh_router
+from app.api.sessions import router as sessions_router
+from app.api.commands import router as commands_router
+from app.api.ai import router as ai_router
+from app.api.sync import router as sync_router
+from app.api.profile import router as profile_router
+from app.websocket import websocket_router
+from app.websocket.manager import connection_manager
 from app.core.config import settings
 from app.core.logging import logger, log_request, log_error
 from app.db.database import db_manager, init_database, check_database_connection
+from app.middleware import (
+    AuthenticationMiddleware,
+    RateLimitMiddleware,
+    SecurityHeadersMiddleware,
+    setup_cors
+)
 
 
 @asynccontextmanager
@@ -44,6 +61,12 @@ async def lifespan(app: FastAPI):
         await app.state.redis.ping()
         logger.info("Redis connection established")
         
+        # Set Redis client for authentication module
+        set_redis_client(app.state.redis)
+        
+        # Set Redis client for WebSocket connection manager
+        connection_manager.redis = app.state.redis
+        
         # Initialize database tables if needed
         if settings.app_debug:
             await init_database()
@@ -60,6 +83,9 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down application")
     
     try:
+        # Stop WebSocket connection manager background tasks
+        await connection_manager.stop_background_tasks()
+        
         # Close Redis connection
         if hasattr(app.state, 'redis'):
             await app.state.redis.close()
@@ -112,14 +138,17 @@ def setup_middleware(app: FastAPI) -> None:
         app: FastAPI application instance
     """
     
-    # CORS middleware
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.cors_origins,
-        allow_credentials=settings.cors_allow_credentials,
-        allow_methods=settings.cors_allow_methods,
-        allow_headers=settings.cors_allow_headers,
-    )
+    # Security headers middleware (first to ensure headers are always added)
+    app.add_middleware(SecurityHeadersMiddleware)
+    
+    # Rate limiting middleware
+    app.add_middleware(RateLimitMiddleware, enabled=True)
+    
+    # Authentication middleware (before routes that need auth)
+    app.add_middleware(AuthenticationMiddleware)
+    
+    # CORS middleware using our setup function
+    setup_cors(app)
     
     # Trusted host middleware (for production)
     if not settings.app_debug:
@@ -127,6 +156,8 @@ def setup_middleware(app: FastAPI) -> None:
             TrustedHostMiddleware,
             allowed_hosts=["devpocket.app", "api.devpocket.app", "*.devpocket.app"]
         )
+    
+    logger.info("Middleware configured successfully")
 
 
 def setup_exception_handlers(app: FastAPI) -> None:
@@ -208,7 +239,7 @@ def setup_routes(app: FastAPI) -> None:
                     "database": "healthy" if db_healthy else "unhealthy",
                     "redis": "healthy" if redis_healthy else "unhealthy"
                 },
-                "timestamp": "2024-01-01T00:00:00Z"  # Will be updated with actual timestamp
+                "timestamp": datetime.now().isoformat()
             }
             
         except Exception as e:
@@ -221,8 +252,20 @@ def setup_routes(app: FastAPI) -> None:
                 }
             )
     
-    # Import and include API routers here
-    # This will be expanded when we create the API endpoints
+    # Include authentication routes
+    app.include_router(auth_router)
+    
+    # Include Core API routers
+    app.include_router(ssh_router)
+    app.include_router(sessions_router)
+    app.include_router(commands_router)
+    app.include_router(ai_router)
+    app.include_router(sync_router)
+    app.include_router(profile_router)
+    
+    # Include WebSocket router
+    app.include_router(websocket_router)
+    
     logger.info("Routes configured successfully")
 
 
