@@ -4,6 +4,7 @@ Sync data model for DevPocket API.
 
 from datetime import datetime
 from typing import Optional
+from uuid import UUID as PyUUID
 from sqlalchemy import String, ForeignKey, Text, Boolean, JSON, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -16,8 +17,8 @@ class SyncData(BaseModel):
     __tablename__ = "sync_data"
     
     # Foreign key to user
-    user_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False),
+    user_id: Mapped[PyUUID] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True
@@ -144,7 +145,7 @@ class SyncData(BaseModel):
     @classmethod
     def create_sync_item(
         cls,
-        user_id: str,
+        user_id: PyUUID,
         sync_type: str,
         sync_key: str,
         data: dict,

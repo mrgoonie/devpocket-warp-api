@@ -4,6 +4,7 @@ User model for DevPocket API.
 
 from datetime import datetime
 from typing import Optional, List
+from uuid import UUID as PyUUID
 from sqlalchemy import String, Boolean, Text, JSON, ForeignKey, Enum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -156,8 +157,8 @@ class UserSettings(BaseModel):
     __tablename__ = "user_settings"
     
     # Foreign key to user
-    user_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False),
+    user_id: Mapped[PyUUID] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True

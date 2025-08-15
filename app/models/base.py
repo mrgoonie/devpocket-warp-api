@@ -4,7 +4,7 @@ Base model classes for DevPocket API.
 
 from datetime import datetime, timezone
 from typing import Any, Dict
-from uuid import uuid4
+from uuid import uuid4, UUID as PyUUID
 from sqlalchemy import DateTime, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -41,10 +41,10 @@ class TimestampMixin:
 class UUIDMixin:
     """Mixin for UUID primary key."""
     
-    id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False),
+    id: Mapped[PyUUID] = mapped_column(
+        UUID(as_uuid=True),
         primary_key=True,
-        default=lambda: str(uuid4()),
+        default=uuid4,
         index=True
     )
 

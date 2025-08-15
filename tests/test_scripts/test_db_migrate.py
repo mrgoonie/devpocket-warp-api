@@ -393,3 +393,419 @@ class TestDbMigrateScript:
             result = script_runner.run_script("db_migrate.sh", ["--check-only"])
         
         assert result.returncode == 0
+    
+    # NEW ENHANCED FEATURE TESTS
+    
+    @patch('subprocess.run')
+    def test_dry_run_functionality(self, mock_run, script_runner, mock_env):
+        """Test the --dry-run option shows what would be migrated without executing."""
+        mock_run.side_effect = [
+            # db_utils.py test
+            MagicMock(returncode=0),
+            # alembic show head (validation)
+            MagicMock(returncode=0),
+            # alembic current (for dry run check)
+            MagicMock(returncode=0, stdout="abc123")
+        ]
+        
+        with patch.dict(os.environ, mock_env):
+            result = script_runner.run_script("db_migrate.sh", ["--dry-run"])
+        
+        assert result.returncode == 0
+        output = result.stdout + result.stderr
+        assert "Dry run mode" in output
+        assert "showing what would be migrated" in output
+        assert "Dry run completed" in output
+    
+    @patch('subprocess.run')
+    def test_dry_run_with_specific_target(self, mock_run, script_runner, mock_env):
+        """Test dry run with specific migration target."""
+        target = "def456"
+        mock_run.side_effect = [
+            # db_utils.py test
+            MagicMock(returncode=0),
+            # alembic show <target> (validation)
+            MagicMock(returncode=0),
+            # alembic current (for dry run check)
+            MagicMock(returncode=0, stdout="abc123")
+        ]
+        
+        with patch.dict(os.environ, mock_env):
+            result = script_runner.run_script("db_migrate.sh", ["--dry-run", target])
+        
+        assert result.returncode == 0
+        output = result.stdout + result.stderr
+        assert "Dry run mode" in output
+        assert target in output or "Migration target validated" in output
+    
+    @patch('subprocess.run')
+    def test_skip_backup_option(self, mock_run, script_runner, mock_env):
+        """Test the --skip-backup option skips backup creation."""
+        mock_run.side_effect = [
+            # db_utils.py test
+            MagicMock(returncode=0),
+            # alembic current
+            MagicMock(returncode=0, stdout="abc123"),
+            # alembic show head
+            MagicMock(returncode=0),
+            # Check data safety (returns different revision)
+            MagicMock(returncode=0, stdout="def456"),
+            # alembic upgrade head
+            MagicMock(returncode=0),
+            # alembic current (final)
+            MagicMock(returncode=0, stdout="def456")
+        ]
+        
+        with patch.dict(os.environ, mock_env):
+            result = script_runner.run_script("db_migrate.sh", ["--skip-backup", "--force"])
+        
+        assert result.returncode == 0
+        output = result.stdout + result.stderr
+        # Should not mention backup creation
+        assert "Creating database backup" not in output or "skipping backup" in output.lower()
+    
+    @patch('subprocess.run')
+    def test_force_option_skips_confirmation(self, mock_run, script_runner, mock_env):
+        """Test the --force option skips user confirmation."""
+        mock_run.side_effect = [
+            # db_utils.py test
+            MagicMock(returncode=0),
+            # alembic current
+            MagicMock(returncode=0, stdout="abc123"),
+            # alembic show head
+            MagicMock(returncode=0),
+            # Check data safety (returns different revision)
+            MagicMock(returncode=0, stdout="def456"),
+            # alembic upgrade head
+            MagicMock(returncode=0),
+            # alembic current (final)
+            MagicMock(returncode=0, stdout="def456")
+        ]
+        
+        with patch.dict(os.environ, mock_env):
+            result = script_runner.run_script("db_migrate.sh", ["--force"])
+        
+        assert result.returncode == 0
+        output = result.stdout + result.stderr
+        # Should not prompt for confirmation
+        assert "Do you want to continue?" not in output
+    
+    @patch('subprocess.run')
+    def test_env_file_option(self, mock_run, script_runner, temp_dir):
+        """Test the --env-file option uses custom environment file."""
+        # Create a custom env file
+        custom_env_file = temp_dir / "custom.env"
+        custom_env_file.write_text(
+            "DATABASE_HOST=custom-host\n"
+            "DATABASE_PORT=5434\n"
+            "DATABASE_USER=custom-user\n"
+            "DATABASE_PASSWORD=custom-pass\n"
+            "DATABASE_NAME=custom-db\n"
+        )
+        
+        mock_run.return_value = MagicMock(returncode=0)
+        
+        result = script_runner.run_script(
+            "db_migrate.sh", 
+            ["--env-file", str(custom_env_file), "--check-only"]
+        )
+        
+        assert result.returncode == 0
+        output = result.stdout + result.stderr
+        assert f"Environment file: {custom_env_file}" in output
+    
+    def test_env_file_option_missing_file(self, script_runner):
+        """Test --env-file with missing argument shows error."""
+        result = script_runner.run_script("db_migrate.sh", ["--env-file"])
+        assert result.returncode != 0
+        output = result.stdout + result.stderr
+        assert "Environment file path required" in output
+    
+    @patch('subprocess.run')
+    def test_backup_creation_success(self, mock_run, script_runner, mock_env, temp_dir):
+        """Test successful backup creation before migration."""
+        # Mock pg_dump availability and success
+        with patch('shutil.which', return_value='/usr/bin/pg_dump'):  
+            with patch('subprocess.run') as mock_run:
+                mock_run.side_effect = [
+                    # db_utils.py test
+                    MagicMock(returncode=0),
+                    # alembic current
+                    MagicMock(returncode=0, stdout="abc123"),
+                    # alembic show head
+                    MagicMock(returncode=0),
+                    # Check data safety
+                    MagicMock(returncode=0, stdout="def456"),
+                    # pg_dump (backup)
+                    MagicMock(returncode=0),
+                    # alembic upgrade
+                    MagicMock(returncode=0),
+                    # alembic current (final)
+                    MagicMock(returncode=0)
+                ]
+                
+                with patch.dict(os.environ, mock_env):
+                    result = script_runner.run_script("db_migrate.sh", ["--force"])
+                
+                assert result.returncode == 0
+    
+    @patch('subprocess.run')
+    def test_backup_creation_failure_warning(self, mock_run, script_runner, mock_env):
+        """Test that backup failure shows warning but continues migration."""
+        with patch('shutil.which', return_value='/usr/bin/pg_dump'):
+            mock_run.side_effect = [
+                # db_utils.py test
+                MagicMock(returncode=0),
+                # alembic current
+                MagicMock(returncode=0, stdout="abc123"),
+                # alembic show head
+                MagicMock(returncode=0),
+                # Check data safety
+                MagicMock(returncode=0, stdout="def456"),
+                # pg_dump fails
+                MagicMock(returncode=1),
+                # alembic upgrade (should still continue)
+                MagicMock(returncode=0),
+                # alembic current (final)
+                MagicMock(returncode=0)
+            ]
+            
+            with patch.dict(os.environ, mock_env):
+                result = script_runner.run_script("db_migrate.sh", ["--force"])
+            
+            assert result.returncode == 0
+            output = result.stdout + result.stderr
+            assert "Failed to create database backup" in output or "WARN" in output
+    
+    @patch('subprocess.run')
+    def test_no_pg_dump_available(self, mock_run, script_runner, mock_env):
+        """Test behavior when pg_dump is not available."""
+        with patch('shutil.which', return_value=None):
+            mock_run.side_effect = [
+                # db_utils.py test
+                MagicMock(returncode=0),
+                # alembic current
+                MagicMock(returncode=0, stdout="abc123"),
+                # alembic show head
+                MagicMock(returncode=0),
+                # Check data safety
+                MagicMock(returncode=0, stdout="def456"),
+                # alembic upgrade
+                MagicMock(returncode=0),
+                # alembic current (final)
+                MagicMock(returncode=0)
+            ]
+            
+            with patch.dict(os.environ, mock_env):
+                result = script_runner.run_script("db_migrate.sh", ["--force"])
+            
+            assert result.returncode == 0
+            output = result.stdout + result.stderr
+            assert "pg_dump not found" in output or "skipping backup" in output
+    
+    @patch('subprocess.run')
+    def test_migration_verification_success(self, mock_run, script_runner, mock_env):
+        """Test migration verification after successful migration."""
+        target_revision = "def456"
+        mock_run.side_effect = [
+            # db_utils.py test
+            MagicMock(returncode=0),
+            # alembic current
+            MagicMock(returncode=0, stdout="abc123"),
+            # alembic show head
+            MagicMock(returncode=0),
+            # Check data safety
+            MagicMock(returncode=0, stdout=target_revision),
+            # alembic upgrade
+            MagicMock(returncode=0),
+            # alembic current (verification)
+            MagicMock(returncode=0, stdout=target_revision[:12])  # First 12 chars
+        ]
+        
+        with patch.dict(os.environ, mock_env):
+            result = script_runner.run_script("db_migrate.sh", ["--force", "--skip-backup"])
+        
+        assert result.returncode == 0
+        output = result.stdout + result.stderr
+        assert "Migration verification passed" in output
+    
+    @patch('subprocess.run')
+    def test_migration_verification_failure(self, mock_run, script_runner, mock_env):
+        """Test migration verification failure warning."""
+        mock_run.side_effect = [
+            # db_utils.py test
+            MagicMock(returncode=0),
+            # alembic current
+            MagicMock(returncode=0, stdout="abc123"),
+            # alembic show head
+            MagicMock(returncode=0),
+            # Check data safety
+            MagicMock(returncode=0, stdout="def456"),
+            # alembic upgrade
+            MagicMock(returncode=0),
+            # alembic current (verification) - wrong revision
+            MagicMock(returncode=0, stdout="wrongrev")
+        ]
+        
+        with patch.dict(os.environ, mock_env):
+            result = script_runner.run_script("db_migrate.sh", ["--force", "--skip-backup"])
+        
+        assert result.returncode == 0
+        output = result.stdout + result.stderr
+        assert "Migration verification failed" in output or "target not reached" in output
+    
+    @patch('subprocess.run')
+    def test_data_safety_check_shows_pending_migrations(self, mock_run, script_runner, mock_env):
+        """Test that data safety check shows pending migrations."""
+        mock_run.side_effect = [
+            # db_utils.py test
+            MagicMock(returncode=0),
+            # alembic current
+            MagicMock(returncode=0, stdout="abc123"),
+            # alembic show head
+            MagicMock(returncode=0),
+            # alembic heads
+            MagicMock(returncode=0, stdout="def456789012"),
+            # alembic history -r range
+            MagicMock(returncode=0, stdout="Pending migrations list"),
+            # alembic upgrade
+            MagicMock(returncode=0),
+            # alembic current (final)
+            MagicMock(returncode=0)
+        ]
+        
+        with patch.dict(os.environ, mock_env):
+            result = script_runner.run_script("db_migrate.sh", ["--force", "--skip-backup"])
+        
+        assert result.returncode == 0
+        output = result.stdout + result.stderr
+        assert "Migration will change" in output or "Pending migrations" in output
+    
+    @patch('subprocess.run')
+    def test_no_migration_needed(self, mock_run, script_runner, mock_env):
+        """Test behavior when database is already at target revision."""
+        current_revision = "abc123456789"
+        mock_run.side_effect = [
+            # db_utils.py test
+            MagicMock(returncode=0),
+            # alembic current
+            MagicMock(returncode=0, stdout=current_revision),
+            # alembic show head
+            MagicMock(returncode=0),
+            # alembic heads (for target resolution)
+            MagicMock(returncode=0, stdout=current_revision),
+            # No more calls needed as migration is not required
+        ]
+        
+        with patch.dict(os.environ, mock_env):
+            result = script_runner.run_script("db_migrate.sh")
+        
+        assert result.returncode == 0
+        output = result.stdout + result.stderr
+        assert "No migration needed" in output or "database is up to date" in output
+    
+    def test_invalid_option_combinations(self, script_runner):
+        """Test handling of invalid option combinations."""
+        # Test conflicting options
+        result = script_runner.run_script("db_migrate.sh", ["--dry-run", "--force"])
+        # This should work - force doesn't conflict with dry-run
+        # But we test that script handles multiple options properly
+        
+        # Test unknown option
+        result = script_runner.run_script("db_migrate.sh", ["--unknown-option"])
+        assert result.returncode != 0
+        output = result.stdout + result.stderr
+        assert "Unknown option" in output
+    
+    @patch('subprocess.run')
+    def test_enhanced_logging_output(self, mock_run, script_runner, mock_env):
+        """Test enhanced logging throughout the migration process."""
+        mock_run.return_value = MagicMock(returncode=0)
+        
+        with patch.dict(os.environ, mock_env):
+            result = script_runner.run_script("db_migrate.sh", ["--check-only"])
+        
+        output = result.stdout + result.stderr
+        
+        # Check for various log levels and components
+        assert "[INFO]" in output
+        assert "Starting database migration script" in output
+        assert "Project root:" in output
+        assert "Environment file:" in output
+        assert "Database connection verified" in output or "Database connection check completed" in output
+
+    def test_help_includes_enhanced_options(self, script_runner):
+        """Test that help includes all enhanced options."""
+        result = script_runner.run_script("db_migrate.sh", ["--help"])
+        
+        assert result.returncode == 0
+        # Test enhanced options are included
+        assert "--dry-run" in result.stdout
+        assert "--skip-backup" in result.stdout
+        assert "--force" in result.stdout
+        assert "--env-file" in result.stdout
+
+
+@pytest.mark.integration
+class TestDbMigrateIntegration:
+    """Integration tests for db_migrate.sh against actual database."""
+    
+    @pytest.mark.slow
+    def test_database_connection_real(self, script_runner):
+        """Test actual database connection with real credentials."""
+        # Use the actual database URL provided
+        db_env = {
+            "DATABASE_URL": "postgresql://postgres:N9fgWyjhxkNUeYrPm6C8kZVjEpLw@51.79.231.184:32749/devpocket_warp_dev"
+        }
+        
+        with patch.dict(os.environ, db_env):
+            result = script_runner.run_script("db_migrate.sh", ["--check-only"])
+        
+        assert result.returncode == 0
+        output = result.stdout + result.stderr
+        assert "Database connection verified" in output or "Database connection check completed" in output
+    
+    @pytest.mark.slow
+    def test_migration_dry_run_real(self, script_runner):
+        """Test dry run against real database."""
+        db_env = {
+            "DATABASE_URL": "postgresql://postgres:N9fgWyjhxkNUeYrPm6C8kZVjEpLw@51.79.231.184:32749/devpocket_warp_dev"
+        }
+        
+        with patch.dict(os.environ, db_env):
+            result = script_runner.run_script("db_migrate.sh", ["--dry-run"])
+        
+        # Should succeed regardless of current migration state
+        assert result.returncode == 0
+        output = result.stdout + result.stderr
+        assert "Dry run" in output
+    
+    @pytest.mark.slow
+    def test_migration_history_real(self, script_runner):
+        """Test migration history against real database."""
+        db_env = {
+            "DATABASE_URL": "postgresql://postgres:N9fgWyjhxkNUeYrPm6C8kZVjEpLw@51.79.231.184:32749/devpocket_warp_dev"
+        }
+        
+        with patch.dict(os.environ, db_env):
+            result = script_runner.run_script("db_migrate.sh", ["--history"])
+        
+        assert result.returncode == 0
+        output = result.stdout + result.stderr
+        assert "Migration history" in output
+    
+    @pytest.mark.slow
+    def test_current_migration_status_real(self, script_runner):
+        """Test checking current migration status against real database."""
+        db_env = {
+            "DATABASE_URL": "postgresql://postgres:N9fgWyjhxkNUeYrPm6C8kZVjEpLw@51.79.231.184:32749/devpocket_warp_dev"
+        }
+        
+        with patch.dict(os.environ, db_env):
+            # Test that we can get current status
+            result = script_runner.run_script("db_migrate.sh", ["--dry-run", "head"])
+        
+        assert result.returncode == 0
+        output = result.stdout + result.stderr
+        # Should show some migration information
+        assert "Migration target validated" in output or "No migration needed" in output or "would be migrated" in output

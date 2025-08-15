@@ -4,6 +4,7 @@ Command model for DevPocket API.
 
 from datetime import datetime
 from typing import Optional
+from uuid import UUID as PyUUID
 from sqlalchemy import String, ForeignKey, Integer, Text, Float, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -16,8 +17,8 @@ class Command(BaseModel):
     __tablename__ = "commands"
     
     # Foreign key to session
-    session_id: Mapped[str] = mapped_column(
-        UUID(as_uuid=False),
+    session_id: Mapped[PyUUID] = mapped_column(
+        UUID(as_uuid=True),
         ForeignKey("sessions.id", ondelete="CASCADE"),
         nullable=False,
         index=True
@@ -116,7 +117,7 @@ class Command(BaseModel):
     
     # Computed properties
     @property
-    def user_id(self) -> str:
+    def user_id(self) -> PyUUID:
         """Get user ID through session relationship."""
         return self.session.user_id if self.session else None
     

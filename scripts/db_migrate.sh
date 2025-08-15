@@ -73,14 +73,104 @@ check_database() {
     fi
 }
 
+# Validate migration target
+validate_migration_target() {
+    local target="$1"
+    
+    log "INFO" "Validating migration target: $target"
+    
+    # Change to project root for Alembic operations
+    cd "$PROJECT_ROOT"
+    
+    case "$target" in
+        "head"|"+1"|"-1")
+            log "SUCCESS" "Migration target validated: $target"
+            return 0
+            ;;
+        *)
+            # Check if it's a valid revision ID
+            if alembic show "$target" &> /dev/null; then
+                log "SUCCESS" "Migration target validated: $target"
+                return 0
+            else
+                log "ERROR" "Invalid migration target: $target"
+                log "INFO" "Valid targets: head, +1, -1, or specific revision ID"
+                alembic history --verbose | head -20
+                return 1
+            fi
+            ;;
+    esac
+}
+
+# Create database backup before migration
+create_backup() {
+    log "INFO" "Creating database backup before migration..."
+    
+    local backup_dir="${PROJECT_ROOT}/backups"
+    local timestamp=$(date '+%Y%m%d_%H%M%S')
+    local backup_file="${backup_dir}/db_backup_${timestamp}.sql"
+    
+    # Create backup directory if it doesn't exist
+    mkdir -p "$backup_dir"
+    
+    # Create backup using pg_dump
+    if command -v pg_dump &> /dev/null; then
+        if pg_dump "$DATABASE_URL" > "$backup_file" 2>/dev/null; then
+            log "SUCCESS" "Database backup created: $backup_file"
+            return 0
+        else
+            log "WARN" "Failed to create database backup"
+            return 1
+        fi
+    else
+        log "WARN" "pg_dump not found, skipping backup"
+        return 1
+    fi
+}
+
+# Check for pending data changes that might be affected
+check_data_safety() {
+    log "INFO" "Checking for data safety concerns..."
+    
+    cd "$PROJECT_ROOT"
+    
+    # Get current migration and show what will be applied
+    local current_revision=$(alembic current | grep -o '[a-f0-9]\{12\}' | head -1)
+    local target_revision="$1"
+    
+    if [[ "$target_revision" == "head" ]]; then
+        target_revision=$(alembic heads | grep -o '[a-f0-9]\{12\}' | head -1)
+    fi
+    
+    if [[ "$current_revision" != "$target_revision" ]]; then
+        log "INFO" "Migration will change from $current_revision to $target_revision"
+        
+        # Show what migrations will be applied
+        log "INFO" "Pending migrations:"
+        alembic history -r "${current_revision}:${target_revision}" --verbose
+        
+        return 0
+    else
+        log "INFO" "Database is already at target revision"
+        return 1
+    fi
+}
+
 # Run Alembic migrations
 run_migrations() {
     local target="${1:-head}"
+    local skip_backup="${2:-false}"
+    local force_migration="${3:-false}"
     
     log "INFO" "Running Alembic migrations to target: $target"
     
     # Change to project root for Alembic operations
     cd "$PROJECT_ROOT"
+    
+    # Validate migration target first
+    if ! validate_migration_target "$target"; then
+        exit 1
+    fi
     
     # Check current migration status
     log "INFO" "Current migration status:"
@@ -89,18 +179,43 @@ run_migrations() {
         exit 1
     fi
     
-    # Show pending migrations
-    log "INFO" "Checking for pending migrations..."
-    if alembic show "$target" &> /dev/null; then
-        # Run the migration
-        if alembic upgrade "$target"; then
-            log "SUCCESS" "Migration completed successfully"
+    # Check if migration is needed
+    if ! check_data_safety "$target"; then
+        log "INFO" "No migration needed, database is up to date"
+        return 0
+    fi
+    
+    # Create backup unless skipped
+    if [[ "$skip_backup" != "true" ]]; then
+        create_backup
+    fi
+    
+    # Ask for confirmation unless force is used
+    if [[ "$force_migration" != "true" ]]; then
+        log "WARN" "About to run database migration to: $target"
+        read -p "Do you want to continue? (y/N): " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            log "INFO" "Migration cancelled by user"
+            exit 0
+        fi
+    fi
+    
+    # Run the migration with transaction
+    log "INFO" "Starting migration transaction..."
+    if alembic upgrade "$target"; then
+        log "SUCCESS" "Migration completed successfully"
+        
+        # Verify migration success
+        log "INFO" "Verifying migration..."
+        if alembic current | grep -q "$(echo "$target" | head -c 12)"; then
+            log "SUCCESS" "Migration verification passed"
         else
-            log "ERROR" "Migration failed"
-            exit 1
+            log "WARN" "Migration verification failed - target not reached"
         fi
     else
-        log "ERROR" "Invalid migration target: $target"
+        log "ERROR" "Migration failed"
+        log "INFO" "Check the error messages above and consider restoring from backup"
         exit 1
     fi
     
@@ -146,6 +261,9 @@ OPTIONS:
     -g, --generate MESSAGE  Generate new migration with message
     --history              Show migration history
     --check-only           Only check database connection, don't run migrations
+    --skip-backup          Skip creating database backup before migration
+    --force                Force migration without confirmation prompts
+    --dry-run              Show what would be migrated without executing
     --env-file FILE        Specify environment file to use (default: .env)
 
 ARGUMENTS:
@@ -164,6 +282,9 @@ EXAMPLES:
     $0 -g "Add user table"  # Generate new migration
     $0 --history           # Show migration history
     $0 --check-only        # Only check database connection
+    $0 --force             # Force migration without prompts
+    $0 --skip-backup       # Skip backup creation
+    $0 --dry-run           # Show pending migrations only
 
 ENVIRONMENT:
     Set DATABASE_URL or individual database connection variables in .env file.
@@ -184,6 +305,9 @@ main() {
     local generate_msg=""
     local show_history_flag=false
     local check_only=false
+    local skip_backup=false
+    local force_migration=false
+    local dry_run=false
     local env_file=".env"
     
     # Parse command line arguments
@@ -207,6 +331,15 @@ main() {
                 ;;
             --check-only)
                 check_only=true
+                ;;
+            --skip-backup)
+                skip_backup=true
+                ;;
+            --force)
+                force_migration=true
+                ;;
+            --dry-run)
+                dry_run=true
                 ;;
             --env-file)
                 if [[ -n "${2:-}" ]]; then
@@ -252,8 +385,13 @@ main() {
         show_history
     elif [[ "$check_only" == true ]]; then
         log "SUCCESS" "Database connection check completed"
+    elif [[ "$dry_run" == true ]]; then
+        log "INFO" "Dry run mode - showing what would be migrated"
+        validate_migration_target "$target"
+        check_data_safety "$target"
+        log "INFO" "Dry run completed"
     else
-        run_migrations "$target"
+        run_migrations "$target" "$skip_backup" "$force_migration"
     fi
     
     log "SUCCESS" "Database migration script completed successfully"
