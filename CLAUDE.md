@@ -113,3 +113,11 @@ When implementation begins:
 - WebSocket connection tests
 - Mock OpenRouter API for AI service tests
 - Flutter widget tests for UI components
+
+## Code Quality Guidelines
+
+### Linting and Formatting
+- Don't be too harsh on code linting and formatting
+- Prioritize functionality and readability over strict style enforcement
+- Use reasonable code quality standards that enhance developer productivity
+- Allow for minor style variations when they improve code clarity
