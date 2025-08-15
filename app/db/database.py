@@ -44,8 +44,10 @@ class DatabaseManager:
     async def connect(self) -> None:
         """Create database connection pool."""
         try:
+            # asyncpg expects postgresql:// not postgresql+asyncpg://
+            db_url = settings.database_url.replace("postgresql+asyncpg://", "postgresql://")
             self._pool = await asyncpg.create_pool(
-                settings.database_url,
+                db_url,
                 min_size=10,
                 max_size=20,
                 max_queries=50000,
@@ -170,8 +172,9 @@ async def check_database_connection() -> bool:
         bool: True if connection is working
     """
     try:
+        from sqlalchemy import text
         async with AsyncSessionLocal() as session:
-            await session.execute("SELECT 1")
+            await session.execute(text("SELECT 1"))
         return True
     except Exception as e:
         logger.error(f"Database connection check failed: {e}")

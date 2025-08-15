@@ -80,8 +80,22 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    # Get the database URL and ensure it uses the sync driver
+    configuration = config.get_section(config.config_ini_section, {})
+    if 'sqlalchemy.url' not in configuration:
+        database_url = os.getenv("DATABASE_URL")
+        if database_url:
+            # Ensure we use the sync driver (psycopg2) not the async driver
+            database_url = database_url.replace("postgresql+asyncpg://", "postgresql://")
+            configuration['sqlalchemy.url'] = database_url
+    else:
+        # Also ensure the configured URL uses sync driver
+        url = configuration.get('sqlalchemy.url', '')
+        if 'asyncpg' in url:
+            configuration['sqlalchemy.url'] = url.replace("postgresql+asyncpg://", "postgresql://")
+    
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
