@@ -92,13 +92,13 @@ async def seed_database(seed_type: str, count: int = 10):
     """Seed database with sample data using factories."""
     
     # Import required modules
-    from app.db.database import get_db_session
+    from app.db.database import AsyncSessionLocal
     from app.core.config import settings
     from app.core.logging import logger
     
     # Import factories
     from tests.factories.user_factory import UserFactory
-    from tests.factories.ssh_factory import SSHConnectionFactory
+    from tests.factories.ssh_factory import SSHProfileFactory
     from tests.factories.command_factory import CommandFactory
     from tests.factories.session_factory import SessionFactory
     from tests.factories.sync_factory import SyncDataFactory
@@ -107,14 +107,16 @@ async def seed_database(seed_type: str, count: int = 10):
     
     try:
         # Get database session
-        async with get_db_session() as session:
+        async with AsyncSessionLocal() as session:
             
             if seed_type in ["all", "users"]:
                 logger.info(f"Creating {count} sample users...")
                 users = []
                 for i in range(count):
-                    user = await UserFactory.create_async(session=session)
+                    user = UserFactory.build()
+                    session.add(user)
                     users.append(user)
+                await session.flush()  # Get IDs without committing
                 logger.info(f"Created {len(users)} users")
             
             if seed_type in ["all", "ssh"]:
@@ -123,32 +125,51 @@ async def seed_database(seed_type: str, count: int = 10):
                 for i in range(count):
                     # Create user first if not already created
                     if seed_type != "all":
-                        user = await UserFactory.create_async(session=session)
+                        user = UserFactory.build()
+                        session.add(user)
+                        await session.flush()
                     else:
-                        user = users[i % len(users)] if users else await UserFactory.create_async(session=session)
+                        user = users[i % len(users)] if users else None
+                        if not user:
+                            user = UserFactory.build()
+                            session.add(user)
+                            await session.flush()
                     
-                    ssh_conn = await SSHConnectionFactory.create_async(
-                        session=session,
-                        user_id=user.id
-                    )
+                    ssh_conn = SSHProfileFactory.build(user_id=user.id)
+                    session.add(ssh_conn)
                     ssh_connections.append(ssh_conn)
+                await session.flush()
                 logger.info(f"Created {len(ssh_connections)} SSH connections")
             
             if seed_type in ["all", "commands"]:
                 logger.info(f"Creating {count} sample commands...")
                 commands = []
                 for i in range(count):
-                    # Create user first if not already created
-                    if seed_type not in ["all", "ssh"]:
-                        user = await UserFactory.create_async(session=session)
+                    # Create user and session first if not already created
+                    if seed_type not in ["all", "ssh", "sessions"]:
+                        user = UserFactory.build()
+                        session.add(user)
+                        await session.flush()
+                        
+                        user_session = SessionFactory.build(user_id=user.id)
+                        session.add(user_session)
+                        await session.flush()
                     else:
-                        user = users[i % len(users)] if 'users' in locals() else await UserFactory.create_async(session=session)
+                        user = users[i % len(users)] if 'users' in locals() and users else None
+                        if not user:
+                            user = UserFactory.build()
+                            session.add(user)
+                            await session.flush()
+                        
+                        # Create a session for this user
+                        user_session = SessionFactory.build(user_id=user.id)
+                        session.add(user_session)
+                        await session.flush()
                     
-                    command = await CommandFactory.create_async(
-                        session=session,
-                        user_id=user.id
-                    )
+                    command = CommandFactory.build(session_id=user_session.id)
+                    session.add(command)
                     commands.append(command)
+                await session.flush()
                 logger.info(f"Created {len(commands)} commands")
             
             if seed_type in ["all", "sessions"]:
@@ -157,15 +178,20 @@ async def seed_database(seed_type: str, count: int = 10):
                 for i in range(count):
                     # Create user first if not already created
                     if seed_type not in ["all", "ssh", "commands"]:
-                        user = await UserFactory.create_async(session=session)
+                        user = UserFactory.build()
+                        session.add(user)
+                        await session.flush()
                     else:
-                        user = users[i % len(users)] if 'users' in locals() else await UserFactory.create_async(session=session)
+                        user = users[i % len(users)] if 'users' in locals() and users else None
+                        if not user:
+                            user = UserFactory.build()
+                            session.add(user)
+                            await session.flush()
                     
-                    session_obj = await SessionFactory.create_async(
-                        session=session,
-                        user_id=user.id
-                    )
+                    session_obj = SessionFactory.build(user_id=user.id)
+                    session.add(session_obj)
                     sessions.append(session_obj)
+                await session.flush()
                 logger.info(f"Created {len(sessions)} sessions")
             
             if seed_type in ["all", "sync"]:
@@ -174,15 +200,20 @@ async def seed_database(seed_type: str, count: int = 10):
                 for i in range(count):
                     # Create user first if not already created
                     if seed_type not in ["all", "ssh", "commands", "sessions"]:
-                        user = await UserFactory.create_async(session=session)
+                        user = UserFactory.build()
+                        session.add(user)
+                        await session.flush()
                     else:
-                        user = users[i % len(users)] if 'users' in locals() else await UserFactory.create_async(session=session)
+                        user = users[i % len(users)] if 'users' in locals() and users else None
+                        if not user:
+                            user = UserFactory.build()
+                            session.add(user)
+                            await session.flush()
                     
-                    sync_obj = await SyncDataFactory.create_async(
-                        session=session,
-                        user_id=user.id
-                    )
+                    sync_obj = SyncDataFactory.build(user_id=user.id)
+                    session.add(sync_obj)
                     sync_data.append(sync_obj)
+                await session.flush()
                 logger.info(f"Created {len(sync_data)} sync data records")
             
             # Commit all changes
@@ -247,24 +278,25 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 async def show_database_stats():
     """Show database table statistics."""
-    from app.db.database import get_db_session
+    from app.db.database import AsyncSessionLocal
     from app.core.logging import logger
     
     try:
-        async with get_db_session() as session:
+        async with AsyncSessionLocal() as session:
+            from sqlalchemy import text
             # Query table statistics
-            result = await session.execute("""
+            result = await session.execute(text("""
                 SELECT 
                     schemaname,
-                    tablename,
+                    relname as table_name,
                     n_tup_ins as inserts,
                     n_tup_upd as updates,
                     n_tup_del as deletes,
                     n_live_tup as live_rows,
                     n_dead_tup as dead_rows
                 FROM pg_stat_user_tables 
-                ORDER BY tablename;
-            """)
+                ORDER BY relname;
+            """))
             
             stats = result.fetchall()
             
@@ -275,7 +307,7 @@ async def show_database_stats():
                 print("-" * 80)
                 
                 for stat in stats:
-                    print(f"{stat.tablename:<20} {stat.live_rows:<12} {stat.inserts:<10} {stat.updates:<10} {stat.deletes:<10}")
+                    print(f"{stat.table_name:<20} {stat.live_rows:<12} {stat.inserts:<10} {stat.updates:<10} {stat.deletes:<10}")
                 
                 print("-" * 80)
                 print(f"Total tables: {len(stats)}")
@@ -314,6 +346,7 @@ OPTIONS:
     -h, --help          Show this help message
     --stats             Show database statistics after seeding
     --stats-only        Only show database statistics, don't seed
+    --env-file FILE     Specify environment file to use (default: .env)
 
 ARGUMENTS:
     SEED_TYPE           Type of data to seed (default: all)
@@ -354,6 +387,7 @@ main() {
     local count=10
     local show_stats_flag=false
     local stats_only=false
+    local env_file=".env"
     
     # Parse command line arguments
     while [[ $# -gt 0 ]]; do
@@ -367,6 +401,15 @@ main() {
                 ;;
             --stats-only)
                 stats_only=true
+                ;;
+            --env-file)
+                if [[ -n "${2:-}" ]]; then
+                    env_file="$2"
+                    shift
+                else
+                    log "ERROR" "Environment file path required with --env-file option"
+                    exit 1
+                fi
                 ;;
             -*)
                 log "ERROR" "Unknown option: $1"
@@ -400,6 +443,10 @@ main() {
     log "INFO" "Project root: $PROJECT_ROOT"
     log "INFO" "Seed type: $seed_type"
     log "INFO" "Count: $count"
+    log "INFO" "Environment file: $env_file"
+    
+    # Set environment file for Python scripts
+    export ENV_FILE="$env_file"
     
     # Activate virtual environment
     activate_venv

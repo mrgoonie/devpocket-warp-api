@@ -146,6 +146,7 @@ OPTIONS:
     -g, --generate MESSAGE  Generate new migration with message
     --history              Show migration history
     --check-only           Only check database connection, don't run migrations
+    --env-file FILE        Specify environment file to use (default: .env)
 
 ARGUMENTS:
     TARGET                  Migration target (default: head)
@@ -183,6 +184,7 @@ main() {
     local generate_msg=""
     local show_history_flag=false
     local check_only=false
+    local env_file=".env"
     
     # Parse command line arguments
     while [[ $# -gt 0 ]]; do
@@ -206,6 +208,15 @@ main() {
             --check-only)
                 check_only=true
                 ;;
+            --env-file)
+                if [[ -n "${2:-}" ]]; then
+                    env_file="$2"
+                    shift
+                else
+                    log "ERROR" "Environment file path required with --env-file option"
+                    exit 1
+                fi
+                ;;
             -*)
                 log "ERROR" "Unknown option: $1"
                 show_help
@@ -220,6 +231,10 @@ main() {
     
     log "INFO" "Starting database migration script..."
     log "INFO" "Project root: $PROJECT_ROOT"
+    log "INFO" "Environment file: $env_file"
+    
+    # Set environment file for Python scripts
+    export ENV_FILE="$env_file"
     
     # Activate virtual environment
     activate_venv

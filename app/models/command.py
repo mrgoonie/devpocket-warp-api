@@ -5,6 +5,7 @@ Command model for DevPocket API.
 from datetime import datetime
 from typing import Optional
 from sqlalchemy import String, ForeignKey, Integer, Text, Float, Index
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseModel
 
@@ -16,7 +17,7 @@ class Command(BaseModel):
     
     # Foreign key to session
     session_id: Mapped[str] = mapped_column(
-        String(36),
+        UUID(as_uuid=False),
         ForeignKey("sessions.id", ondelete="CASCADE"),
         nullable=False,
         index=True

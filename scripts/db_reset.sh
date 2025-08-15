@@ -265,6 +265,7 @@ OPTIONS:
     --seed-type TYPE        Type of seed data (default: all)
     --seed-count COUNT      Number of seed records (default: 10)
     --no-verify             Skip database health verification
+    --env-file FILE         Specify environment file to use (default: .env)
 
 SEED TYPES:
     all                     Create sample data for all entity types
@@ -309,6 +310,7 @@ main() {
     local seed_type="all"
     local seed_count=10
     local skip_verify=false
+    local env_file=".env"
     
     # Parse command line arguments
     while [[ $# -gt 0 ]]; do
@@ -344,6 +346,15 @@ main() {
             --no-verify)
                 skip_verify=true
                 ;;
+            --env-file)
+                if [[ -n "${2:-}" ]]; then
+                    env_file="$2"
+                    shift
+                else
+                    log "ERROR" "Environment file path required with --env-file option"
+                    exit 1
+                fi
+                ;;
             -*)
                 log "ERROR" "Unknown option: $1"
                 show_help
@@ -372,6 +383,10 @@ main() {
     
     log "INFO" "Starting database reset script..."
     log "INFO" "Project root: $PROJECT_ROOT"
+    log "INFO" "Environment file: $env_file"
+    
+    # Set environment file for Python scripts
+    export ENV_FILE="$env_file"
     
     # Check requirements
     check_requirements

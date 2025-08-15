@@ -8,9 +8,20 @@ import asyncpg
 import sys
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Add the project root to the path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+project_root = str(Path(__file__).parent.parent)
+sys.path.insert(0, project_root)
+
+# Load environment variables from specified file (default: .env)
+env_file = os.getenv('ENV_FILE', '.env')
+env_path = os.path.join(project_root, env_file)
+if os.path.exists(env_path):
+    load_dotenv(env_path, override=True)
+    print(f"Loaded environment from: {env_path}")
+else:
+    print(f"Warning: Environment file not found: {env_path}")
 
 from app.core.config import settings
 from app.core.logging import logger

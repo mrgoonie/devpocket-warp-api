@@ -5,6 +5,7 @@ Session model for DevPocket API.
 from datetime import datetime
 from typing import Optional, List
 from sqlalchemy import String, ForeignKey, Integer, Text, Boolean
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseModel
 
@@ -16,7 +17,7 @@ class Session(BaseModel):
     
     # Foreign key to user
     user_id: Mapped[str] = mapped_column(
-        String(36),
+        UUID(as_uuid=False),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True

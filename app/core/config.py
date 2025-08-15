@@ -2,9 +2,9 @@
 Configuration settings for DevPocket API.
 """
 
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Annotated
 import os
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator, Field
 from pydantic_settings import BaseSettings
 
 
@@ -101,10 +101,10 @@ class Settings(BaseSettings):
     jwt_refresh_expiration_days: int = 30
     
     # CORS settings
-    cors_origins: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000", "https://devpocket.app"]
+    cors_origins: Union[str, List[str]] = "http://localhost:3000,http://127.0.0.1:3000,https://devpocket.app"
     cors_allow_credentials: bool = True
-    cors_allow_methods: List[str] = ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
-    cors_allow_headers: List[str] = ["*"]
+    cors_allow_methods: Union[str, List[str]] = "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+    cors_allow_headers: Union[str, List[str]] = "*"
     
     # OpenRouter settings
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
@@ -134,33 +134,45 @@ class Settings(BaseSettings):
     reload: bool = True
     workers: int = 1
     
-    @validator("jwt_secret_key")
+    # Additional secret key (for general encryption)
+    secret_key: str = ""
+    
+    # Email service settings
+    resend_api_key: str = ""
+    from_email: str = "noreply@devpocket.app"
+    support_email: str = "support@devpocket.app"
+    
+    @field_validator("jwt_secret_key")
+    @classmethod
     def validate_jwt_secret(cls, v):
         """Validate JWT secret key."""
         if len(v) < 32:
             raise ValueError("JWT secret key must be at least 32 characters long")
         return v
     
-    @validator("cors_origins", pre=True)
+    @field_validator("cors_origins", mode="before")
+    @classmethod
     def validate_cors_origins(cls, v):
         """Validate CORS origins."""
         if isinstance(v, str):
-            return [x.strip() for x in v.split(",")]
-        return v
+            return [x.strip() for x in v.split(",") if x.strip()]
+        return v if isinstance(v, list) else [v]
     
-    @validator("cors_allow_methods", pre=True)
+    @field_validator("cors_allow_methods", mode="before")
+    @classmethod
     def validate_cors_methods(cls, v):
         """Validate CORS methods."""
         if isinstance(v, str):
-            return [x.strip() for x in v.split(",")]
-        return v
+            return [x.strip() for x in v.split(",") if x.strip()]
+        return v if isinstance(v, list) else [v]
     
-    @validator("cors_allow_headers", pre=True)
+    @field_validator("cors_allow_headers", mode="before")
+    @classmethod
     def validate_cors_headers(cls, v):
         """Validate CORS headers."""
         if isinstance(v, str):
-            return [x.strip() for x in v.split(",")]
-        return v
+            return [x.strip() for x in v.split(",") if x.strip()]
+        return v if isinstance(v, list) else [v]
     
     @property
     def database(self) -> DatabaseSettings:
@@ -240,9 +252,11 @@ class Settings(BaseSettings):
             max_output_size=self.max_output_size,
         )
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = {
+        "env_file": ".env",
+        "env_file_encoding": "utf-8",
+        "env_parse_none_str": "None"
+    }
 
 
 # Global settings instance

@@ -4,9 +4,18 @@ User model for DevPocket API.
 
 from datetime import datetime
 from typing import Optional, List
-from sqlalchemy import String, Boolean, Text, JSON, ForeignKey
+from sqlalchemy import String, Boolean, Text, JSON, ForeignKey, Enum
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+import enum
 from .base import BaseModel
+
+
+class UserRole(enum.Enum):
+    """User role enumeration."""
+    USER = "user"
+    ADMIN = "admin" 
+    PREMIUM = "premium"
 
 
 class User(BaseModel):
@@ -29,9 +38,20 @@ class User(BaseModel):
         index=True
     )
     
-    password_hash: Mapped[str] = mapped_column(
+    hashed_password: Mapped[str] = mapped_column(
         String(255), 
         nullable=False
+    )
+    
+    full_name: Mapped[Optional[str]] = mapped_column(
+        String(255), 
+        nullable=True
+    )
+    
+    role: Mapped[UserRole] = mapped_column(
+        Enum(UserRole, name="user_role"),
+        nullable=False,
+        default=UserRole.USER
     )
     
     # Account status
@@ -49,58 +69,25 @@ class User(BaseModel):
         server_default="false"
     )
     
-    # Subscription information
-    subscription_tier: Mapped[str] = mapped_column(
-        String(20), 
-        nullable=False, 
-        default="free",
-        server_default="'free'",
-        index=True
-    )
-    
-    # API key validation
-    has_api_key: Mapped[bool] = mapped_column(
-        Boolean, 
-        nullable=False, 
-        default=False,
-        server_default="false"
-    )
-    
-    api_key_validated_at: Mapped[Optional[datetime]] = mapped_column(
+    verification_token: Mapped[Optional[str]] = mapped_column(
+        String(255), 
         nullable=True
     )
     
-    # Profile information
-    display_name: Mapped[Optional[str]] = mapped_column(
-        String(100), 
+    reset_token: Mapped[Optional[str]] = mapped_column(
+        String(255), 
         nullable=True
     )
     
-    bio: Mapped[Optional[str]] = mapped_column(
-        Text, 
+    reset_token_expires: Mapped[Optional[datetime]] = mapped_column(
         nullable=True
     )
     
-    timezone: Mapped[Optional[str]] = mapped_column(
-        String(50), 
-        nullable=True,
-        default="UTC"
-    )
-    
-    # Authentication tracking
-    last_login_at: Mapped[Optional[datetime]] = mapped_column(
+    openrouter_api_key: Mapped[Optional[str]] = mapped_column(
+        String(255), 
         nullable=True
     )
     
-    failed_login_attempts: Mapped[int] = mapped_column(
-        nullable=False,
-        default=0,
-        server_default="0"
-    )
-    
-    locked_until: Mapped[Optional[datetime]] = mapped_column(
-        nullable=True
-    )
     
     # Relationships
     sessions: Mapped[List["Session"]] = relationship(
@@ -170,7 +157,7 @@ class UserSettings(BaseModel):
     
     # Foreign key to user
     user_id: Mapped[str] = mapped_column(
-        String(36),
+        UUID(as_uuid=False),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True

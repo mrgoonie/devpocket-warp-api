@@ -5,6 +5,7 @@ SSH Profile and SSH Key models for DevPocket API.
 from datetime import datetime
 from typing import Optional, List
 from sqlalchemy import String, ForeignKey, Integer, Text, Boolean, LargeBinary
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseModel
 
@@ -16,7 +17,7 @@ class SSHProfile(BaseModel):
     
     # Foreign key to user
     user_id: Mapped[str] = mapped_column(
-        String(36),
+        UUID(as_uuid=False),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True
@@ -61,7 +62,7 @@ class SSHProfile(BaseModel):
     
     # SSH key reference (if using key auth)
     ssh_key_id: Mapped[Optional[str]] = mapped_column(
-        String(36),
+        UUID(as_uuid=False),
         ForeignKey("ssh_keys.id", ondelete="SET NULL"),
         nullable=True,
         index=True
@@ -188,7 +189,7 @@ class SSHKey(BaseModel):
     
     # Foreign key to user
     user_id: Mapped[str] = mapped_column(
-        String(36),
+        UUID(as_uuid=False),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True
