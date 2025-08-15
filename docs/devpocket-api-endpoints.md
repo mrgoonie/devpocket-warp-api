@@ -35,6 +35,10 @@ tags:
     description: User profile and settings
   - name: Subscription
     description: Subscription and billing
+  - name: Database
+    description: Database management and administration
+  - name: Development
+    description: Development and testing utilities
 
 components:
   securitySchemes:
@@ -910,6 +914,447 @@ paths:
                     format: date-time
                   cancel_at_period_end:
                     type: boolean
+                    
+  # ============================================================================
+  # DATABASE MANAGEMENT ENDPOINTS
+  # ============================================================================
+  
+  /api/admin/database/status:
+    get:
+      tags:
+        - Database
+      summary: Get database status and migration info
+      operationId: getDatabaseStatus
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Database status information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  current_revision:
+                    type: string
+                    description: Current database revision
+                  target_revision:
+                    type: string
+                    description: Target/latest revision
+                  pending_migrations:
+                    type: integer
+                    description: Number of pending migrations
+                  is_up_to_date:
+                    type: boolean
+                  last_migration_date:
+                    type: string
+                    format: date-time
+                  migration_history:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        revision:
+                          type: string
+                        message:
+                          type: string
+                        date:
+                          type: string
+                          format: date-time
+        '403':
+          description: Admin access required
+          
+  /api/admin/database/migrate:
+    post:
+      tags:
+        - Database
+      summary: Run database migrations
+      operationId: runMigrations
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                target:
+                  type: string
+                  default: head
+                  description: Migration target (head, +1, -1, or revision ID)
+                dry_run:
+                  type: boolean
+                  default: false
+                  description: Preview migrations without executing
+                skip_backup:
+                  type: boolean
+                  default: false
+                  description: Skip automatic backup creation
+                force:
+                  type: boolean
+                  default: false
+                  description: Skip confirmation prompts
+      responses:
+        '200':
+          description: Migration completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  migrations_applied:
+                    type: array
+                    items:
+                      type: string
+                  backup_created:
+                    type: string
+                    description: Backup file path if created
+        '400':
+          description: Invalid migration target or parameters
+        '403':
+          description: Admin access required
+        '500':
+          description: Migration failed
+          
+  /api/admin/database/seed:
+    post:
+      tags:
+        - Database
+      summary: Seed database with test data
+      operationId: seedDatabase
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                seed_type:
+                  type: string
+                  enum: [all, users, ssh, commands, sessions, sync]
+                  default: all
+                  description: Type of data to seed
+                count:
+                  type: integer
+                  default: 10
+                  minimum: 1
+                  maximum: 10000
+                  description: Number of records to create per type
+                clean_first:
+                  type: boolean
+                  default: false
+                  description: Clean existing data before seeding
+                use_upsert:
+                  type: boolean
+                  default: false
+                  description: Use upsert for conflict resolution
+                environment:
+                  type: string
+                  enum: [development, testing, staging]
+                  default: development
+                  description: Environment context for seeding
+      responses:
+        '200':
+          description: Database seeded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  records_created:
+                    type: object
+                    properties:
+                      users:
+                        type: integer
+                      ssh_profiles:
+                        type: integer
+                      ssh_keys:
+                        type: integer
+                      commands:
+                        type: integer
+                      sessions:
+                        type: integer
+                      sync_data:
+                        type: integer
+                  execution_time:
+                    type: number
+                    description: Seeding execution time in seconds
+        '400':
+          description: Invalid seeding parameters
+        '403':
+          description: Admin access required
+        '500':
+          description: Seeding failed
+          
+  /api/admin/database/stats:
+    get:
+      tags:
+        - Database
+      summary: Get database statistics
+      operationId: getDatabaseStats
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Database statistics
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  table_stats:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        table_name:
+                          type: string
+                        live_rows:
+                          type: integer
+                        inserts:
+                          type: integer
+                        updates:
+                          type: integer
+                        deletes:
+                          type: integer
+                        dead_rows:
+                          type: integer
+                  database_size:
+                    type: string
+                    description: Total database size
+                  total_tables:
+                    type: integer
+                  last_updated:
+                    type: string
+                    format: date-time
+        '403':
+          description: Admin access required
+          
+  /api/admin/database/backup:
+    post:
+      tags:
+        - Database
+      summary: Create database backup
+      operationId: createDatabaseBackup
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                backup_name:
+                  type: string
+                  description: Custom backup name (optional)
+                include_data:
+                  type: boolean
+                  default: true
+                  description: Include data in backup
+                compress:
+                  type: boolean
+                  default: true
+                  description: Compress backup file
+      responses:
+        '200':
+          description: Backup created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  backup_file:
+                    type: string
+                    description: Path to backup file
+                  file_size:
+                    type: string
+                    description: Backup file size
+                  created_at:
+                    type: string
+                    format: date-time
+        '403':
+          description: Admin access required
+        '500':
+          description: Backup creation failed
+          
+  /api/admin/database/reset:
+    post:
+      tags:
+        - Database
+      summary: Reset database (dangerous operation)
+      operationId: resetDatabase
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - confirmation
+              properties:
+                confirmation:
+                  type: string
+                  description: Must be "RESET_DATABASE" to confirm
+                backup_first:
+                  type: boolean
+                  default: true
+                  description: Create backup before reset
+                environment:
+                  type: string
+                  enum: [development, testing]
+                  description: Only allowed in dev/test environments
+      responses:
+        '200':
+          description: Database reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  backup_created:
+                    type: string
+                    description: Backup file if created
+        '400':
+          description: Invalid confirmation or not allowed in this environment
+        '403':
+          description: Admin access required
+        '500':
+          description: Reset failed
+          
+  # ============================================================================
+  # DEVELOPMENT UTILITIES ENDPOINTS
+  # ============================================================================
+  
+  /api/dev/test-data/generate:
+    post:
+      tags:
+        - Development
+      summary: Generate test data for specific scenarios
+      operationId: generateTestData
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                scenario:
+                  type: string
+                  enum: [user_onboarding, ssh_workflow, command_history, sync_testing, performance_testing]
+                  description: Test scenario to generate data for
+                parameters:
+                  type: object
+                  description: Scenario-specific parameters
+                  properties:
+                    user_count:
+                      type: integer
+                    command_count:
+                      type: integer
+                    session_duration_hours:
+                      type: integer
+                    ssh_profiles_per_user:
+                      type: integer
+      responses:
+        '200':
+          description: Test data generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  scenario:
+                    type: string
+                  data_created:
+                    type: object
+                  test_users:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        email:
+                          type: string
+                        password:
+                          type: string
+                        user_id:
+                          type: string
+        '400':
+          description: Invalid scenario or parameters
+        '403':
+          description: Development environment only
+          
+  /api/dev/cleanup:
+    post:
+      tags:
+        - Development
+      summary: Clean up test data
+      operationId: cleanupTestData
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                older_than_hours:
+                  type: integer
+                  default: 24
+                  description: Clean data older than specified hours
+                include_test_users:
+                  type: boolean
+                  default: true
+                  description: Include test users in cleanup
+                data_types:
+                  type: array
+                  items:
+                    type: string
+                    enum: [users, commands, sessions, ssh_profiles]
+      responses:
+        '200':
+          description: Cleanup completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  cleaned_records:
+                    type: object
+                    properties:
+                      users:
+                        type: integer
+                      commands:
+                        type: integer
+                      sessions:
+                        type: integer
+                      ssh_profiles:
+                        type: integer
+        '403':
+          description: Development environment only
                     
   # ============================================================================
   # WEBSOCKET ENDPOINT

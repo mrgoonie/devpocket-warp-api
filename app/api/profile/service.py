@@ -9,10 +9,17 @@ from fastapi import HTTPException, status
 
 from app.core.logging import logger
 from app.models.user import User
+
 # from app.models.user_settings import UserSettings as UserSettingsModel
 from app.repositories.user import UserRepository
+
 # from app.repositories.user_settings import UserSettingsRepository
-from .schemas import UserProfileUpdate, UserSettings, UserProfileResponse, UserSettingsResponse
+from .schemas import (
+    UserProfileUpdate,
+    UserSettings,
+    UserProfileResponse,
+    UserSettingsResponse,
+)
 
 
 class ProfileService:
@@ -31,19 +38,23 @@ class ProfileService:
                 username=user.username,
                 email=user.email,
                 display_name=user.display_name,
-                subscription_tier=user.subscription_tier.value if user.subscription_tier else "free",
+                subscription_tier=user.subscription_tier.value
+                if user.subscription_tier
+                else "free",
                 created_at=user.created_at,
-                updated_at=user.updated_at
+                updated_at=user.updated_at,
             )
 
         except Exception as e:
             logger.error(f"Error getting user profile: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to retrieve user profile"
+                detail="Failed to retrieve user profile",
             )
 
-    async def update_profile(self, user: User, profile_data: UserProfileUpdate) -> UserProfileResponse:
+    async def update_profile(
+        self, user: User, profile_data: UserProfileUpdate
+    ) -> UserProfileResponse:
         """Update user profile information."""
         try:
             # Check if email is being changed and if it's already taken
@@ -52,7 +63,7 @@ class ProfileService:
                 if existing_user and existing_user.id != user.id:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Email address is already registered"
+                        detail="Email address is already registered",
                     )
 
             # Update user profile
@@ -73,9 +84,11 @@ class ProfileService:
                 username=updated_user.username,
                 email=updated_user.email,
                 display_name=updated_user.display_name,
-                subscription_tier=updated_user.subscription_tier.value if updated_user.subscription_tier else "free",
+                subscription_tier=updated_user.subscription_tier.value
+                if updated_user.subscription_tier
+                else "free",
                 created_at=updated_user.created_at,
-                updated_at=updated_user.updated_at
+                updated_at=updated_user.updated_at,
             )
 
         except HTTPException:
@@ -85,14 +98,14 @@ class ProfileService:
             await self.session.rollback()
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update user profile"
+                detail="Failed to update user profile",
             )
 
     async def get_settings(self, user: User) -> UserSettingsResponse:
         """Get user settings."""
         try:
             settings = await self.settings_repo.get_by_user_id(user.id)
-            
+
             if not settings:
                 # Create default settings
                 default_settings = UserSettingsModel(
@@ -103,7 +116,7 @@ class ProfileService:
                     terminal_preferences={},
                     ai_preferences={},
                     sync_enabled=True,
-                    notifications_enabled=True
+                    notifications_enabled=True,
                 )
                 settings = await self.settings_repo.create(default_settings)
                 await self.session.commit()
@@ -117,21 +130,23 @@ class ProfileService:
                 ai_preferences=settings.ai_preferences or {},
                 sync_enabled=settings.sync_enabled,
                 notifications_enabled=settings.notifications_enabled,
-                updated_at=settings.updated_at
+                updated_at=settings.updated_at,
             )
 
         except Exception as e:
             logger.error(f"Error getting user settings: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to retrieve user settings"
+                detail="Failed to retrieve user settings",
             )
 
-    async def update_settings(self, user: User, settings_data: UserSettings) -> UserSettingsResponse:
+    async def update_settings(
+        self, user: User, settings_data: UserSettings
+    ) -> UserSettingsResponse:
         """Update user settings."""
         try:
             existing_settings = await self.settings_repo.get_by_user_id(user.id)
-            
+
             update_data = {
                 "theme": settings_data.theme,
                 "timezone": settings_data.timezone,
@@ -140,11 +155,13 @@ class ProfileService:
                 "ai_preferences": settings_data.ai_preferences,
                 "sync_enabled": settings_data.sync_enabled,
                 "notifications_enabled": settings_data.notifications_enabled,
-                "updated_at": datetime.utcnow()
+                "updated_at": datetime.utcnow(),
             }
 
             if existing_settings:
-                updated_settings = await self.settings_repo.update(existing_settings.id, update_data)
+                updated_settings = await self.settings_repo.update(
+                    existing_settings.id, update_data
+                )
             else:
                 # Create new settings
                 new_settings = UserSettingsModel(user_id=user.id, **update_data)
@@ -161,7 +178,7 @@ class ProfileService:
                 ai_preferences=updated_settings.ai_preferences or {},
                 sync_enabled=updated_settings.sync_enabled,
                 notifications_enabled=updated_settings.notifications_enabled,
-                updated_at=updated_settings.updated_at
+                updated_at=updated_settings.updated_at,
             )
 
         except Exception as e:
@@ -169,7 +186,7 @@ class ProfileService:
             await self.session.rollback()
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update user settings"
+                detail="Failed to update user settings",
             )
 
     async def delete_account(self, user: User) -> bool:
@@ -178,7 +195,7 @@ class ProfileService:
             # This would cascade delete all associated data
             await self.user_repo.delete(user.id)
             await self.session.commit()
-            
+
             logger.info(f"User account deleted: {user.id}")
             return True
 
@@ -187,14 +204,14 @@ class ProfileService:
             await self.session.rollback()
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to delete user account"
+                detail="Failed to delete user account",
             )
 
     async def get_account_stats(self, user: User) -> Dict[str, Any]:
         """Get user account statistics."""
         try:
             stats = await self.user_repo.get_user_stats(user.id)
-            
+
             return {
                 "profile_completeness": self._calculate_profile_completeness(user),
                 "account_age_days": (datetime.utcnow() - user.created_at).days,
@@ -203,24 +220,22 @@ class ProfileService:
                 "ssh_profiles": stats.get("ssh_profiles", 0),
                 "active_devices": stats.get("active_devices", 0),
                 "storage_used_mb": stats.get("storage_used_mb", 0),
-                "last_login": stats.get("last_login")
+                "last_login": stats.get("last_login"),
             }
 
         except Exception as e:
             logger.error(f"Error getting account stats: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to get account statistics"
+                detail="Failed to get account statistics",
             )
 
     def _calculate_profile_completeness(self, user: User) -> int:
         """Calculate profile completeness percentage."""
         completeness = 0
-        fields = [
-            user.username,
-            user.email,
-            user.display_name
-        ]
-        
-        completed_fields = sum(1 for field in fields if field is not None and field.strip())
+        fields = [user.username, user.email, user.display_name]
+
+        completed_fields = sum(
+            1 for field in fields if field is not None and field.strip()
+        )
         return int((completed_fields / len(fields)) * 100)

@@ -40,7 +40,6 @@ __all__ = [
     "blacklist_token",
     "generate_password_reset_token",
     "verify_password_reset_token",
-    
     # Dependencies
     "get_current_user",
     "get_current_active_user",

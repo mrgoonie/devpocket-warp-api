@@ -12,7 +12,7 @@ from .cors import setup_cors
 
 __all__ = [
     "AuthenticationMiddleware",
-    "RateLimitMiddleware", 
+    "RateLimitMiddleware",
     "SecurityHeadersMiddleware",
     "setup_cors",
 ]

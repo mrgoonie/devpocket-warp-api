@@ -10,7 +10,7 @@ from .sync import SyncData
 
 __all__ = [
     "User",
-    "UserSettings", 
+    "UserSettings",
     "Session",
     "Command",
     "SSHProfile",

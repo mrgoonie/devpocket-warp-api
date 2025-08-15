@@ -12,8 +12,8 @@ from .router import websocket_router
 
 __all__ = [
     "ConnectionManager",
-    "TerminalSession", 
+    "TerminalSession",
     "TerminalMessage",
     "MessageType",
-    "websocket_router"
+    "websocket_router",
 ]

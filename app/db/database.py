@@ -12,6 +12,7 @@ from app.core.logging import logger
 
 class Base(DeclarativeBase):
     """Base class for all database models."""
+
     pass
 
 
@@ -37,15 +38,17 @@ AsyncSessionLocal = async_sessionmaker(
 
 class DatabaseManager:
     """Database connection manager."""
-    
+
     def __init__(self):
         self._pool: asyncpg.Pool = None
-    
+
     async def connect(self) -> None:
         """Create database connection pool."""
         try:
             # asyncpg expects postgresql:// not postgresql+asyncpg://
-            db_url = settings.database_url.replace("postgresql+asyncpg://", "postgresql://")
+            db_url = settings.database_url.replace(
+                "postgresql+asyncpg://", "postgresql://"
+            )
             self._pool = await asyncpg.create_pool(
                 db_url,
                 min_size=10,
@@ -58,26 +61,23 @@ class DatabaseManager:
         except Exception as e:
             logger.error(f"Failed to create database connection pool: {e}")
             raise
-    
+
     async def disconnect(self) -> None:
         """Close database connection pool."""
         if self._pool:
             await self._pool.close()
             logger.info("Database connection pool closed")
-    
+
     async def _setup_connection(self, connection: asyncpg.Connection) -> None:
         """Set up database connection with custom types and settings."""
         # Set timezone
         await connection.execute("SET timezone TO 'UTC'")
-        
+
         # Set JSON serialization
         await connection.set_type_codec(
-            'json',
-            encoder=lambda x: x,
-            decoder=lambda x: x,
-            schema='pg_catalog'
+            "json", encoder=lambda x: x, decoder=lambda x: x, schema="pg_catalog"
         )
-    
+
     async def execute_query(self, query: str, *args) -> list:
         """Execute a SELECT query and return results."""
         async with self._pool.acquire() as connection:
@@ -87,7 +87,7 @@ class DatabaseManager:
             except Exception as e:
                 logger.error(f"Database query error: {e}")
                 raise
-    
+
     async def execute_command(self, query: str, *args) -> str:
         """Execute an INSERT/UPDATE/DELETE command and return status."""
         async with self._pool.acquire() as connection:
@@ -97,7 +97,7 @@ class DatabaseManager:
             except Exception as e:
                 logger.error(f"Database command error: {e}")
                 raise
-    
+
     async def execute_transaction(self, queries: list) -> bool:
         """Execute multiple queries in a transaction."""
         async with self._pool.acquire() as connection:
@@ -109,7 +109,7 @@ class DatabaseManager:
                 except Exception as e:
                     logger.error(f"Database transaction error: {e}")
                     raise
-    
+
     @property
     def pool(self) -> asyncpg.Pool:
         """Get the connection pool."""
@@ -125,7 +125,7 @@ db_manager = DatabaseManager()
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
     Dependency to get database session.
-    
+
     Yields:
         AsyncSession: Database session
     """
@@ -143,7 +143,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 async def get_db_pool() -> asyncpg.Pool:
     """
     Dependency to get database connection pool.
-    
+
     Returns:
         asyncpg.Pool: Database connection pool
     """
@@ -167,12 +167,13 @@ async def drop_tables() -> None:
 async def check_database_connection() -> bool:
     """
     Check if database connection is working.
-    
+
     Returns:
         bool: True if connection is working
     """
     try:
         from sqlalchemy import text
+
         async with AsyncSessionLocal() as session:
             await session.execute(text("SELECT 1"))
         return True
@@ -186,10 +187,10 @@ async def init_database() -> None:
     try:
         # Create tables
         await create_tables()
-        
+
         # Add any initial data here if needed
         logger.info("Database initialized successfully")
-        
+
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
         raise

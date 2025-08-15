@@ -19,11 +19,18 @@ from app.models.ssh_profile import SSHProfile, SSHKey
 from app.repositories.ssh_profile import SSHProfileRepository, SSHKeyRepository
 from app.services.ssh_client import SSHClientService
 from .schemas import (
-    SSHProfileCreate, SSHProfileUpdate, SSHProfileResponse,
-    SSHKeyCreate, SSHKeyUpdate, SSHKeyResponse,
-    SSHConnectionTestRequest, SSHConnectionTestResponse,
-    SSHProfileSearchRequest, SSHKeySearchRequest,
-    SSHProfileStats, SSHKeyStats
+    SSHProfileCreate,
+    SSHProfileUpdate,
+    SSHProfileResponse,
+    SSHKeyCreate,
+    SSHKeyUpdate,
+    SSHKeyResponse,
+    SSHConnectionTestRequest,
+    SSHConnectionTestResponse,
+    SSHProfileSearchRequest,
+    SSHKeySearchRequest,
+    SSHProfileStats,
+    SSHKeyStats,
 )
 
 
@@ -37,9 +44,7 @@ class SSHProfileService:
         self.ssh_client = SSHClientService()
 
     async def create_profile(
-        self,
-        user: User,
-        profile_data: SSHProfileCreate
+        self, user: User, profile_data: SSHProfileCreate
     ) -> SSHProfileResponse:
         """Create a new SSH profile."""
         try:
@@ -50,7 +55,7 @@ class SSHProfileService:
             if existing_profile:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Profile with name '{profile_data.name}' already exists"
+                    detail=f"Profile with name '{profile_data.name}' already exists",
                 )
 
             # Create the profile
@@ -68,11 +73,11 @@ class SSHProfileService:
                 environment=profile_data.environment or {},
                 compression=profile_data.compression,
                 forward_agent=profile_data.forward_agent,
-                forward_x11=profile_data.forward_x11
+                forward_x11=profile_data.forward_x11,
             )
 
             await self.session.commit()
-            
+
             logger.info(f"SSH profile created: {profile.name} by user {user.username}")
             return SSHProfileResponse.model_validate(profile)
 
@@ -83,29 +88,25 @@ class SSHProfileService:
             logger.warning(f"Integrity error creating SSH profile: {e}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Profile with this name already exists"
+                detail="Profile with this name already exists",
             )
         except Exception as e:
             await self.session.rollback()
             logger.error(f"Error creating SSH profile: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create SSH profile"
+                detail="Failed to create SSH profile",
             )
 
     async def get_user_profiles(
-        self,
-        user: User,
-        active_only: bool = True,
-        offset: int = 0,
-        limit: int = 50
+        self, user: User, active_only: bool = True, offset: int = 0, limit: int = 50
     ) -> Tuple[List[SSHProfileResponse], int]:
         """Get SSH profiles for a user with pagination."""
         try:
             profiles = await self.profile_repo.get_user_profiles(
                 user.id, active_only=active_only, offset=offset, limit=limit
             )
-            
+
             # Get total count for pagination
             # Note: This is a simplified count - in production, you'd want a more efficient method
             all_profiles = await self.profile_repo.get_user_profiles(
@@ -123,35 +124,31 @@ class SSHProfileService:
             logger.error(f"Error fetching user SSH profiles: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to fetch SSH profiles"
+                detail="Failed to fetch SSH profiles",
             )
 
     async def get_profile(self, user: User, profile_id: str) -> SSHProfileResponse:
         """Get a specific SSH profile."""
         profile = await self.profile_repo.get_by_id(profile_id)
-        
+
         if not profile or profile.user_id != user.id:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="SSH profile not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="SSH profile not found"
             )
 
         return SSHProfileResponse.model_validate(profile)
 
     async def update_profile(
-        self,
-        user: User,
-        profile_id: str,
-        update_data: SSHProfileUpdate
+        self, user: User, profile_id: str, update_data: SSHProfileUpdate
     ) -> SSHProfileResponse:
         """Update an SSH profile."""
         try:
             profile = await self.profile_repo.get_by_id(profile_id)
-            
+
             if not profile or profile.user_id != user.id:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail="SSH profile not found"
+                    detail="SSH profile not found",
                 )
 
             # Check if name is being changed and if new name already exists
@@ -162,7 +159,7 @@ class SSHProfileService:
                 if existing_profile and existing_profile.id != profile_id:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=f"Profile with name '{update_data.name}' already exists"
+                        detail=f"Profile with name '{update_data.name}' already exists",
                     )
 
             # Update the profile
@@ -184,18 +181,18 @@ class SSHProfileService:
             logger.error(f"Error updating SSH profile: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update SSH profile"
+                detail="Failed to update SSH profile",
             )
 
     async def delete_profile(self, user: User, profile_id: str) -> bool:
         """Delete an SSH profile."""
         try:
             profile = await self.profile_repo.get_by_id(profile_id)
-            
+
             if not profile or profile.user_id != user.id:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail="SSH profile not found"
+                    detail="SSH profile not found",
                 )
 
             await self.profile_repo.delete(profile_id)
@@ -211,17 +208,15 @@ class SSHProfileService:
             logger.error(f"Error deleting SSH profile: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to delete SSH profile"
+                detail="Failed to delete SSH profile",
             )
 
     async def test_connection(
-        self,
-        user: User,
-        test_request: SSHConnectionTestRequest
+        self, user: User, test_request: SSHConnectionTestRequest
     ) -> SSHConnectionTestResponse:
         """Test SSH connection."""
         start_time = time.time()
-        
+
         try:
             # Prepare connection parameters
             if test_request.profile_id:
@@ -229,21 +224,21 @@ class SSHProfileService:
                 if not profile or profile.user_id != user.id:
                     raise HTTPException(
                         status_code=status.HTTP_404_NOT_FOUND,
-                        detail="SSH profile not found"
+                        detail="SSH profile not found",
                     )
-                
+
                 host = profile.host
                 port = profile.port
                 username = profile.username
                 timeout = test_request.connect_timeout
-                
+
             else:
                 if not all([test_request.host, test_request.username]):
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Host and username are required when not using a profile"
+                        detail="Host and username are required when not using a profile",
                     )
-                
+
                 host = test_request.host
                 port = test_request.port or 22
                 username = test_request.username
@@ -256,7 +251,7 @@ class SSHProfileService:
                 if not ssh_key or ssh_key.user_id != user.id:
                     raise HTTPException(
                         status_code=status.HTTP_404_NOT_FOUND,
-                        detail="SSH key not found"
+                        detail="SSH key not found",
                     )
 
             # Perform connection test
@@ -265,8 +260,10 @@ class SSHProfileService:
                 port=port,
                 username=username,
                 ssh_key=ssh_key,
-                password=test_request.password if test_request.auth_method == "password" else None,
-                timeout=timeout
+                password=test_request.password
+                if test_request.auth_method == "password"
+                else None,
+                timeout=timeout,
             )
 
             # Record connection attempt if using a profile
@@ -280,7 +277,7 @@ class SSHProfileService:
                 else:
                     profile.last_connection_status = "connection_failed"
                     profile.last_error_message = test_result.get("error_message")
-                
+
                 profile.last_connection_at = datetime.utcnow()
                 await self.session.commit()
 
@@ -292,7 +289,7 @@ class SSHProfileService:
                 details=test_result.get("details"),
                 duration_ms=duration_ms,
                 server_info=test_result.get("server_info"),
-                timestamp=datetime.utcnow()
+                timestamp=datetime.utcnow(),
             )
 
         except HTTPException:
@@ -300,20 +297,18 @@ class SSHProfileService:
         except Exception as e:
             logger.error(f"Error testing SSH connection: {e}")
             duration_ms = int((time.time() - start_time) * 1000)
-            
+
             return SSHConnectionTestResponse(
                 success=False,
                 message=f"Connection test failed: {str(e)}",
                 details={"error": str(e)},
                 duration_ms=duration_ms,
                 server_info=None,
-                timestamp=datetime.utcnow()
+                timestamp=datetime.utcnow(),
             )
 
     async def search_profiles(
-        self,
-        user: User,
-        search_request: SSHProfileSearchRequest
+        self, user: User, search_request: SSHProfileSearchRequest
     ) -> Tuple[List[SSHProfileResponse], int]:
         """Search SSH profiles with filters."""
         try:
@@ -322,19 +317,23 @@ class SSHProfileService:
                     user.id,
                     search_request.search_term,
                     offset=search_request.offset,
-                    limit=search_request.limit
+                    limit=search_request.limit,
                 )
             else:
                 profiles = await self.profile_repo.get_user_profiles(
                     user.id,
                     active_only=search_request.active_only,
                     offset=search_request.offset,
-                    limit=search_request.limit
+                    limit=search_request.limit,
                 )
 
             # Apply additional filters
             if search_request.host_filter:
-                profiles = [p for p in profiles if search_request.host_filter.lower() in p.host.lower()]
+                profiles = [
+                    p
+                    for p in profiles
+                    if search_request.host_filter.lower() in p.host.lower()
+                ]
 
             # TODO: Implement sorting logic based on search_request.sort_by and sort_order
 
@@ -351,7 +350,7 @@ class SSHProfileService:
             logger.error(f"Error searching SSH profiles: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to search SSH profiles"
+                detail="Failed to search SSH profiles",
             )
 
     async def get_profile_stats(self, user: User) -> SSHProfileStats:
@@ -360,9 +359,9 @@ class SSHProfileService:
             all_profiles = await self.profile_repo.get_user_profiles(
                 user.id, active_only=False, offset=0, limit=1000
             )
-            
+
             active_profiles = [p for p in all_profiles if p.is_active]
-            
+
             # Count profiles by status
             status_counts = {}
             for profile in all_profiles:
@@ -379,28 +378,30 @@ class SSHProfileService:
             recent_connections = []
             for profile in all_profiles[:10]:
                 if profile.last_connection_at:
-                    recent_connections.append({
-                        "profile_id": profile.id,
-                        "profile_name": profile.name,
-                        "host": profile.host,
-                        "status": profile.last_connection_status,
-                        "timestamp": profile.last_connection_at.isoformat(),
-                        "success": profile.last_connection_status == "connected"
-                    })
+                    recent_connections.append(
+                        {
+                            "profile_id": profile.id,
+                            "profile_name": profile.name,
+                            "host": profile.host,
+                            "status": profile.last_connection_status,
+                            "timestamp": profile.last_connection_at.isoformat(),
+                            "success": profile.last_connection_status == "connected",
+                        }
+                    )
 
             return SSHProfileStats(
                 total_profiles=len(all_profiles),
                 active_profiles=len(active_profiles),
                 profiles_by_status=status_counts,
                 most_used_profiles=most_used_responses,
-                recent_connections=recent_connections
+                recent_connections=recent_connections,
             )
 
         except Exception as e:
             logger.error(f"Error getting SSH profile stats: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to get SSH profile statistics"
+                detail="Failed to get SSH profile statistics",
             )
 
 
@@ -411,25 +412,19 @@ class SSHKeyService:
         self.session = session
         self.key_repo = SSHKeyRepository(session)
 
-    async def create_key(
-        self,
-        user: User,
-        key_data: SSHKeyCreate
-    ) -> SSHKeyResponse:
+    async def create_key(self, user: User, key_data: SSHKeyCreate) -> SSHKeyResponse:
         """Create a new SSH key."""
         try:
             # Check if key name already exists for user
-            existing_key = await self.key_repo.get_key_by_name(
-                user.id, key_data.name
-            )
+            existing_key = await self.key_repo.get_key_by_name(user.id, key_data.name)
             if existing_key:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"SSH key with name '{key_data.name}' already exists"
+                    detail=f"SSH key with name '{key_data.name}' already exists",
                 )
 
             # Encrypt the private key (simplified - use proper encryption in production)
-            encrypted_private_key = key_data.private_key.encode('utf-8')
+            encrypted_private_key = key_data.private_key.encode("utf-8")
 
             # Create the SSH key
             ssh_key = await self.key_repo.create_key(
@@ -439,7 +434,7 @@ class SSHKeyService:
                 encrypted_private_key=encrypted_private_key,
                 public_key=key_data.public_key,
                 comment=key_data.comment,
-                passphrase_protected=key_data.passphrase_protected
+                passphrase_protected=key_data.passphrase_protected,
             )
 
             await self.session.commit()
@@ -454,22 +449,18 @@ class SSHKeyService:
             logger.warning(f"Integrity error creating SSH key: {e}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="SSH key with this name or fingerprint already exists"
+                detail="SSH key with this name or fingerprint already exists",
             )
         except Exception as e:
             await self.session.rollback()
             logger.error(f"Error creating SSH key: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to create SSH key"
+                detail="Failed to create SSH key",
             )
 
     async def get_user_keys(
-        self,
-        user: User,
-        active_only: bool = True,
-        offset: int = 0,
-        limit: int = 50
+        self, user: User, active_only: bool = True, offset: int = 0, limit: int = 50
     ) -> Tuple[List[SSHKeyResponse], int]:
         """Get SSH keys for a user with pagination."""
         try:
@@ -483,9 +474,7 @@ class SSHKeyService:
             )
             total = len(all_keys)
 
-            key_responses = [
-                SSHKeyResponse.model_validate(key) for key in keys
-            ]
+            key_responses = [SSHKeyResponse.model_validate(key) for key in keys]
 
             return key_responses, total
 
@@ -493,35 +482,30 @@ class SSHKeyService:
             logger.error(f"Error fetching user SSH keys: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to fetch SSH keys"
+                detail="Failed to fetch SSH keys",
             )
 
     async def get_key(self, user: User, key_id: str) -> SSHKeyResponse:
         """Get a specific SSH key."""
         key = await self.key_repo.get_by_id(key_id)
-        
+
         if not key or key.user_id != user.id:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="SSH key not found"
+                status_code=status.HTTP_404_NOT_FOUND, detail="SSH key not found"
             )
 
         return SSHKeyResponse.model_validate(key)
 
     async def update_key(
-        self,
-        user: User,
-        key_id: str,
-        update_data: SSHKeyUpdate
+        self, user: User, key_id: str, update_data: SSHKeyUpdate
     ) -> SSHKeyResponse:
         """Update an SSH key."""
         try:
             key = await self.key_repo.get_by_id(key_id)
-            
+
             if not key or key.user_id != user.id:
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="SSH key not found"
+                    status_code=status.HTTP_404_NOT_FOUND, detail="SSH key not found"
                 )
 
             # Check if name is being changed and if new name already exists
@@ -532,7 +516,7 @@ class SSHKeyService:
                 if existing_key and existing_key.id != key_id:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail=f"SSH key with name '{update_data.name}' already exists"
+                        detail=f"SSH key with name '{update_data.name}' already exists",
                     )
 
             # Update the key
@@ -554,18 +538,17 @@ class SSHKeyService:
             logger.error(f"Error updating SSH key: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update SSH key"
+                detail="Failed to update SSH key",
             )
 
     async def delete_key(self, user: User, key_id: str) -> bool:
         """Delete an SSH key."""
         try:
             key = await self.key_repo.get_by_id(key_id)
-            
+
             if not key or key.user_id != user.id:
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="SSH key not found"
+                    status_code=status.HTTP_404_NOT_FOUND, detail="SSH key not found"
                 )
 
             await self.key_repo.delete(key_id)
@@ -581,13 +564,11 @@ class SSHKeyService:
             logger.error(f"Error deleting SSH key: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to delete SSH key"
+                detail="Failed to delete SSH key",
             )
 
     async def search_keys(
-        self,
-        user: User,
-        search_request: SSHKeySearchRequest
+        self, user: User, search_request: SSHKeySearchRequest
     ) -> Tuple[List[SSHKeyResponse], int]:
         """Search SSH keys with filters."""
         try:
@@ -596,25 +577,27 @@ class SSHKeyService:
                     user.id,
                     search_request.search_term,
                     offset=search_request.offset,
-                    limit=search_request.limit
+                    limit=search_request.limit,
                 )
             else:
                 keys = await self.key_repo.get_user_keys(
                     user.id,
                     active_only=search_request.active_only,
                     offset=search_request.offset,
-                    limit=search_request.limit
+                    limit=search_request.limit,
                 )
 
             # Apply additional filters
             if search_request.key_type_filter:
-                keys = [k for k in keys if k.key_type == search_request.key_type_filter.value]
+                keys = [
+                    k
+                    for k in keys
+                    if k.key_type == search_request.key_type_filter.value
+                ]
 
             # TODO: Implement sorting logic
 
-            key_responses = [
-                SSHKeyResponse.model_validate(key) for key in keys
-            ]
+            key_responses = [SSHKeyResponse.model_validate(key) for key in keys]
 
             total = len(key_responses)
 
@@ -624,7 +607,7 @@ class SSHKeyService:
             logger.error(f"Error searching SSH keys: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to search SSH keys"
+                detail="Failed to search SSH keys",
             )
 
     async def get_key_stats(self, user: User) -> SSHKeyStats:
@@ -632,7 +615,7 @@ class SSHKeyService:
         try:
             # Get key statistics from repository
             stats = await self.key_repo.get_key_stats(user.id)
-            
+
             # Get most used keys
             most_used = await self.key_repo.get_most_used_keys(user.id, limit=5)
             most_used_responses = [
@@ -643,12 +626,12 @@ class SSHKeyService:
                 total_keys=stats["total_keys"],
                 active_keys=stats["active_keys"],
                 keys_by_type=stats["type_breakdown"],
-                most_used_keys=most_used_responses
+                most_used_keys=most_used_responses,
             )
 
         except Exception as e:
             logger.error(f"Error getting SSH key stats: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to get SSH key statistics"
+                detail="Failed to get SSH key statistics",
             )

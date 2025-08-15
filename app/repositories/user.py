@@ -20,9 +20,7 @@ class UserRepository(BaseRepository[User]):
 
     async def get_by_email(self, email: str) -> Optional[User]:
         """Get user by email address."""
-        result = await self.session.execute(
-            select(User).where(User.email == email)
-        )
+        result = await self.session.execute(select(User).where(User.email == email))
         return result.scalar_one_or_none()
 
     async def get_by_username(self, username: str) -> Optional[User]:
@@ -44,9 +42,7 @@ class UserRepository(BaseRepository[User]):
     async def get_with_settings(self, user_id: str) -> Optional[User]:
         """Get user with settings."""
         result = await self.session.execute(
-            select(User)
-            .where(User.id == user_id)
-            .options(selectinload(User.settings))
+            select(User).where(User.id == user_id).options(selectinload(User.settings))
         )
         return result.scalar_one_or_none()
 
@@ -59,64 +55,55 @@ class UserRepository(BaseRepository[User]):
                 selectinload(User.settings),
                 selectinload(User.sessions),
                 selectinload(User.ssh_profiles),
-                selectinload(User.ssh_keys)
+                selectinload(User.ssh_keys),
             )
         )
         return result.scalar_one_or_none()
 
     async def create_user_with_settings(
-        self,
-        email: str,
-        username: str,
-        password_hash: str,
-        **kwargs
+        self, email: str, username: str, password_hash: str, **kwargs
     ) -> User:
         """Create a new user with default settings."""
         # Create user
         user = User(
-            email=email,
-            username=username,
-            password_hash=password_hash,
-            **kwargs
+            email=email, username=username, password_hash=password_hash, **kwargs
         )
         self.session.add(user)
         await self.session.flush()
-        
+
         # Create default settings
         settings = UserSettings(user_id=user.id)
         self.session.add(settings)
         await self.session.flush()
-        
+
         # Refresh to get the relationships
         await self.session.refresh(user, ["settings"])
-        
+
         return user
 
     async def is_email_taken(self, email: str, exclude_user_id: str = None) -> bool:
         """Check if email is already taken by another user."""
         query = select(func.count(User.id)).where(User.email == email)
-        
+
         if exclude_user_id:
             query = query.where(User.id != exclude_user_id)
-        
+
         result = await self.session.execute(query)
         return result.scalar() > 0
 
-    async def is_username_taken(self, username: str, exclude_user_id: str = None) -> bool:
+    async def is_username_taken(
+        self, username: str, exclude_user_id: str = None
+    ) -> bool:
         """Check if username is already taken by another user."""
         query = select(func.count(User.id)).where(User.username == username)
-        
+
         if exclude_user_id:
             query = query.where(User.id != exclude_user_id)
-        
+
         result = await self.session.execute(query)
         return result.scalar() > 0
 
-    async def get_active_users(
-        self,
-        offset: int = 0,
-        limit: int = 100
-    ) -> List[User]:
+    async def get_active_users(self, offset: int = 0, limit: int = 100) -> List[User]:
         """Get all active users."""
         result = await self.session.execute(
             select(User)
@@ -128,10 +115,7 @@ class UserRepository(BaseRepository[User]):
         return result.scalars().all()
 
     async def get_users_by_subscription(
-        self,
-        subscription_tier: str,
-        offset: int = 0,
-        limit: int = 100
+        self, subscription_tier: str, offset: int = 0, limit: int = 100
     ) -> List[User]:
         """Get users by subscription tier."""
         result = await self.session.execute(
@@ -148,10 +132,7 @@ class UserRepository(BaseRepository[User]):
         now = datetime.now()
         result = await self.session.execute(
             select(User).where(
-                and_(
-                    User.locked_until.is_not(None),
-                    User.locked_until > now
-                )
+                and_(User.locked_until.is_not(None), User.locked_until > now)
             )
         )
         return result.scalars().all()
@@ -161,24 +142,19 @@ class UserRepository(BaseRepository[User]):
         now = datetime.now()
         result = await self.session.execute(
             select(User).where(
-                and_(
-                    User.locked_until.is_not(None),
-                    User.locked_until <= now
-                )
+                and_(User.locked_until.is_not(None), User.locked_until <= now)
             )
         )
         expired_users = result.scalars().all()
-        
+
         for user in expired_users:
             user.locked_until = None
             user.failed_login_attempts = 0
-        
+
         return len(expired_users)
 
     async def get_users_with_api_keys(
-        self,
-        offset: int = 0,
-        limit: int = 100
+        self, offset: int = 0, limit: int = 100
     ) -> List[User]:
         """Get users who have validated API keys."""
         result = await self.session.execute(
@@ -191,19 +167,17 @@ class UserRepository(BaseRepository[User]):
         return result.scalars().all()
 
     async def search_users(
-        self,
-        search_term: str,
-        offset: int = 0,
-        limit: int = 100
+        self, search_term: str, offset: int = 0, limit: int = 100
     ) -> List[User]:
         """Search users by username, email, or display name."""
         search_pattern = f"%{search_term}%"
         result = await self.session.execute(
-            select(User).where(
+            select(User)
+            .where(
                 or_(
                     User.username.ilike(search_pattern),
                     User.email.ilike(search_pattern),
-                    User.display_name.ilike(search_pattern)
+                    User.display_name.ilike(search_pattern),
                 )
             )
             .order_by(User.created_at.desc())
@@ -237,7 +211,7 @@ class UserRepository(BaseRepository[User]):
             user_id,
             last_login_at=datetime.now(),
             failed_login_attempts=0,
-            locked_until=None
+            locked_until=None,
         )
 
     async def increment_failed_login(self, user_id: str) -> User:

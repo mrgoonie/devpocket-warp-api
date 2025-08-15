@@ -1,4 +1,220 @@
 # DevPocket Server Implementation
+
+## Database Management
+
+The DevPocket API includes comprehensive database management capabilities with enhanced migration and seeding scripts for development, testing, and production environments.
+
+### Database Migration Script (`scripts/db_migrate.sh`)
+
+The migration script provides production-ready database schema management with safety features and backup capabilities.
+
+#### Basic Usage
+```bash
+# Migrate to latest version
+./scripts/db_migrate.sh
+
+# Migrate to specific revision  
+./scripts/db_migrate.sh abc123
+
+# Migrate one step forward/backward
+./scripts/db_migrate.sh +1
+./scripts/db_migrate.sh -1
+```
+
+#### Advanced Features
+
+**Safety Features:**
+- `--dry-run` - Preview migrations without executing them
+- `--force` - Skip confirmation prompts for automated deployments
+- `--skip-backup` - Skip automatic backup creation
+- Automatic validation of migration targets
+- Data safety checks before execution
+
+**Environment Management:**
+- `--env-file FILE` - Use custom environment files
+- Support for multiple environment configurations
+- Automatic virtual environment activation
+
+**Backup and Recovery:**
+- Automatic database backup before migrations
+- Timestamped backup files in `backups/` directory
+- pg_dump integration for reliable backups
+
+**Usage Examples:**
+```bash
+# Production deployment with safety checks
+./scripts/db_migrate.sh --dry-run head
+./scripts/db_migrate.sh head
+
+# Automated CI/CD deployment
+./scripts/db_migrate.sh --force --skip-backup head
+
+# Development with custom environment
+./scripts/db_migrate.sh --env-file .env.dev head
+
+# Generate new migration
+./scripts/db_migrate.sh --generate "Add user preferences table"
+
+# View migration history
+./scripts/db_migrate.sh --history
+```
+
+### Database Seeding Script (`scripts/db_seed.sh`)
+
+The seeding script provides comprehensive test data generation with factory-based approach and advanced data management.
+
+#### Basic Usage
+```bash
+# Seed all entity types with default count
+./scripts/db_seed.sh
+
+# Seed specific entity type
+./scripts/db_seed.sh users 25
+./scripts/db_seed.sh ssh 15
+./scripts/db_seed.sh commands 50
+```
+
+#### Entity Types
+- `all` - All entity types (users, ssh, commands, sessions, sync)
+- `users` - User accounts with realistic data
+- `ssh` - SSH profiles and keys with dependencies
+- `commands` - Command history with various statuses
+- `sessions` - Terminal sessions with device info
+- `sync` - Synchronization data for multi-device testing
+
+#### Data Management Features
+
+**Cleaning Operations:**
+- `--clean` - Clean specific data types before seeding (with confirmation)
+- `--clean-force` - Force clean without confirmation prompts
+- Maintains foreign key constraints during cleaning
+- Selective cleaning by entity type
+
+**Database Reset:**
+- `--reset` - Complete database reset (with confirmation)
+- `--reset-force` - Force reset without confirmation
+- Drops all data and resets sequences
+- Rebuilds schema from migrations
+
+**Conflict Resolution:**
+- `--upsert` - Use PostgreSQL UPSERT for conflict handling
+- Handles duplicate data gracefully
+- Useful for repeated seeding operations
+
+**Statistics and Monitoring:**
+- `--stats` - Show database statistics after seeding
+- `--stats-only` - Only display statistics without seeding
+- Table-level statistics with row counts and activity
+
+#### Advanced Usage Examples
+
+```bash
+# Development setup with clean slate
+./scripts/db_seed.sh --reset-force --upsert all 100 --stats
+
+# Clean and reseed specific data
+./scripts/db_seed.sh --clean-force commands 50
+
+# Production-like data volume
+./scripts/db_seed.sh --upsert all 1000
+
+# Quick stats check
+./scripts/db_seed.sh --stats-only
+
+# Custom environment with selective seeding
+./scripts/db_seed.sh --env-file .env.test users 10
+```
+
+### Testing Infrastructure
+
+The database scripts include comprehensive testing with multiple test levels:
+
+#### Integration Tests
+- Script execution validation
+- Database state verification
+- Error handling scenarios
+- Environment isolation
+
+#### End-to-End Tests  
+- Complete workflow testing
+- Multi-script interaction
+- Production scenario simulation
+- Performance benchmarks
+
+#### Test Categories
+- **Unit Tests**: Individual script functions
+- **Integration Tests**: Database interactions
+- **End-to-End Tests**: Complete workflows
+- **Performance Tests**: Large dataset handling
+- **Error Handling Tests**: Failure scenarios
+
+#### Running Tests
+```bash
+# Run all script tests
+pytest tests/test_scripts/
+
+# Specific test categories
+pytest tests/test_scripts/test_db_migrate.py
+pytest tests/test_scripts/test_db_seed.py
+pytest tests/test_scripts/test_end_to_end.py
+
+# Integration tests
+pytest tests/test_scripts/test_db_integration.py
+```
+
+### Best Practices
+
+#### Migration Best Practices
+1. **Always backup** before production migrations
+2. **Test migrations** in staging environment first
+3. **Use dry-run** to preview changes
+4. **Monitor migration logs** for warnings
+5. **Keep backups** for rollback capability
+
+#### Seeding Best Practices
+1. **Use upsert mode** for repeated seeding
+2. **Clean selectively** to preserve important data
+3. **Monitor statistics** to verify data consistency
+4. **Use appropriate counts** for environment (dev vs staging)
+5. **Test with realistic data volumes**
+
+#### Environment Management
+1. **Separate environment files** for different stages
+2. **Secure credentials** in production environments
+3. **Use version control** for migration files
+4. **Document custom configurations**
+
+### Troubleshooting
+
+#### Common Migration Issues
+- **Connection failures**: Check database connectivity and credentials
+- **Permission errors**: Verify user permissions for schema changes
+- **Lock timeouts**: Ensure no long-running transactions
+- **Disk space**: Monitor available space for backups
+
+#### Common Seeding Issues
+- **Foreign key violations**: Check dependency order in cleaning
+- **Duplicate data**: Use `--upsert` for conflict resolution
+- **Memory issues**: Reduce batch sizes for large datasets
+- **Performance**: Use appropriate indexes for seeding queries
+
+#### Debug Mode
+```bash
+# Enable verbose logging
+export DB_DEBUG=1
+./scripts/db_migrate.sh --dry-run head
+
+# Check database connection
+./scripts/db_migrate.sh --check-only
+
+# Verify seeding results
+./scripts/db_seed.sh --stats-only
+```
+
+---
+
+## Main Application Implementation
+
 # File: main.py
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends

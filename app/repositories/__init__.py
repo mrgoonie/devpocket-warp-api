@@ -10,7 +10,7 @@ from .sync import SyncDataRepository
 
 __all__ = [
     "UserRepository",
-    "SessionRepository", 
+    "SessionRepository",
     "CommandRepository",
     "SSHProfileRepository",
     "SyncDataRepository",
