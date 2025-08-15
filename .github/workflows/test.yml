@@ -56,6 +56,11 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-pip-
 
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y redis-tools postgresql-client
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -192,10 +197,29 @@ jobs:
       with:
         python-version: 3.12
 
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y redis-tools postgresql-client
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
+
+    - name: Wait for services
+      run: |
+        while ! pg_isready -h localhost -p 5433 -U test; do
+          echo "Waiting for PostgreSQL..."
+          sleep 2
+        done
+        
+        while ! redis-cli -h localhost -p 6380 ping; do
+          echo "Waiting for Redis..."
+          sleep 2
+        done
+        
+        echo "Services are ready!"
 
     - name: Run integration tests
       run: |
