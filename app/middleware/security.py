@@ -106,7 +106,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next) -> Response:
         """
         Add security headers to response.
-        
+
         Args:
             request: FastAPI request object
             call_next: Next middleware/handler in chain
@@ -121,7 +121,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             for header, value in self.headers.items():
                 # Don't override headers that are already set
                 if header not in response.headers:
-                    response.headers[header] = value
+                    # Use path-specific CSP for Content-Security-Policy
+                    if header == "Content-Security-Policy":
+                        path_specific_csp = SecurityConfig.get_csp_for_path(
+                            request.url.path, 
+                            debug=settings.app_debug
+                        )
+                        response.headers[header] = path_specific_csp
+                    else:
+                        response.headers[header] = value
             
             # Add API-specific headers
             self._add_api_headers(request, response)
@@ -138,7 +146,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             )
             
             for header, value in self.headers.items():
-                response.headers[header] = value
+                if header == "Content-Security-Policy":
+                    path_specific_csp = SecurityConfig.get_csp_for_path(
+                        request.url.path, 
+                        debug=settings.app_debug
+                    )
+                    response.headers[header] = path_specific_csp
+                else:
+                    response.headers[header] = value
             
             # Log the error but don't expose it
             import logging
@@ -192,7 +207,7 @@ class SecurityConfig:
     def get_csp_for_path(path: str, debug: bool = False) -> str:
         """
         Get Content Security Policy for specific path.
-        
+
         Args:
             path: Request path
             debug: Whether in debug mode
@@ -204,10 +219,11 @@ class SecurityConfig:
             # Relaxed CSP for API documentation
             return (
                 "default-src 'self'; "
-                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; "
-                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net blob:; "
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; "
+                "font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; "
                 "img-src 'self' data: https:; "
-                "font-src 'self' https://cdn.jsdelivr.net; "
+                "worker-src blob:; "
                 "connect-src 'self'"
             )
         elif path.startswith("/api/"):
