@@ -195,21 +195,29 @@ class DevPocketSetup:
             if not python_path.exists():
                 python_path = self.venv_path / "Scripts" / "python.exe"  # Windows
             
-            # Test import of main application
-            test_script = """
-import sys
+            # Create a temporary test script file
+            test_file = self.project_root / "test_import.py"
+            test_script = """import sys
 sys.path.insert(0, '.')
 try:
     from app.core.config import settings
     from main import app
-    print("✓ Application imports successful")
+    print("Application imports successful")
 except ImportError as e:
-    print(f"✗ Import failed: {e}")
+    print(f"Import failed: {e}")
     sys.exit(1)
 """
-            result = self.run_command(f"{python_path} -c \"{test_script}\"")
-            self.log("Installation validation completed successfully")
-            return True
+            with open(test_file, 'w') as f:
+                f.write(test_script)
+            
+            try:
+                result = self.run_command(f"{python_path} {test_file}")
+                self.log("Installation validation completed successfully")
+                return True
+            finally:
+                # Clean up test file
+                if test_file.exists():
+                    test_file.unlink()
         except Exception as e:
             self.log(f"Installation validation failed: {e}", "ERROR")
             return False
@@ -244,7 +252,7 @@ except ImportError as e:
     def print_next_steps(self) -> None:
         """Print instructions for next steps."""
         print("\n" + "="*60)
-        print("🎉 DevPocket API setup completed successfully!")
+        print("DevPocket API setup completed successfully!")
         print("="*60)
         print("\nNext steps:")
         print("\n1. Activate the virtual environment:")
