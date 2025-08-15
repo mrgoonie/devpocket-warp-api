@@ -89,3 +89,12 @@ When implementation begins:
 ### Pre-commit/Push Rules
 - Run `./scripts/format_code.sh` before commit
 - Run `./scripts/run_tests.sh` before push
+- Update existing docs (Markdown files) in `./docs` directory before any code refactoring
+- Add new docs (Markdown files) to `./docs` directory after new feature implementation (do not create duplicated docs)
+- Keep commits focused on the actual code changes
+- NEVER automatically add AI attribution signatures like:
+  "🤖 Generated with [Claude Code]"
+  "Co-Authored-By: Claude noreply@anthropic.com"
+  Any AI tool attribution or signature
+- Create clean, professional commit messages without AI references. Use conventional commit format.
+- use `context7` mcp tools for docs of plugins/packages
