@@ -263,12 +263,12 @@ async def get_ai_settings(
     return AISettingsResponse(
         user_id=current_user.id,
         preferred_models={
-            "command_suggestion": "anthropic/claude-3-haiku:beta",
-            "command_explanation": "anthropic/claude-3-haiku:beta",
-            "error_analysis": "anthropic/claude-3-haiku:beta",
-            "optimization": "anthropic/claude-3-sonnet:beta"
+            "command_suggestion": "google/gemini-2.5-flash",
+            "command_explanation": "google/gemini-2.5-flash",
+            "error_analysis": "google/gemini-2.5-flash",
+            "optimization": "google/gemini-2.5-flash"
         },
-        default_model="anthropic/claude-3-haiku:beta",
+        default_model="google/gemini-2.5-flash",
         updated_at=current_user.updated_at
     )
 
@@ -423,8 +423,7 @@ async def get_ai_usage_insights(
                 "optimizations": 0
             },
             "model_usage": {
-                "anthropic/claude-3-haiku:beta": 0,
-                "anthropic/claude-3-sonnet:beta": 0
+                "google/gemini-2.5-flash": 0,
             },
             "trends": {
                 "requests_this_week": [],
@@ -475,10 +474,7 @@ async def ai_service_health(
             "byok_model": "active",
             "cache_status": "enabled",
             "supported_models": [
-                "anthropic/claude-3-haiku:beta",
-                "anthropic/claude-3-sonnet:beta",
-                "openai/gpt-3.5-turbo",
-                "openai/gpt-4"
+                "google/gemini-2.5-flash"
             ],
             "timestamp": logger.get_current_time()
         }

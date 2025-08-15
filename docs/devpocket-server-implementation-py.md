@@ -391,7 +391,7 @@ class AIService:
                 response = await client.post(
                     "/chat/completions",
                     json={
-                        "model": "anthropic/claude-3-haiku",
+                        "model": "google/gemini-2.5-flash",
                         "messages": messages,
                         "max_tokens": 150,
                         "temperature": 0.3
@@ -427,7 +427,7 @@ class AIService:
                 response = await client.post(
                     "/chat/completions",
                     json={
-                        "model": "anthropic/claude-3-haiku",
+                        "model": "google/gemini-2.5-flash",
                         "messages": [
                             {"role": "user", "content": prompt}
                         ],

@@ -357,10 +357,8 @@ class AIService:
             models.sort(key=lambda x: (x.performance_tier, x.context_length), reverse=True)
 
             recommended_models = [
-                "anthropic/claude-3-haiku:beta",
-                "anthropic/claude-3-sonnet:beta",
-                "openai/gpt-3.5-turbo",
-                "openai/gpt-4"
+                "google/gemini-2.5-flash",
+                "google/gemini-2.5-pro"
             ]
 
             return AvailableModelsResponse(

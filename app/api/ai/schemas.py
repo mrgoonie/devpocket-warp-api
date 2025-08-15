@@ -12,12 +12,8 @@ from enum import Enum
 
 class AIModel(str, Enum):
     """Supported AI models."""
-    CLAUDE_HAIKU = "anthropic/claude-3-haiku:beta"
-    CLAUDE_SONNET = "anthropic/claude-3-sonnet:beta"
-    CLAUDE_OPUS = "anthropic/claude-3-opus:beta"
-    GPT_3_5_TURBO = "openai/gpt-3.5-turbo"
-    GPT_4 = "openai/gpt-4"
-    GPT_4_TURBO = "openai/gpt-4-turbo"
+    GEMINI_2_5_FLASH = "google/gemini-2.5-flash"
+    GEMINI_2_5_PRO = "google/gemini-2.5-pro"
 
 
 class AIServiceType(str, Enum):

@@ -47,11 +47,11 @@ class OpenRouterService:
         
         # Default models for different use cases
         self.models = {
-            "command_suggestion": "anthropic/claude-3-haiku:beta",
-            "command_explanation": "anthropic/claude-3-haiku:beta", 
-            "error_analysis": "anthropic/claude-3-haiku:beta",
-            "optimization": "anthropic/claude-3-sonnet:beta",
-            "general": "anthropic/claude-3-haiku:beta"
+            "command_suggestion": "google/gemini-2.5-flash",
+            "command_explanation": "google/gemini-2.5-flash", 
+            "error_analysis": "google/gemini-2.5-flash",
+            "optimization": "google/gemini-2.5-flash",
+            "general": "google/gemini-2.5-flash"
         }
         
         # Rate limiting (simple in-memory store)
