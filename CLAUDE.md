@@ -40,45 +40,6 @@ Complete API specification in `docs/devpocket-api-endpoints.md`:
 - Synchronization (`/api/sync/*`)
 - WebSocket terminal (`/ws/terminal`)
 
-## Development Commands
-
-Since this is currently a documentation-only repository with planned implementation:
-
-### Future Backend Commands (Python/FastAPI)
-```bash
-# Install dependencies (when implemented)
-pip install -r requirements.txt
-
-# Run development server
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-
-# Run tests
-pytest
-
-# Database migrations
-alembic upgrade head
-
-# Format code
-black .
-ruff check --fix .
-```
-
-### Future Frontend Commands (Flutter)
-```bash
-# Install dependencies
-flutter pub get
-
-# Run on iOS simulator
-flutter run -d ios
-
-# Run on Android
-flutter run -d android
-
-# Build for production
-flutter build ios
-flutter build apk
-```
-
 ## Key Implementation Notes
 
 ### BYOK (Bring Your Own Key) Model
@@ -101,7 +62,7 @@ flutter build apk
 ## Business Model
 
 Freemium tiers documented in `docs/devpocket-product-overview.md`:
-- **Free Tier**: Core terminal + BYOK AI features
+- **Free Tier (7 days)**: Core terminal + BYOK AI features
 - **Pro Tier ($12/mo)**: Multi-device sync, cloud history, AI caching
 - **Team Tier ($25/user/mo)**: Team workspaces, shared workflows, SSO
 
@@ -113,3 +74,10 @@ When implementation begins:
 - WebSocket connection tests
 - Mock OpenRouter API for AI service tests
 - Flutter widget tests for UI components
+
+## Development Rules
+
+### Rules
+- use docker compose for development environment
+- run `./scripts/format_code.sh` before commit
+- run `./scripts/run_tests.sh` before push
