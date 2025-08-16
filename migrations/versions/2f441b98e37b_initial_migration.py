@@ -10,6 +10,7 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects.postgresql import ENUM
 
 # revision identifiers, used by Alembic.
 revision: str = "2f441b98e37b"
@@ -58,7 +59,7 @@ def upgrade() -> None:
             sa.Column('username', sa.String(length=50), nullable=False),
             sa.Column('hashed_password', sa.String(length=255), nullable=False),
             sa.Column('full_name', sa.String(length=255), nullable=True),
-            sa.Column('role', sa.Enum('user', 'admin', 'premium', name='user_role', create_type=False), 
+            sa.Column('role', ENUM('user', 'admin', 'premium', name='user_role', create_type=False), 
                      nullable=False, server_default='user'),
             sa.Column('is_active', sa.Boolean(), nullable=False, server_default='true'),
             sa.Column('is_verified', sa.Boolean(), nullable=False, server_default='false'),

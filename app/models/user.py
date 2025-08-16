@@ -5,7 +5,8 @@ User model for DevPocket API.
 from datetime import datetime, timezone
 from typing import Optional, List
 from uuid import UUID as PyUUID
-from sqlalchemy import String, Boolean, Text, JSON, ForeignKey, Enum
+from sqlalchemy import String, Boolean, Text, JSON, ForeignKey
+from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 import enum
@@ -39,7 +40,7 @@ class User(BaseModel):
     full_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     role: Mapped[UserRole] = mapped_column(
-        Enum(UserRole, name="user_role", create_type=False), nullable=False, default=UserRole.USER
+        ENUM(UserRole, name="user_role", create_type=False), nullable=False, default=UserRole.USER
     )
 
     # Account status
