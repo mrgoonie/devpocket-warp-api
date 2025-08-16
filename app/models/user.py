@@ -2,7 +2,7 @@
 User model for DevPocket API.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 from uuid import UUID as PyUUID
 from sqlalchemy import String, Boolean, Text, JSON, ForeignKey, Enum
@@ -39,7 +39,7 @@ class User(BaseModel):
     full_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     role: Mapped[UserRole] = mapped_column(
-        Enum(UserRole, name="user_role"), nullable=False, default=UserRole.USER
+        Enum(UserRole, name="user_role", create_type=False), nullable=False, default=UserRole.USER
     )
 
     # Account status
@@ -109,7 +109,7 @@ class User(BaseModel):
         """Check if user account is locked."""
         if self.locked_until is None:
             return False
-        return datetime.now() < self.locked_until
+        return datetime.now(timezone.utc) < self.locked_until
 
     def can_login(self) -> bool:
         """Check if user can login."""
@@ -127,13 +127,13 @@ class User(BaseModel):
         if self.failed_login_attempts >= 5:
             from datetime import timedelta
 
-            self.locked_until = datetime.now() + timedelta(minutes=15)
+            self.locked_until = datetime.now(timezone.utc) + timedelta(minutes=15)
 
     def reset_failed_login(self) -> None:
         """Reset failed login attempts."""
         self.failed_login_attempts = 0
         self.locked_until = None
-        self.last_login_at = datetime.now()
+        self.last_login_at = datetime.now(timezone.utc)
 
     def __repr__(self) -> str:
         return f"<User(id={self.id}, username={self.username}, email={self.email})>"
