@@ -71,24 +71,18 @@ class Connection:
             await self.websocket.send_text(text)
             return True
         except Exception as e:
-            logger.error(
-                f"Failed to send text on connection {self.connection_id}: {e}"
-            )
+            logger.error(f"Failed to send text on connection {self.connection_id}: {e}")
             return False
 
     def add_terminal_session(self, session: TerminalSession) -> None:
         """Add a terminal session to this connection."""
         self.terminal_sessions[session.session_id] = session
 
-    def remove_terminal_session(
-        self, session_id: str
-    ) -> Optional[TerminalSession]:
+    def remove_terminal_session(self, session_id: str) -> Optional[TerminalSession]:
         """Remove and return a terminal session."""
         return self.terminal_sessions.pop(session_id, None)
 
-    def get_terminal_session(
-        self, session_id: str
-    ) -> Optional[TerminalSession]:
+    def get_terminal_session(self, session_id: str) -> Optional[TerminalSession]:
         """Get a terminal session by ID."""
         return self.terminal_sessions.get(session_id)
 
@@ -102,12 +96,8 @@ class ConnectionManager:
 
     def __init__(self, redis_client: Optional[aioredis.Redis] = None):
         self.connections: Dict[str, Connection] = {}
-        self.user_connections: Dict[
-            str, Set[str]
-        ] = {}  # user_id -> connection_ids
-        self.session_connections: Dict[
-            str, str
-        ] = {}  # session_id -> connection_id
+        self.user_connections: Dict[str, Set[str]] = {}  # user_id -> connection_ids
+        self.session_connections: Dict[str, str] = {}  # session_id -> connection_id
         self.redis = redis_client
         self._cleanup_task: Optional[asyncio.Task] = None
 
@@ -127,9 +117,7 @@ class ConnectionManager:
             except asyncio.CancelledError:
                 pass
 
-    async def connect(
-        self, websocket: WebSocket, user_id: str, device_id: str
-    ) -> str:
+    async def connect(self, websocket: WebSocket, user_id: str, device_id: str) -> str:
         """
         Register a new WebSocket connection.
 
@@ -183,9 +171,7 @@ class ConnectionManager:
 
             # Remove from user connections
             if connection.user_id in self.user_connections:
-                self.user_connections[connection.user_id].discard(
-                    connection_id
-                )
+                self.user_connections[connection.user_id].discard(connection_id)
                 if not self.user_connections[connection.user_id]:
                     del self.user_connections[connection.user_id]
 
@@ -201,16 +187,12 @@ class ConnectionManager:
             # Remove connection
             del self.connections[connection_id]
 
-            logger.info(
-                f"WebSocket disconnected: connection_id={connection_id}"
-            )
+            logger.info(f"WebSocket disconnected: connection_id={connection_id}")
 
         except Exception as e:
             logger.error(f"Error during disconnect cleanup: {e}")
 
-    async def handle_message(
-        self, connection_id: str, message_data: Dict
-    ) -> None:
+    async def handle_message(self, connection_id: str, message_data: Dict) -> None:
         """
         Handle incoming WebSocket message.
 
@@ -253,9 +235,7 @@ class ConnectionManager:
             await connection.send_message(error_msg)
         except Exception as e:
             logger.error(f"Error handling message from {connection_id}: {e}")
-            error_msg = create_error_message(
-                "message_handling_error", "Internal error"
-            )
+            error_msg = create_error_message("message_handling_error", "Internal error")
             await connection.send_message(error_msg)
 
     async def _handle_connect_message(
@@ -272,9 +252,7 @@ class ConnectionManager:
                     "user_id": connection.user_id,
                     "device_id": connection.device_id,
                     "device_type": "web",  # Could be enhanced to detect actual device type
-                    "session_type": message.data.get(
-                        "session_type", "terminal"
-                    ),
+                    "session_type": message.data.get("session_type", "terminal"),
                     "terminal_cols": message.data.get("terminal_size", {}).get(
                         "cols", 80
                     ),
@@ -306,9 +284,7 @@ class ConnectionManager:
 
                 # Register terminal session
                 connection.add_terminal_session(terminal_session)
-                self.session_connections[
-                    db_session.id
-                ] = connection.connection_id
+                self.session_connections[db_session.id] = connection.connection_id
 
                 # Start the terminal session
                 await terminal_session.start()
@@ -372,9 +348,7 @@ class ConnectionManager:
         elif message.type == MessageType.SIGNAL:
             await session.handle_signal(message.data.get("signal", ""))
 
-    async def _cleanup_terminal_session(
-        self, session: TerminalSession
-    ) -> None:
+    async def _cleanup_terminal_session(self, session: TerminalSession) -> None:
         """Clean up a terminal session."""
         try:
             await session.stop()
@@ -402,9 +376,7 @@ class ConnectionManager:
 
                 # Disconnect inactive connections
                 for connection_id in inactive_connections:
-                    logger.info(
-                        f"Cleaning up inactive connection: {connection_id}"
-                    )
+                    logger.info(f"Cleaning up inactive connection: {connection_id}")
                     await self.disconnect(connection_id)
 
             except asyncio.CancelledError:

@@ -78,9 +78,7 @@ async def drop_database():
         )
 
         # Drop the database
-        await conn.execute(
-            f'DROP DATABASE IF EXISTS "{settings.database_name}"'
-        )
+        await conn.execute(f'DROP DATABASE IF EXISTS "{settings.database_name}"')
         logger.info(f"Dropped database: {settings.database_name}")
 
         await conn.close()
@@ -96,9 +94,7 @@ async def test_database_connection():
     try:
         conn = await asyncpg.connect(settings.database_url)
         result = await conn.fetchval("SELECT version()")
-        logger.info(
-            f"Database connection successful. PostgreSQL version: {result}"
-        )
+        logger.info(f"Database connection successful. PostgreSQL version: {result}")
         await conn.close()
         return True
 

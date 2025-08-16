@@ -23,17 +23,11 @@ class SyncDataFactory(factory.Factory):
     user_id = factory.LazyAttribute(lambda obj: str(fake.uuid4()))
 
     # Sync metadata
-    sync_type = fuzzy.FuzzyChoice(
-        ["commands", "ssh_profiles", "settings", "history"]
-    )
-    sync_key = factory.LazyAttribute(
-        lambda obj: f"{obj.sync_type}_{fake.uuid4()}"
-    )
+    sync_type = fuzzy.FuzzyChoice(["commands", "ssh_profiles", "settings", "history"])
+    sync_key = factory.LazyAttribute(lambda obj: f"{obj.sync_type}_{fake.uuid4()}")
 
     # Data content (varies by sync_type)
-    data = factory.LazyAttribute(
-        lambda obj: _generate_sync_data(obj.sync_type)
-    )
+    data = factory.LazyAttribute(lambda obj: _generate_sync_data(obj.sync_type))
 
     # Sync status
     version = fuzzy.FuzzyInteger(1, 10)
@@ -111,9 +105,7 @@ class SettingsSyncDataFactory(SyncDataFactory):
 
     data = factory.LazyFunction(
         lambda: {
-            "terminal_theme": fake.random_element(
-                ["dark", "light", "high-contrast"]
-            ),
+            "terminal_theme": fake.random_element(["dark", "light", "high-contrast"]),
             "terminal_font_size": fake.random_int(min=10, max=20),
             "terminal_font_family": "Fira Code",
             "preferred_ai_model": "claude-3-haiku",
@@ -203,27 +195,21 @@ class iOSSyncDataFactory(SyncDataFactory):
     """Factory for iOS device sync data."""
 
     source_device_type = "ios"
-    source_device_id = factory.LazyFunction(
-        lambda: f"ios_device_{fake.uuid4()}"
-    )
+    source_device_id = factory.LazyFunction(lambda: f"ios_device_{fake.uuid4()}")
 
 
 class AndroidSyncDataFactory(SyncDataFactory):
     """Factory for Android device sync data."""
 
     source_device_type = "android"
-    source_device_id = factory.LazyFunction(
-        lambda: f"android_device_{fake.uuid4()}"
-    )
+    source_device_id = factory.LazyFunction(lambda: f"android_device_{fake.uuid4()}")
 
 
 class WebSyncDataFactory(SyncDataFactory):
     """Factory for web device sync data."""
 
     source_device_type = "web"
-    source_device_id = factory.LazyFunction(
-        lambda: f"web_session_{fake.uuid4()}"
-    )
+    source_device_id = factory.LazyFunction(lambda: f"web_session_{fake.uuid4()}")
 
 
 class HighVersionSyncDataFactory(SyncDataFactory):
@@ -283,9 +269,7 @@ def _generate_sync_data(sync_type: str) -> dict:
 
     elif sync_type == "settings":
         return {
-            "terminal_theme": fake.random_element(
-                ["dark", "light", "high-contrast"]
-            ),
+            "terminal_theme": fake.random_element(["dark", "light", "high-contrast"]),
             "terminal_font_size": fake.random_int(min=10, max=20),
             "terminal_font_family": fake.random_element(
                 ["Fira Code", "Monaco", "Consolas", "Ubuntu Mono"]

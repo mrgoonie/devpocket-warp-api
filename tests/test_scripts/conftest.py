@@ -369,14 +369,9 @@ def script_assertions():
         ):
             """Assert that a script failed with expected exit code."""
             if result.returncode == 0:
-                raise AssertionError(
-                    f"{message}. Script unexpectedly succeeded."
-                )
+                raise AssertionError(f"{message}. Script unexpectedly succeeded.")
 
-            if (
-                expected_code is not None
-                and result.returncode != expected_code
-            ):
+            if expected_code is not None and result.returncode != expected_code:
                 raise AssertionError(
                     f"{message}. Expected exit code {expected_code}, "
                     f"got {result.returncode}"

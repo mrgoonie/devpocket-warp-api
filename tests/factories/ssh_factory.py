@@ -137,9 +137,7 @@ class SSHKeyFactory(factory.Factory):
     fingerprint = factory.LazyFunction(lambda: fake.sha256()[:32])
 
     # Mock encrypted private key (in real scenario this would be properly encrypted)
-    encrypted_private_key = factory.LazyFunction(
-        lambda: fake.binary(length=2048)
-    )
+    encrypted_private_key = factory.LazyFunction(lambda: fake.binary(length=2048))
 
     # Mock public key
     public_key = factory.LazyAttribute(

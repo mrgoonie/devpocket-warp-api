@@ -114,17 +114,15 @@ class CommandService:
                     executed_at=cmd.executed_at,
                     duration_ms=cmd.duration_ms,
                     session_id=cmd.session_id,
-                    session_name=cmd.session.name
-                    if cmd.session
-                    else "Unknown",
-                    session_type=cmd.session.session_type
-                    if cmd.session
-                    else "unknown",
+                    session_name=cmd.session.name if cmd.session else "Unknown",
+                    session_type=cmd.session.session_type if cmd.session else "unknown",
                     command_type=CommandType(cmd.command_type or "unknown"),
                     is_dangerous=cmd.is_dangerous or False,
-                    output_size=len(cmd.stdout) + len(cmd.stderr)
-                    if cmd.stdout and cmd.stderr
-                    else 0,
+                    output_size=(
+                        len(cmd.stdout) + len(cmd.stderr)
+                        if cmd.stdout and cmd.stderr
+                        else 0
+                    ),
                     has_output=bool(cmd.stdout),
                     has_error=bool(cmd.stderr),
                 )
@@ -140,9 +138,7 @@ class CommandService:
                 total=total,
                 offset=offset,
                 limit=limit,
-                filters_applied={"session_id": session_id}
-                if session_id
-                else None,
+                filters_applied={"session_id": session_id} if session_id else None,
             )
 
         except Exception as e:
@@ -193,9 +189,7 @@ class CommandService:
             )
 
             # Get total count
-            total = await self.command_repo.count_commands_with_criteria(
-                criteria
-            )
+            total = await self.command_repo.count_commands_with_criteria(criteria)
 
             # Convert to response objects
             command_responses = []
@@ -237,9 +231,7 @@ class CommandService:
                 detail="Failed to search commands",
             )
 
-    async def get_command_details(
-        self, user: User, command_id: str
-    ) -> CommandResponse:
+    async def get_command_details(self, user: User, command_id: str) -> CommandResponse:
         """Get detailed command information."""
         try:
             command = await self.command_repo.get_by_id(command_id)
@@ -264,8 +256,7 @@ class CommandService:
                 stdout=command.stdout or "",
                 stderr=command.stderr or "",
                 output_truncated=command.output_truncated or False,
-                output_size=len(command.stdout or "")
-                + len(command.stderr or ""),
+                output_size=len(command.stdout or "") + len(command.stderr or ""),
                 executed_at=command.executed_at,
                 started_at=command.started_at,
                 completed_at=command.completed_at,
@@ -301,9 +292,7 @@ class CommandService:
             await self.command_repo.delete(command_id)
             await self.session.commit()
 
-            logger.info(
-                f"Command deleted: {command_id} by user {user.username}"
-            )
+            logger.info(f"Command deleted: {command_id} by user {user.username}")
             return True
 
         except HTTPException:
@@ -348,18 +337,12 @@ class CommandService:
             successful_commands = len(
                 [cmd for cmd in all_commands if cmd.exit_code == 0]
             )
-            failed_commands = len(
-                [cmd for cmd in all_commands if cmd.exit_code != 0]
-            )
+            failed_commands = len([cmd for cmd in all_commands if cmd.exit_code != 0])
 
             # Duration statistics
-            durations = [
-                cmd.duration_ms for cmd in all_commands if cmd.duration_ms
-            ]
+            durations = [cmd.duration_ms for cmd in all_commands if cmd.duration_ms]
             avg_duration = sum(durations) / len(durations) if durations else 0
-            median_duration = (
-                sorted(durations)[len(durations) // 2] if durations else 0
-            )
+            median_duration = sorted(durations)[len(durations) // 2] if durations else 0
             total_execution_time = sum(durations)
 
             # Breakdown by type and status
@@ -375,11 +358,7 @@ class CommandService:
             month_ago = now - timedelta(days=30)
 
             commands_today = len(
-                [
-                    cmd
-                    for cmd in all_commands
-                    if cmd.executed_at.date() == today
-                ]
+                [cmd for cmd in all_commands if cmd.executed_at.date() == today]
             )
             commands_this_week = len(
                 [cmd for cmd in all_commands if cmd.executed_at >= week_ago]
@@ -407,9 +386,7 @@ class CommandService:
                 {
                     "command": cmd.command,
                     "duration_ms": cmd.duration_ms,
-                    "duration_seconds": round(
-                        (cmd.duration_ms or 0) / 1000, 2
-                    ),
+                    "duration_seconds": round((cmd.duration_ms or 0) / 1000, 2),
                     "executed_at": cmd.executed_at.isoformat(),
                 }
                 for cmd in sorted_by_duration[:10]
@@ -445,9 +422,7 @@ class CommandService:
         """Get command statistics grouped by session."""
         try:
             # Get sessions with command counts
-            sessions_data = await self.command_repo.get_session_command_stats(
-                user.id
-            )
+            sessions_data = await self.command_repo.get_session_command_stats(user.id)
 
             stats = []
             for session_data in sessions_data:
@@ -492,9 +467,7 @@ class CommandService:
                 )
 
             # Analyze command patterns
-            command_analysis = self._analyze_command_patterns(
-                commands, min_usage
-            )
+            command_analysis = self._analyze_command_patterns(commands, min_usage)
 
             frequent_commands = []
             for pattern, data in command_analysis.items():
@@ -554,12 +527,9 @@ class CommandService:
 
             # File operations suggestions
             if any(
-                word in context_lower
-                for word in ["list", "show", "files", "directory"]
+                word in context_lower for word in ["list", "show", "files", "directory"]
             ):
-                suggestions.extend(
-                    self._get_file_operation_suggestions(context_lower)
-                )
+                suggestions.extend(self._get_file_operation_suggestions(context_lower))
 
             # System monitoring suggestions
             if any(
@@ -575,9 +545,7 @@ class CommandService:
                 word in context_lower
                 for word in ["network", "connection", "ping", "download"]
             ):
-                suggestions.extend(
-                    self._get_network_suggestions(context_lower)
-                )
+                suggestions.extend(self._get_network_suggestions(context_lower))
 
             # Git suggestions
             if any(
@@ -589,9 +557,7 @@ class CommandService:
             # Based on user's command history patterns
             if recent_commands:
                 suggestions.extend(
-                    self._get_personalized_suggestions(
-                        recent_commands, context_lower
-                    )
+                    self._get_personalized_suggestions(recent_commands, context_lower)
                 )
 
             # Sort by confidence and limit results
@@ -619,19 +585,14 @@ class CommandService:
 
             # Calculate metrics
             active_commands = len(
-                [
-                    cmd
-                    for cmd in recent_commands
-                    if cmd.status in ["pending", "running"]
-                ]
+                [cmd for cmd in recent_commands if cmd.status in ["pending", "running"]]
             )
 
             completed_today = len(
                 [
                     cmd
                     for cmd in recent_commands
-                    if cmd.executed_at.date() == today
-                    and cmd.status == "completed"
+                    if cmd.executed_at.date() == today and cmd.status == "completed"
                 ]
             )
 
@@ -639,8 +600,7 @@ class CommandService:
                 [
                     cmd
                     for cmd in recent_commands
-                    if cmd.executed_at.date() == today
-                    and cmd.status == "failed"
+                    if cmd.executed_at.date() == today and cmd.status == "failed"
                 ]
             )
 
@@ -659,11 +619,7 @@ class CommandService:
 
             # Success rate for last 24 hours
             total_24h = len(
-                [
-                    cmd
-                    for cmd in recent_commands
-                    if cmd.executed_at >= yesterday
-                ]
+                [cmd for cmd in recent_commands if cmd.executed_at >= yesterday]
             )
             successful_24h = len(
                 [
@@ -678,9 +634,7 @@ class CommandService:
 
             # Error analysis
             error_commands = [
-                cmd
-                for cmd in recent_commands
-                if cmd.exit_code != 0 and cmd.stderr
+                cmd for cmd in recent_commands if cmd.exit_code != 0 and cmd.stderr
             ]
             error_counter = Counter()
             for cmd in error_commands:
@@ -706,9 +660,7 @@ class CommandService:
                 failed_today=failed_today,
                 avg_response_time_ms=round(avg_response_time, 2),
                 success_rate_24h=round(success_rate_24h, 2),
-                total_cpu_time_ms=sum(
-                    cmd.duration_ms or 0 for cmd in recent_commands
-                ),
+                total_cpu_time_ms=sum(cmd.duration_ms or 0 for cmd in recent_commands),
                 peak_memory_usage_mb=None,  # Would need system monitoring
                 top_error_types=top_errors,
                 timestamp=now,
@@ -776,8 +728,7 @@ class CommandService:
                 result[pattern] = {
                     "count": data["count"],
                     "variations": list(set(data["variations"])),
-                    "success_rate": (data["success_count"] / data["count"])
-                    * 100,
+                    "success_rate": (data["success_count"] / data["count"]) * 100,
                     "average_duration": (
                         sum(data["durations"]) / len(data["durations"])
                         if data["durations"]
@@ -800,9 +751,7 @@ class CommandService:
         pattern = re.sub(r"\b\d+\b", "N", pattern)
 
         # Replace IP addresses
-        pattern = re.sub(
-            r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b", "IP", pattern
-        )
+        pattern = re.sub(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b", "IP", pattern)
 
         # Replace URLs
         pattern = re.sub(r"https?://[^\s]+", "URL", pattern)
@@ -814,9 +763,7 @@ class CommandService:
         cmd_pattern = self._create_command_pattern(command)
         return cmd_pattern == pattern
 
-    def _get_file_operation_suggestions(
-        self, context: str
-    ) -> List[CommandSuggestion]:
+    def _get_file_operation_suggestions(self, context: str) -> List[CommandSuggestion]:
         """Generate file operation command suggestions."""
         suggestions = []
 
@@ -877,9 +824,7 @@ class CommandService:
 
         return suggestions
 
-    def _get_network_suggestions(
-        self, context: str
-    ) -> List[CommandSuggestion]:
+    def _get_network_suggestions(self, context: str) -> List[CommandSuggestion]:
         """Generate network-related suggestions."""
         suggestions = []
 

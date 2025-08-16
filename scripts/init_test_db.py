@@ -27,13 +27,8 @@ async def init_test_database():
     )
 
     # Ensure we're using asyncpg driver
-    if (
-        "postgresql://" in database_url
-        and "postgresql+asyncpg://" not in database_url
-    ):
-        database_url = database_url.replace(
-            "postgresql://", "postgresql+asyncpg://"
-        )
+    if "postgresql://" in database_url and "postgresql+asyncpg://" not in database_url:
+        database_url = database_url.replace("postgresql://", "postgresql+asyncpg://")
 
     logger.info(f"Initializing test database: {database_url}")
 

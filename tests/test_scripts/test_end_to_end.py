@@ -66,9 +66,7 @@ class TestEndToEndWorkflows:
 
         for table in tables:
             try:
-                count = await db_connection.fetchval(
-                    f"SELECT COUNT(*) FROM {table}"
-                )
+                count = await db_connection.fetchval(f"SELECT COUNT(*) FROM {table}")
                 counts[table] = count
             except Exception:
                 counts[table] = 0
@@ -76,9 +74,7 @@ class TestEndToEndWorkflows:
         return counts
 
     @pytest.mark.slow
-    async def test_full_development_setup(
-        self, script_runner, db_connection, db_env
-    ):
+    async def test_full_development_setup(self, script_runner, db_connection, db_env):
         """Test complete development environment setup workflow."""
         # Step 1: Check database connectivity
         result = self.run_script_with_timeout(
@@ -120,9 +116,7 @@ class TestEndToEndWorkflows:
         assert (
             counts["ssh_profiles"] >= 5
         ), f"Expected SSH profiles, got {counts['ssh_profiles']}"
-        assert (
-            counts["sessions"] >= 5
-        ), f"Expected sessions, got {counts['sessions']}"
+        assert counts["sessions"] >= 5, f"Expected sessions, got {counts['sessions']}"
 
         # Step 7: Generate database statistics
         result = self.run_script_with_timeout(
@@ -173,14 +167,10 @@ class TestEndToEndWorkflows:
         result = self.run_script_with_timeout(
             script_runner, "../scripts/db_utils.py", ["health"], db_env
         )
-        assert (
-            result.returncode == 0
-        ), "Post-deployment health check should pass"
+        assert result.returncode == 0, "Post-deployment health check should pass"
 
     @pytest.mark.slow
-    async def test_data_migration_workflow(
-        self, script_runner, db_connection, db_env
-    ):
+    async def test_data_migration_workflow(self, script_runner, db_connection, db_env):
         """Test data migration and transformation workflow."""
         # Step 1: Baseline - ensure we have some data
         result = self.run_script_with_timeout(
@@ -250,9 +240,7 @@ class TestEndToEndWorkflows:
         result = self.run_script_with_timeout(
             script_runner, "db_seed.sh", ["--clean-force", "all", "0"], db_env
         )
-        assert (
-            result.returncode == 0
-        ), "Disaster simulation (data cleaning) should work"
+        assert result.returncode == 0, "Disaster simulation (data cleaning) should work"
 
         # Step 2: Verify disaster state
         counts = await self.get_table_counts(db_connection)
@@ -285,18 +273,10 @@ class TestEndToEndWorkflows:
         # Step 5: Verify recovery
         recovery_counts = await self.get_table_counts(db_connection)
 
-        assert (
-            recovery_counts["users"] >= 10
-        ), "Should have recovered user data"
-        assert (
-            recovery_counts["ssh_profiles"] >= 5
-        ), "Should have recovered SSH data"
-        assert (
-            recovery_counts["sessions"] >= 10
-        ), "Should have recovered session data"
-        assert (
-            recovery_counts["commands"] >= 20
-        ), "Should have recovered command data"
+        assert recovery_counts["users"] >= 10, "Should have recovered user data"
+        assert recovery_counts["ssh_profiles"] >= 5, "Should have recovered SSH data"
+        assert recovery_counts["sessions"] >= 10, "Should have recovered session data"
+        assert recovery_counts["commands"] >= 20, "Should have recovered command data"
 
         # Step 6: Health verification
         result = self.run_script_with_timeout(
@@ -410,9 +390,7 @@ class TestEndToEndWorkflows:
             JOIN sessions s ON c.session_id = s.id
         """
         )
-        assert (
-            session_commands >= 15
-        ), "Should have session-command relationships"
+        assert session_commands >= 15, "Should have session-command relationships"
 
         # Check SSH key relationships
         ssh_user_keys = await db_connection.fetchval(
@@ -641,6 +619,4 @@ class TestWorkflowReliability:
 
                 output = result.stdout + result.stderr
                 # Should have consistent log format
-                assert (
-                    "[INFO]" in output
-                ), f"{operation_type} should have INFO logs"
+                assert "[INFO]" in output, f"{operation_type} should have INFO logs"

@@ -48,24 +48,18 @@ class TestDatabaseErrorHandling:
     async def test_database_timeout(self, test_client, auth_headers):
         """Test handling database query timeouts."""
         # Arrange
-        with patch(
-            "app.repositories.user.UserRepository.get_by_id"
-        ) as mock_get:
+        with patch("app.repositories.user.UserRepository.get_by_id") as mock_get:
             mock_get.side_effect = asyncio.TimeoutError("Query timeout")
 
             # Act
-            response = test_client.get(
-                "/api/auth/profile", headers=auth_headers
-            )
+            response = test_client.get("/api/auth/profile", headers=auth_headers)
 
             # Assert
             assert response.status_code == 504
             assert "timeout" in response.json()["detail"].lower()
 
     @pytest.mark.asyncio
-    async def test_database_constraint_violation(
-        self, test_client, auth_headers
-    ):
+    async def test_database_constraint_violation(self, test_client, auth_headers):
         """Test handling database constraint violations."""
         # Arrange
         user_data = {
@@ -74,12 +68,8 @@ class TestDatabaseErrorHandling:
             "password": "password123",
         }
 
-        with patch(
-            "app.repositories.user.UserRepository.create"
-        ) as mock_create:
-            mock_create.side_effect = SQLAlchemyError(
-                "UNIQUE constraint failed"
-            )
+        with patch("app.repositories.user.UserRepository.create") as mock_create:
+            mock_create.side_effect = SQLAlchemyError("UNIQUE constraint failed")
 
             # Act
             response = test_client.post("/api/auth/register", json=user_data)
@@ -92,9 +82,7 @@ class TestDatabaseErrorHandling:
     async def test_database_deadlock(self, test_client, auth_headers):
         """Test handling database deadlocks."""
         # Arrange
-        with patch(
-            "app.repositories.base.BaseRepository.update"
-        ) as mock_update:
+        with patch("app.repositories.base.BaseRepository.update") as mock_update:
             mock_update.side_effect = SQLAlchemyError("Deadlock detected")
 
             # Act
@@ -166,12 +154,8 @@ class TestNetworkErrorHandling:
 
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
-            mock_client_class.return_value.__aenter__.return_value = (
-                mock_client
-            )
-            mock_client.post.side_effect = httpx.TimeoutException(
-                "Request timed out"
-            )
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+            mock_client.post.side_effect = httpx.TimeoutException("Request timed out")
 
             # Act
             response = test_client.post(
@@ -183,21 +167,15 @@ class TestNetworkErrorHandling:
             assert "timeout" in response.json()["detail"].lower()
 
     @pytest.mark.asyncio
-    async def test_openrouter_api_network_error(
-        self, test_client, auth_headers
-    ):
+    async def test_openrouter_api_network_error(self, test_client, auth_headers):
         """Test handling OpenRouter API network errors."""
         # Arrange
         request_data = {"prompt": "list files", "api_key": "test-key"}
 
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
-            mock_client_class.return_value.__aenter__.return_value = (
-                mock_client
-            )
-            mock_client.post.side_effect = httpx.NetworkError(
-                "Network unreachable"
-            )
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+            mock_client.post.side_effect = httpx.NetworkError("Network unreachable")
 
             # Act
             response = test_client.post(
@@ -209,9 +187,7 @@ class TestNetworkErrorHandling:
             assert "network" in response.json()["detail"].lower()
 
     @pytest.mark.asyncio
-    async def test_ssh_connection_network_error(
-        self, test_client, auth_headers
-    ):
+    async def test_ssh_connection_network_error(self, test_client, auth_headers):
         """Test handling SSH connection network errors."""
         # Arrange
         ssh_profile_data = {
@@ -221,9 +197,7 @@ class TestNetworkErrorHandling:
             "username": "user",
         }
 
-        with patch(
-            "app.services.ssh_client.SSHClient.connect"
-        ) as mock_connect:
+        with patch("app.services.ssh_client.SSHClient.connect") as mock_connect:
             mock_connect.side_effect = OSError("Network is unreachable")
 
             # Act
@@ -322,7 +296,7 @@ class TestInputValidationEdgeCases:
             "тест русский",  # Russian
             "🔥💻🚀",  # Emojis
             "café naïve résumé",  # Accented characters
-            "\u200B\u200C\u200D",  # Zero-width characters
+            "\u200b\u200c\u200d",  # Zero-width characters
         ]
 
         for unicode_input in unicode_inputs:
@@ -399,9 +373,7 @@ class TestConcurrencyEdgeCases:
 
         # Assert
         success_count = sum(
-            1
-            for r in responses
-            if hasattr(r, "status_code") and r.status_code == 201
+            1 for r in responses if hasattr(r, "status_code") and r.status_code == 201
         )
         assert success_count == 1  # Only one should succeed
 
@@ -479,9 +451,7 @@ class TestSecurityBoundaryTesting:
             assert response.status_code in [400, 422]
 
     @pytest.mark.asyncio
-    async def test_command_injection_prevention(
-        self, test_client, auth_headers
-    ):
+    async def test_command_injection_prevention(self, test_client, auth_headers):
         """Test command injection prevention."""
         # Arrange
         command_injection_attempts = [

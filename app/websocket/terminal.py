@@ -102,9 +102,7 @@ class TerminalSession:
                 return await self._start_pty_session()
 
         except Exception as e:
-            logger.error(
-                f"Failed to start terminal session {self.session_id}: {e}"
-            )
+            logger.error(f"Failed to start terminal session {self.session_id}: {e}")
             await self._send_error("session_start_failed", str(e))
             return False
 
@@ -164,9 +162,7 @@ class TerminalSession:
                 )
 
         except Exception as e:
-            logger.error(
-                f"Failed to handle input in session {self.session_id}: {e}"
-            )
+            logger.error(f"Failed to handle input in session {self.session_id}: {e}")
             await self._send_error("input_error", str(e))
 
     async def handle_resize(self, cols: int, rows: int) -> None:
@@ -201,23 +197,17 @@ class TerminalSession:
                     )
                     await self.db.commit()
                 except Exception as e:
-                    logger.warning(
-                        f"Failed to update terminal size in database: {e}"
-                    )
+                    logger.warning(f"Failed to update terminal size in database: {e}")
 
             if success:
                 logger.debug(
                     f"Terminal resized to {cols}x{rows} for session {self.session_id}"
                 )
             else:
-                await self._send_error(
-                    "resize_failed", "Failed to resize terminal"
-                )
+                await self._send_error("resize_failed", "Failed to resize terminal")
 
         except Exception as e:
-            logger.error(
-                f"Failed to handle resize in session {self.session_id}: {e}"
-            )
+            logger.error(f"Failed to handle resize in session {self.session_id}: {e}")
             await self._send_error("resize_error", str(e))
 
     async def handle_signal(self, signal_name: str) -> None:
@@ -239,18 +229,14 @@ class TerminalSession:
                 success = self.pty_handler.send_signal(signal_name)
 
             if success:
-                logger.debug(
-                    f"Signal {signal_name} sent to session {self.session_id}"
-                )
+                logger.debug(f"Signal {signal_name} sent to session {self.session_id}")
             else:
                 logger.warning(
                     f"Failed to send signal {signal_name} to session {self.session_id}"
                 )
 
         except Exception as e:
-            logger.error(
-                f"Failed to handle signal in session {self.session_id}: {e}"
-            )
+            logger.error(f"Failed to handle signal in session {self.session_id}: {e}")
 
     async def _start_ssh_session(self) -> bool:
         """Start an SSH terminal session."""
@@ -263,9 +249,7 @@ class TerminalSession:
             self.ssh_profile = await ssh_repo.get(self.ssh_profile_id)
 
             if not self.ssh_profile:
-                await self._send_error(
-                    "ssh_profile_not_found", "SSH profile not found"
-                )
+                await self._send_error("ssh_profile_not_found", "SSH profile not found")
                 return False
 
             # Get SSH key if available
@@ -337,9 +321,7 @@ class TerminalSession:
             success = await self.pty_handler.start()
 
             if not success:
-                await self._send_error(
-                    "pty_start_failed", "Failed to start terminal"
-                )
+                await self._send_error("pty_start_failed", "Failed to start terminal")
                 return False
 
             self._running = True
@@ -374,9 +356,7 @@ class TerminalSession:
                 self.db_session.update_activity()
 
         except Exception as e:
-            logger.error(
-                f"Failed to handle output in session {self.session_id}: {e}"
-            )
+            logger.error(f"Failed to handle output in session {self.session_id}: {e}")
 
     async def _send_status(
         self,
@@ -396,9 +376,7 @@ class TerminalSession:
     async def _send_error(self, error: str, message: str) -> None:
         """Send error message to client."""
         try:
-            error_msg = create_error_message(
-                error, message, session_id=self.session_id
-            )
+            error_msg = create_error_message(error, message, session_id=self.session_id)
             await self.connection.send_message(error_msg)
         except Exception as e:
             logger.error(f"Failed to send error message: {e}")

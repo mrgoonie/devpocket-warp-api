@@ -55,9 +55,7 @@ class TestScriptVerification:
                 assert result.returncode == 0
 
             # Test format_code.sh can find formatting tools
-            with patch(
-                "shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"
-            ):
+            with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
                 result = script_runner.run_script("format_code.sh", ["--help"])
                 assert result.returncode == 0
 
@@ -82,9 +80,7 @@ class TestScriptVerification:
                     result.returncode == 0
                 ), f"Script {script_name} should work with project structure"
 
-    def test_scripts_handle_missing_dependencies_gracefully(
-        self, script_runner
-    ):
+    def test_scripts_handle_missing_dependencies_gracefully(self, script_runner):
         """Test that scripts handle missing dependencies gracefully."""
 
         # Test with missing tools
@@ -96,9 +92,7 @@ class TestScriptVerification:
             assert result.returncode != 0
 
             # run_tests.sh should fail gracefully when pytest is missing
-            result = script_runner.run_script(
-                "run_tests.sh", ["--help"], timeout=10
-            )
+            result = script_runner.run_script("run_tests.sh", ["--help"], timeout=10)
             # Help should always work
             assert result.returncode == 0
 
@@ -109,9 +103,7 @@ class TestScriptVerification:
             # This might fail or succeed depending on implementation
 
             # format_code.sh should fail gracefully when tools are missing
-            result = script_runner.run_script(
-                "format_code.sh", ["app/"], timeout=10
-            )
+            result = script_runner.run_script("format_code.sh", ["app/"], timeout=10)
             assert result.returncode != 0
 
     def test_scripts_respect_environment_variables(self, script_runner):
@@ -185,9 +177,7 @@ class TestScriptVerification:
         for script_name, args in scripts_to_test:
             result = script_runner.run_script(script_name, args)
 
-            assert (
-                result.returncode == 0
-            ), f"Help for {script_name} should work"
+            assert result.returncode == 0, f"Help for {script_name} should work"
 
             output = result.stdout
 
@@ -195,9 +185,7 @@ class TestScriptVerification:
             assert (
                 len(output) > 100
             ), f"Help output for {script_name} should be substantial"
-            assert (
-                "USAGE:" in output
-            ), f"Help for {script_name} should contain usage"
+            assert "USAGE:" in output, f"Help for {script_name} should contain usage"
             assert (
                 "OPTIONS:" in output
             ), f"Help for {script_name} should contain options"
@@ -207,9 +195,7 @@ class TestScriptVerification:
 
             # Check for proper formatting
             lines = output.split("\n")
-            assert (
-                len(lines) > 10
-            ), f"Help for {script_name} should have multiple lines"
+            assert len(lines) > 10, f"Help for {script_name} should have multiple lines"
 
     def test_scripts_work_with_pytest_markers(self, script_runner):
         """Test that test scripts work with pytest markers defined in pytest.ini."""
@@ -278,9 +264,7 @@ class TestScriptVerification:
                 result = script_runner.run_script(script_name, args, timeout=5)
                 execution_time = time.time() - start_time
 
-                assert (
-                    result.returncode == 0
-                ), f"Script {script_name} help should work"
+                assert result.returncode == 0, f"Script {script_name} help should work"
                 assert (
                     execution_time < 5
                 ), f"Script {script_name} help should be fast (< 5s)"
@@ -327,8 +311,6 @@ class TestScriptVerification:
                 with patch("os.path.exists", return_value=True):
                     for script_name, args in basic_patterns:
                         # These should either work or fail gracefully
-                        result = script_runner.run_script(
-                            script_name, args, timeout=10
-                        )
+                        result = script_runner.run_script(script_name, args, timeout=10)
                         # We don't assert success here since some operations need real infrastructure
                         # but we ensure they don't hang or crash catastrophically

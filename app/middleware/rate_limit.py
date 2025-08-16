@@ -147,9 +147,7 @@ class RateLimitConfig:
         if subscription_tier and subscription_tier in cls.TIER_LIMITS:
             return cls.TIER_LIMITS[subscription_tier].get(
                 endpoint_type,
-                cls.DEFAULT_LIMITS.get(
-                    endpoint_type, cls.DEFAULT_LIMITS["api"]
-                ),
+                cls.DEFAULT_LIMITS.get(endpoint_type, cls.DEFAULT_LIMITS["api"]),
             )
 
         return cls.DEFAULT_LIMITS.get(endpoint_type, cls.DEFAULT_LIMITS["api"])
@@ -200,9 +198,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             endpoint_type = self._get_endpoint_type(request)
             client_ip = self._get_client_ip(request)
             user_id = getattr(request.state, "user_id", None)
-            subscription_tier = getattr(
-                request.state, "subscription_tier", None
-            )
+            subscription_tier = getattr(request.state, "subscription_tier", None)
 
             # Check rate limits
             ip_allowed, ip_count, ip_remaining = self._check_ip_rate_limit(

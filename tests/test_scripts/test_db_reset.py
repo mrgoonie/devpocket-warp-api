@@ -29,9 +29,7 @@ class TestDbResetScript:
 
         # Make it executable for testing
         script_path.chmod(0o755)
-        assert os.access(
-            script_path, os.X_OK
-        ), "db_reset.sh should be executable"
+        assert os.access(script_path, os.X_OK), "db_reset.sh should be executable"
 
     def test_script_syntax_is_valid(self, script_runner):
         """Test that the script has valid bash syntax."""
@@ -143,9 +141,7 @@ class TestDbResetScript:
 
     @patch("subprocess.run")
     @patch("os.path.isfile", return_value=True)
-    def test_reset_no_seed_option(
-        self, mock_isfile, mock_run, script_runner, mock_env
-    ):
+    def test_reset_no_seed_option(self, mock_isfile, mock_run, script_runner, mock_env):
         """Test database reset without seeding."""
         mock_run.side_effect = [
             # db_utils.py reset
@@ -159,9 +155,7 @@ class TestDbResetScript:
         ]
 
         with patch.dict(os.environ, mock_env):
-            result = script_runner.run_script(
-                "db_reset.sh", ["--force", "--no-seed"]
-            )
+            result = script_runner.run_script("db_reset.sh", ["--force", "--no-seed"])
 
         assert result.returncode == 0
 
@@ -235,18 +229,14 @@ class TestDbResetScript:
         ]
 
         with patch.dict(os.environ, mock_env):
-            result = script_runner.run_script(
-                "db_reset.sh", ["--force", "--no-verify"]
-            )
+            result = script_runner.run_script("db_reset.sh", ["--force", "--no-verify"])
 
         assert result.returncode == 0
 
     def test_missing_db_utils_script(self, script_runner):
         """Test handling when db_utils.py is missing."""
         with patch("os.path.isfile") as mock_isfile:
-            mock_isfile.side_effect = lambda path: "db_utils.py" not in str(
-                path
-            )
+            mock_isfile.side_effect = lambda path: "db_utils.py" not in str(path)
 
             result = script_runner.run_script("db_reset.sh", ["--force"])
 
@@ -255,9 +245,7 @@ class TestDbResetScript:
     def test_missing_migrate_script(self, script_runner):
         """Test handling when db_migrate.sh is missing."""
         with patch("os.path.isfile") as mock_isfile:
-            mock_isfile.side_effect = lambda path: "db_migrate.sh" not in str(
-                path
-            )
+            mock_isfile.side_effect = lambda path: "db_migrate.sh" not in str(path)
 
             result = script_runner.run_script("db_reset.sh", ["--force"])
 
@@ -305,9 +293,7 @@ class TestDbResetScript:
 
     @patch("subprocess.run")
     @patch("os.path.isfile", return_value=True)
-    def test_migration_failure(
-        self, mock_isfile, mock_run, script_runner, mock_env
-    ):
+    def test_migration_failure(self, mock_isfile, mock_run, script_runner, mock_env):
         """Test handling of migration failure."""
         mock_run.side_effect = [
             # db_utils.py reset - success
@@ -362,16 +348,12 @@ class TestDbResetScript:
 
     def test_seed_count_without_value(self, script_runner):
         """Test handling of seed count option without value."""
-        result = script_runner.run_script(
-            "db_reset.sh", ["--force", "--seed-count"]
-        )
+        result = script_runner.run_script("db_reset.sh", ["--force", "--seed-count"])
         assert result.returncode != 0
 
     def test_seed_type_without_value(self, script_runner):
         """Test handling of seed type option without value."""
-        result = script_runner.run_script(
-            "db_reset.sh", ["--force", "--seed-type"]
-        )
+        result = script_runner.run_script("db_reset.sh", ["--force", "--seed-type"])
         assert result.returncode != 0
 
     def test_unknown_option(self, script_runner):
@@ -552,9 +534,7 @@ class TestDbResetScript:
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
 
-            result = script_runner.run_script(
-                "db_reset.sh", ["--force", "--no-seed"]
-            )
+            result = script_runner.run_script("db_reset.sh", ["--force", "--no-seed"])
 
         # Check for logging patterns
         output = result.stdout + result.stderr

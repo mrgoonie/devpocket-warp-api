@@ -154,9 +154,7 @@ async def terminal_websocket(
         device_id = device_id or "unknown_device"
 
         # Establish connection
-        connection_id = await connection_manager.connect(
-            websocket, user_id, device_id
-        )
+        connection_id = await connection_manager.connect(websocket, user_id, device_id)
 
         logger.info(
             f"WebSocket terminal connection established: user_id={user_id}, connection_id={connection_id}"
@@ -185,23 +183,17 @@ async def terminal_websocket(
                     error_msg = create_error_message(
                         "invalid_json", "Invalid JSON message format"
                     )
-                    await websocket.send_json(
-                        error_msg.model_dump(mode="json")
-                    )
+                    await websocket.send_json(error_msg.model_dump(mode="json"))
                 except Exception:
                     break  # Connection likely broken
             except Exception as e:
-                logger.error(
-                    f"Error in WebSocket message loop {connection_id}: {e}"
-                )
+                logger.error(f"Error in WebSocket message loop {connection_id}: {e}")
                 # Try to send error message
                 try:
                     error_msg = create_error_message(
                         "message_processing_error", "Error processing message"
                     )
-                    await websocket.send_json(
-                        error_msg.model_dump(mode="json")
-                    )
+                    await websocket.send_json(error_msg.model_dump(mode="json"))
                 except Exception:
                     break  # Connection likely broken
 

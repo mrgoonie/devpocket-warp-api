@@ -51,9 +51,7 @@ class TestSSHClient:
         return client
 
     @pytest.mark.asyncio
-    async def test_ssh_connection_success(
-        self, ssh_client, mock_paramiko_client
-    ):
+    async def test_ssh_connection_success(self, ssh_client, mock_paramiko_client):
         """Test successful SSH connection."""
         # Arrange
         with patch("paramiko.SSHClient", return_value=mock_paramiko_client):
@@ -68,13 +66,11 @@ class TestSSHClient:
             mock_paramiko_client.connect.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_ssh_connection_auth_failure(
-        self, ssh_client, mock_paramiko_client
-    ):
+    async def test_ssh_connection_auth_failure(self, ssh_client, mock_paramiko_client):
         """Test SSH connection authentication failure."""
         # Arrange
-        mock_paramiko_client.connect.side_effect = (
-            paramiko.AuthenticationException("Authentication failed")
+        mock_paramiko_client.connect.side_effect = paramiko.AuthenticationException(
+            "Authentication failed"
         )
 
         with patch("paramiko.SSHClient", return_value=mock_paramiko_client):
@@ -83,14 +79,10 @@ class TestSSHClient:
                 await ssh_client.connect(ssh_key="invalid_key")
 
     @pytest.mark.asyncio
-    async def test_ssh_connection_timeout(
-        self, ssh_client, mock_paramiko_client
-    ):
+    async def test_ssh_connection_timeout(self, ssh_client, mock_paramiko_client):
         """Test SSH connection timeout."""
         # Arrange
-        mock_paramiko_client.connect.side_effect = TimeoutError(
-            "Connection timed out"
-        )
+        mock_paramiko_client.connect.side_effect = TimeoutError("Connection timed out")
 
         with patch("paramiko.SSHClient", return_value=mock_paramiko_client):
             # Act & Assert
@@ -98,9 +90,7 @@ class TestSSHClient:
                 await ssh_client.connect(timeout=5)
 
     @pytest.mark.asyncio
-    async def test_execute_command_success(
-        self, ssh_client, mock_paramiko_client
-    ):
+    async def test_execute_command_success(self, ssh_client, mock_paramiko_client):
         """Test successful command execution over SSH."""
         # Arrange
         mock_stdin = MagicMock()
@@ -125,14 +115,10 @@ class TestSSHClient:
         assert result["exit_code"] == 0
         assert result["stdout"] == "Hello World\n"
         assert result["stderr"] == ""
-        mock_paramiko_client.exec_command.assert_called_once_with(
-            "echo 'Hello World'"
-        )
+        mock_paramiko_client.exec_command.assert_called_once_with("echo 'Hello World'")
 
     @pytest.mark.asyncio
-    async def test_execute_command_error(
-        self, ssh_client, mock_paramiko_client
-    ):
+    async def test_execute_command_error(self, ssh_client, mock_paramiko_client):
         """Test command execution with error."""
         # Arrange
         mock_stdin = MagicMock()
@@ -171,9 +157,7 @@ class TestSSHClient:
 
         # Assert
         mock_paramiko_client.open_sftp.assert_called_once()
-        mock_sftp.put.assert_called_once_with(
-            "/local/file.txt", "/remote/file.txt"
-        )
+        mock_sftp.put.assert_called_once_with("/local/file.txt", "/remote/file.txt")
 
     @pytest.mark.asyncio
     async def test_sftp_download_file(self, ssh_client, mock_paramiko_client):
@@ -187,9 +171,7 @@ class TestSSHClient:
         await ssh_client.download_file("/remote/file.txt", "/local/file.txt")
 
         # Assert
-        mock_sftp.get.assert_called_once_with(
-            "/remote/file.txt", "/local/file.txt"
-        )
+        mock_sftp.get.assert_called_once_with("/remote/file.txt", "/local/file.txt")
 
     @pytest.mark.asyncio
     async def test_ssh_tunnel_creation(self, ssh_client, mock_paramiko_client):
@@ -218,9 +200,7 @@ class TestSSHKeyManagement:
         from cryptography.hazmat.primitives import serialization
         from cryptography.hazmat.primitives.asymmetric import rsa
 
-        private_key = rsa.generate_private_key(
-            public_exponent=65537, key_size=2048
-        )
+        private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
         pem = private_key.private_bytes(
             encoding=serialization.Encoding.PEM,
@@ -306,9 +286,7 @@ class TestSSHKeyManagement:
         encrypted_key = await key_manager.encrypt_private_key(
             rsa_private_key, passphrase
         )
-        decrypted_key = await key_manager.decrypt_private_key(
-            encrypted_key, passphrase
-        )
+        decrypted_key = await key_manager.decrypt_private_key(encrypted_key, passphrase)
 
         # Assert
         assert encrypted_key != rsa_private_key
@@ -346,9 +324,7 @@ class TestSSHConnectionPool:
         # Arrange
         profile_id = "profile-123"
 
-        with patch.object(
-            connection_pool, "_create_connection"
-        ) as mock_create:
+        with patch.object(connection_pool, "_create_connection") as mock_create:
             mock_connection = AsyncMock()
             mock_create.return_value = mock_connection
 
@@ -379,9 +355,7 @@ class TestSSHConnectionPool:
         # Arrange
         profile_id = "profile-123"
 
-        with patch.object(
-            connection_pool, "_create_connection"
-        ) as mock_create:
+        with patch.object(connection_pool, "_create_connection") as mock_create:
             mock_create.return_value = AsyncMock()
 
             # Act - Acquire more than max connections
@@ -492,9 +466,7 @@ class TestSSHWebSocketHandler:
             await ssh_handler.list_directory("/home/user")
 
             # Assert
-            mock_ssh_client.execute_command.assert_called_with(
-                "ls -la /home/user"
-            )
+            mock_ssh_client.execute_command.assert_called_with("ls -la /home/user")
 
     @pytest.mark.asyncio
     async def test_ssh_websocket_disconnect_cleanup(self, ssh_handler):

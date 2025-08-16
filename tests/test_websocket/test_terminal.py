@@ -69,9 +69,7 @@ class TestTerminalWebSocket:
         assert terminal_websocket.is_connected
 
     @pytest.mark.asyncio
-    async def test_websocket_disconnect(
-        self, terminal_websocket, mock_websocket
-    ):
+    async def test_websocket_disconnect(self, terminal_websocket, mock_websocket):
         """Test WebSocket disconnection."""
         # Arrange
         terminal_websocket.is_connected = True
@@ -85,9 +83,7 @@ class TestTerminalWebSocket:
         assert not terminal_websocket.is_connected
 
     @pytest.mark.asyncio
-    async def test_send_terminal_output(
-        self, terminal_websocket, mock_websocket
-    ):
+    async def test_send_terminal_output(self, terminal_websocket, mock_websocket):
         """Test sending terminal output to WebSocket."""
         # Arrange
         terminal_websocket.is_connected = True
@@ -102,9 +98,7 @@ class TestTerminalWebSocket:
         )
 
     @pytest.mark.asyncio
-    async def test_send_terminal_error(
-        self, terminal_websocket, mock_websocket
-    ):
+    async def test_send_terminal_error(self, terminal_websocket, mock_websocket):
         """Test sending terminal error to WebSocket."""
         # Arrange
         terminal_websocket.is_connected = True
@@ -119,9 +113,7 @@ class TestTerminalWebSocket:
         )
 
     @pytest.mark.asyncio
-    async def test_handle_terminal_input(
-        self, terminal_websocket, mock_pty_handler
-    ):
+    async def test_handle_terminal_input(self, terminal_websocket, mock_pty_handler):
         """Test handling terminal input from WebSocket."""
         # Arrange
         terminal_websocket.pty_handler = mock_pty_handler
@@ -135,9 +127,7 @@ class TestTerminalWebSocket:
         mock_pty_handler.write.assert_called_once_with(input_data)
 
     @pytest.mark.asyncio
-    async def test_handle_terminal_resize(
-        self, terminal_websocket, mock_pty_handler
-    ):
+    async def test_handle_terminal_resize(self, terminal_websocket, mock_pty_handler):
         """Test handling terminal resize from WebSocket."""
         # Arrange
         terminal_websocket.pty_handler = mock_pty_handler
@@ -178,10 +168,7 @@ class TestConnectionManager:
 
         # Assert
         assert connection_id in connection_manager.active_connections
-        assert (
-            connection_manager.active_connections[connection_id]
-            == mock_websocket
-        )
+        assert connection_manager.active_connections[connection_id] == mock_websocket
 
     def test_remove_connection(self):
         """Test removing WebSocket connection."""
@@ -254,9 +241,9 @@ class TestPTYHandler:
     async def test_pty_start(self, pty_handler):
         """Test starting PTY process."""
         # Arrange
-        with patch("pty.openpty") as mock_openpty, patch(
-            "os.fork"
-        ) as mock_fork, patch("os.execve") as mock_execve:
+        with patch("pty.openpty") as mock_openpty, patch("os.fork") as mock_fork, patch(
+            "os.execve"
+        ) as mock_execve:
             mock_openpty.return_value = (3, 4)  # master_fd, slave_fd
             mock_fork.return_value = 1234  # child pid
 
@@ -307,9 +294,9 @@ class TestPTYHandler:
         pty_handler.child_pid = 1234
         pty_handler.is_alive = True
 
-        with patch("os.close") as mock_close, patch(
-            "os.kill"
-        ) as mock_kill, patch("os.waitpid") as mock_waitpid:
+        with patch("os.close") as mock_close, patch("os.kill") as mock_kill, patch(
+            "os.waitpid"
+        ) as mock_waitpid:
             # Act
             await pty_handler.close()
 

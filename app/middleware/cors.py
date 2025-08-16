@@ -167,9 +167,7 @@ class CORSConfig:
             Dictionary with CORS configuration
         """
         return {
-            "allow_origins": get_cors_origins_for_environment(
-                settings.app_debug
-            ),
+            "allow_origins": get_cors_origins_for_environment(settings.app_debug),
             "allow_credentials": True,
             "allow_methods": cls.MOBILE_METHODS,
             "allow_headers": cls.MOBILE_HEADERS,
@@ -221,9 +219,7 @@ class CORSConfig:
         }
 
 
-def setup_cors_for_environment(
-    app: FastAPI, environment: str = "development"
-) -> None:
+def setup_cors_for_environment(app: FastAPI, environment: str = "development") -> None:
     """
     Setup CORS based on environment.
 

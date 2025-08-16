@@ -80,9 +80,7 @@ class DevPocketSetup:
                 missing.append(dep)
 
         if missing:
-            self.log(
-                f"Missing system dependencies: {', '.join(missing)}", "ERROR"
-            )
+            self.log(f"Missing system dependencies: {', '.join(missing)}", "ERROR")
             self.log(
                 "Please install the missing dependencies and try again",
                 "ERROR",
@@ -197,9 +195,7 @@ class DevPocketSetup:
             self.log("Running database migrations...")
             python_path = self.venv_path / "bin" / "python"
             if not python_path.exists():
-                python_path = (
-                    self.venv_path / "Scripts" / "python.exe"
-                )  # Windows
+                python_path = self.venv_path / "Scripts" / "python.exe"  # Windows
 
             self.run_command(f"{python_path} -m alembic upgrade head")
             self.log("Database migrations completed successfully")
@@ -215,9 +211,7 @@ class DevPocketSetup:
             self.log("Validating installation...")
             python_path = self.venv_path / "bin" / "python"
             if not python_path.exists():
-                python_path = (
-                    self.venv_path / "Scripts" / "python.exe"
-                )  # Windows
+                python_path = self.venv_path / "Scripts" / "python.exe"  # Windows
 
             # Create a temporary test script file
             test_file = self.project_root / "test_import.py"

@@ -14,9 +14,7 @@ def run_command(command: str, description: str = None) -> int:
     if description:
         print(f"🔄 {description}")
 
-    result = subprocess.run(
-        command, shell=True, cwd=Path(__file__).parent.parent
-    )
+    result = subprocess.run(command, shell=True, cwd=Path(__file__).parent.parent)
     return result.returncode
 
 
@@ -41,9 +39,7 @@ def install_deps():
 def format_code():
     """Format code with black."""
     print("🎨 Formatting code...")
-    return run_command(
-        "source venv/bin/activate && black .", "Running black formatter"
-    )
+    return run_command("source venv/bin/activate && black .", "Running black formatter")
 
 
 def lint_code():
@@ -142,9 +138,7 @@ def setup_db():
 
 def db_create():
     """Create database."""
-    return run_command(
-        "python3 scripts/db_utils.py create", "Creating database"
-    )
+    return run_command("python3 scripts/db_utils.py create", "Creating database")
 
 
 def db_drop():
@@ -154,16 +148,12 @@ def db_drop():
 
 def db_reset():
     """Reset database."""
-    return run_command(
-        "python3 scripts/db_utils.py reset", "Resetting database"
-    )
+    return run_command("python3 scripts/db_utils.py reset", "Resetting database")
 
 
 def db_health():
     """Check database health."""
-    return run_command(
-        "python3 scripts/db_utils.py health", "Checking database health"
-    )
+    return run_command("python3 scripts/db_utils.py health", "Checking database health")
 
 
 def migrate():

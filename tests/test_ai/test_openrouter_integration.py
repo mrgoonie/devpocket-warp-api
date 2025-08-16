@@ -45,22 +45,16 @@ class TestOpenRouterService:
         return client
 
     @pytest.mark.asyncio
-    async def test_validate_api_key_success(
-        self, openrouter_service, mock_api_key
-    ):
+    async def test_validate_api_key_success(self, openrouter_service, mock_api_key):
         """Test successful API key validation."""
         # Arrange
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
-            mock_client_class.return_value.__aenter__.return_value = (
-                mock_client
-            )
+            mock_client_class.return_value.__aenter__.return_value = mock_client
 
             mock_response = MagicMock()
             mock_response.status_code = 200
-            mock_response.json.return_value = {
-                "data": [{"id": "claude-3-haiku"}]
-            }
+            mock_response.json.return_value = {"data": [{"id": "claude-3-haiku"}]}
             mock_client.get.return_value = mock_response
 
             # Act
@@ -77,16 +71,12 @@ class TestOpenRouterService:
             )
 
     @pytest.mark.asyncio
-    async def test_validate_api_key_invalid(
-        self, openrouter_service, mock_api_key
-    ):
+    async def test_validate_api_key_invalid(self, openrouter_service, mock_api_key):
         """Test invalid API key validation."""
         # Arrange
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
-            mock_client_class.return_value.__aenter__.return_value = (
-                mock_client
-            )
+            mock_client_class.return_value.__aenter__.return_value = mock_client
 
             mock_response = MagicMock()
             mock_response.status_code = 401
@@ -99,9 +89,7 @@ class TestOpenRouterService:
             assert not is_valid
 
     @pytest.mark.asyncio
-    async def test_generate_command_success(
-        self, openrouter_service, mock_api_key
-    ):
+    async def test_generate_command_success(self, openrouter_service, mock_api_key):
         """Test successful command generation."""
         # Arrange
         prompt = "list all files in the current directory"
@@ -109,19 +97,13 @@ class TestOpenRouterService:
 
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
-            mock_client_class.return_value.__aenter__.return_value = (
-                mock_client
-            )
+            mock_client_class.return_value.__aenter__.return_value = mock_client
 
             mock_response = MagicMock()
             mock_response.status_code = 200
             mock_response.json.return_value = {
                 "choices": [
-                    {
-                        "message": {
-                            "content": f"```bash\n{expected_command}\n```"
-                        }
-                    }
+                    {"message": {"content": f"```bash\n{expected_command}\n```"}}
                 ],
                 "usage": {
                     "prompt_tokens": 50,
@@ -142,18 +124,14 @@ class TestOpenRouterService:
             mock_client.post.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_generate_command_rate_limit(
-        self, openrouter_service, mock_api_key
-    ):
+    async def test_generate_command_rate_limit(self, openrouter_service, mock_api_key):
         """Test handling rate limit errors."""
         # Arrange
         prompt = "list files"
 
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
-            mock_client_class.return_value.__aenter__.return_value = (
-                mock_client
-            )
+            mock_client_class.return_value.__aenter__.return_value = mock_client
 
             mock_response = MagicMock()
             mock_response.status_code = 429
@@ -174,9 +152,7 @@ class TestOpenRouterService:
             assert "rate limit" in str(exc_info.value).lower()
 
     @pytest.mark.asyncio
-    async def test_explain_command_success(
-        self, openrouter_service, mock_api_key
-    ):
+    async def test_explain_command_success(self, openrouter_service, mock_api_key):
         """Test successful command explanation."""
         # Arrange
         command = "find /home -name '*.py' -type f"
@@ -184,9 +160,7 @@ class TestOpenRouterService:
 
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
-            mock_client_class.return_value.__aenter__.return_value = (
-                mock_client
-            )
+            mock_client_class.return_value.__aenter__.return_value = mock_client
 
             mock_response = MagicMock()
             mock_response.status_code = 200
@@ -204,19 +178,13 @@ class TestOpenRouterService:
             assert result["explanation"] == expected_explanation
 
     @pytest.mark.asyncio
-    async def test_api_timeout_handling(
-        self, openrouter_service, mock_api_key
-    ):
+    async def test_api_timeout_handling(self, openrouter_service, mock_api_key):
         """Test handling API timeout errors."""
         # Arrange
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
-            mock_client_class.return_value.__aenter__.return_value = (
-                mock_client
-            )
-            mock_client.post.side_effect = httpx.TimeoutException(
-                "Request timed out"
-            )
+            mock_client_class.return_value.__aenter__.return_value = mock_client
+            mock_client.post.side_effect = httpx.TimeoutException("Request timed out")
 
             # Act & Assert
             with pytest.raises(Exception) as exc_info:
@@ -347,9 +315,7 @@ class TestAIEndpoints:
             "model": "claude-3-haiku",
         }
 
-        with patch(
-            "app.api.ai.service.AIService.suggest_command"
-        ) as mock_suggest:
+        with patch("app.api.ai.service.AIService.suggest_command") as mock_suggest:
             mock_suggest.return_value = CommandSuggestionResponse(
                 command="ls -la",
                 explanation="Lists files with details",
@@ -377,9 +343,7 @@ class TestAIEndpoints:
             "api_key": "test-key",
         }
 
-        with patch(
-            "app.api.ai.service.AIService.explain_command"
-        ) as mock_explain:
+        with patch("app.api.ai.service.AIService.explain_command") as mock_explain:
             mock_explain.return_value = ExplainCommandResponse(
                 explanation="Searches for 'pattern' recursively",
                 safety_level="safe",
@@ -398,9 +362,7 @@ class TestAIEndpoints:
             assert data["safety_level"] == "safe"
 
     @pytest.mark.asyncio
-    async def test_ai_endpoint_without_api_key(
-        self, test_client, auth_headers
-    ):
+    async def test_ai_endpoint_without_api_key(self, test_client, auth_headers):
         """Test AI endpoint without user API key."""
         # Arrange
         request_data = {
@@ -418,9 +380,7 @@ class TestAIEndpoints:
         assert "api_key" in response.json()["detail"].lower()
 
     @pytest.mark.asyncio
-    async def test_ai_endpoint_invalid_api_key(
-        self, test_client, auth_headers
-    ):
+    async def test_ai_endpoint_invalid_api_key(self, test_client, auth_headers):
         """Test AI endpoint with invalid API key."""
         # Arrange
         request_data = {"prompt": "list files", "api_key": "invalid-key"}

@@ -78,9 +78,7 @@ class TestSyncService:
             )
 
             # Act
-            result = await sync_service.create_sync_data(
-                user_id, sample_sync_data
-            )
+            result = await sync_service.create_sync_data(user_id, sample_sync_data)
 
             # Assert
             assert result.sync_type == "command_history"
@@ -88,9 +86,7 @@ class TestSyncService:
             mock_repo.create.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_sync_data_conflict_detection(
-        self, sync_service, sample_sync_data
-    ):
+    async def test_sync_data_conflict_detection(self, sync_service, sample_sync_data):
         """Test detecting sync conflicts."""
         # Arrange
         user_id = "user-123"
@@ -138,15 +134,11 @@ class TestSyncService:
         )
 
         # Assert
-        assert (
-            merged["data"]["theme"] == "light"
-        )  # Remote wins (later timestamp)
+        assert merged["data"]["theme"] == "light"  # Remote wins (later timestamp)
         assert merged["data"]["font_size"] == 16
 
     @pytest.mark.asyncio
-    async def test_real_time_sync_notification(
-        self, sync_service, mock_redis_client
-    ):
+    async def test_real_time_sync_notification(self, sync_service, mock_redis_client):
         """Test real-time sync notifications via Redis pub/sub."""
         # Arrange
         user_id = "user-123"
@@ -197,9 +189,7 @@ class TestSyncService:
             ]
 
             # Act
-            pending_sync = await sync_service.get_pending_sync(
-                user_id, device_id
-            )
+            pending_sync = await sync_service.get_pending_sync(user_id, device_id)
 
             # Assert
             assert len(pending_sync) == 2
@@ -272,9 +262,7 @@ class TestCommandHistorySync:
         ]
 
         # Act
-        result = await command_sync_service.sync_commands(
-            user_id, duplicate_commands
-        )
+        result = await command_sync_service.sync_commands(user_id, duplicate_commands)
 
         # Assert
         assert result.synced_count == 1  # Should deduplicate
@@ -333,9 +321,7 @@ class TestSSHProfileSync:
         )
 
         # Assert
-        assert (
-            result["host"] == "new.example.com"
-        )  # Remote wins (later timestamp)
+        assert result["host"] == "new.example.com"  # Remote wins (later timestamp)
 
     @pytest.mark.asyncio
     async def test_ssh_key_sync_security(self, ssh_sync_service):
@@ -357,9 +343,7 @@ class TestSSHProfileSync:
 
         # Assert
         assert "private_key" not in result.synced_data[0]
-        assert (
-            result.synced_data[0]["public_key"] == ssh_key_data["public_key"]
-        )
+        assert result.synced_data[0]["public_key"] == ssh_key_data["public_key"]
 
 
 class TestUserSettingsSync:
@@ -384,9 +368,7 @@ class TestUserSettingsSync:
         }
 
         # Act
-        result = await settings_sync_service.sync_settings(
-            user_id, settings_update
-        )
+        result = await settings_sync_service.sync_settings(user_id, settings_update)
 
         # Assert
         assert result.updated_settings == [
@@ -452,9 +434,7 @@ class TestSyncConflictResolution:
         """Test user choice conflict resolution."""
         # Arrange
         local_data = {"ssh_profiles": [{"name": "server1", "host": "old.com"}]}
-        remote_data = {
-            "ssh_profiles": [{"name": "server1", "host": "new.com"}]
-        }
+        remote_data = {"ssh_profiles": [{"name": "server1", "host": "new.com"}]}
         user_choice = "local"
 
         # Act

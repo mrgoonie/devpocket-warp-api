@@ -175,9 +175,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         if request.url.path.startswith("/api/"):
             if "Cache-Control" not in response.headers:
                 # API responses should not be cached by default
-                response.headers[
-                    "Cache-Control"
-                ] = "no-cache, no-store, must-revalidate"
+                response.headers["Cache-Control"] = (
+                    "no-cache, no-store, must-revalidate"
+                )
                 response.headers["Pragma"] = "no-cache"
                 response.headers["Expires"] = "0"
 
@@ -187,9 +187,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
             # Additional security for sensitive endpoints
             if request.url.path in ["/api/auth/login", "/api/auth/register"]:
-                response.headers[
-                    "X-Robots-Tag"
-                ] = "noindex, nofollow, noarchive, nosnippet"
+                response.headers["X-Robots-Tag"] = (
+                    "noindex, nofollow, noarchive, nosnippet"
+                )
 
         # Add API versioning header
         response.headers["X-API-Version"] = settings.app_version

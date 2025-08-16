@@ -151,9 +151,7 @@ class AIService:
             # Cache the response
             self._cache_response(cache_key, response.model_dump())
 
-            logger.info(
-                f"Command suggestions generated for user {user.username}"
-            )
+            logger.info(f"Command suggestions generated for user {user.username}")
             return response
 
         except Exception as e:
@@ -204,18 +202,14 @@ class AIService:
                 model_used=ai_response.model,
                 response_time_ms=ai_response.response_time_ms,
                 tokens_used=ai_response.usage,
-                confidence_score=self._calculate_explanation_confidence(
-                    explanation
-                ),
+                confidence_score=self._calculate_explanation_confidence(explanation),
                 timestamp=ai_response.timestamp,
             )
 
             # Cache the response
             self._cache_response(cache_key, response.model_dump())
 
-            logger.info(
-                f"Command explanation generated for user {user.username}"
-            )
+            logger.info(f"Command explanation generated for user {user.username}")
             return response
 
         except Exception as e:
@@ -269,9 +263,11 @@ class AIService:
             response = ErrorAnalysisResponse(
                 analysis=analysis,
                 original_command=request.command,
-                error_summary=request.error_output[:200] + "..."
-                if len(request.error_output) > 200
-                else request.error_output,
+                error_summary=(
+                    request.error_output[:200] + "..."
+                    if len(request.error_output) > 200
+                    else request.error_output
+                ),
                 model_used=ai_response.model,
                 response_time_ms=ai_response.response_time_ms,
                 tokens_used=ai_response.usage,
@@ -334,18 +330,14 @@ class AIService:
                 model_used=ai_response.model,
                 response_time_ms=ai_response.response_time_ms,
                 tokens_used=ai_response.usage,
-                confidence_score=self._calculate_optimization_confidence(
-                    optimization
-                ),
+                confidence_score=self._calculate_optimization_confidence(optimization),
                 timestamp=ai_response.timestamp,
             )
 
             # Cache the response
             self._cache_response(cache_key, response.model_dump())
 
-            logger.info(
-                f"Command optimization generated for user {user.username}"
-            )
+            logger.info(f"Command optimization generated for user {user.username}")
             return response
 
         except Exception as e:
@@ -355,9 +347,7 @@ class AIService:
                 detail=f"Failed to optimize command: {str(e)}",
             )
 
-    async def get_available_models(
-        self, api_key: str
-    ) -> AvailableModelsResponse:
+    async def get_available_models(self, api_key: str) -> AvailableModelsResponse:
         """Get list of available AI models."""
         try:
             models_data = await self.openrouter.get_available_models(api_key)
@@ -370,13 +360,9 @@ class AIService:
                     description=model_data["description"],
                     context_length=model_data["context_length"],
                     pricing=model_data["pricing"],
-                    provider=model_data.get("top_provider", {}).get(
-                        "name", "Unknown"
-                    ),
+                    provider=model_data.get("top_provider", {}).get("name", "Unknown"),
                     architecture=model_data["architecture"],
-                    performance_tier=self._classify_model_performance(
-                        model_data
-                    ),
+                    performance_tier=self._classify_model_performance(model_data),
                 )
                 models.append(model)
 
@@ -419,17 +405,11 @@ class AIService:
             for i, req_data in enumerate(request.requests):
                 try:
                     # Process based on service type
-                    if (
-                        request.service_type
-                        == AIServiceType.COMMAND_SUGGESTION
-                    ):
+                    if request.service_type == AIServiceType.COMMAND_SUGGESTION:
                         result = await self._process_batch_suggestion(
                             request.api_key, req_data
                         )
-                    elif (
-                        request.service_type
-                        == AIServiceType.COMMAND_EXPLANATION
-                    ):
+                    elif request.service_type == AIServiceType.COMMAND_EXPLANATION:
                         result = await self._process_batch_explanation(
                             request.api_key, req_data
                         )
@@ -454,14 +434,11 @@ class AIService:
                     total_tokens += sum(result.get("tokens_used", {}).values())
 
                 except Exception as e:
-                    results.append(
-                        {"index": i, "status": "error", "error": str(e)}
-                    )
+                    results.append({"index": i, "status": "error", "error": str(e)})
                     error_count += 1
 
             total_time = int(
-                (datetime.now(timezone.utc) - start_time).total_seconds()
-                * 1000
+                (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
             )
 
             return BatchAIResponse(
@@ -495,18 +472,16 @@ class AIService:
         """Get cached response if available and not expired."""
         if cache_key in self._response_cache:
             cached_data = self._response_cache[cache_key]
-            if datetime.now(timezone.utc) - cached_data[
-                "timestamp"
-            ] < timedelta(seconds=self._cache_ttl):
+            if datetime.now(timezone.utc) - cached_data["timestamp"] < timedelta(
+                seconds=self._cache_ttl
+            ):
                 return cached_data["response"]
             else:
                 # Remove expired cache
                 del self._response_cache[cache_key]
         return None
 
-    def _cache_response(
-        self, cache_key: str, response_data: Dict[str, Any]
-    ) -> None:
+    def _cache_response(self, cache_key: str, response_data: Dict[str, Any]) -> None:
         """Cache response data."""
         self._response_cache[cache_key] = {
             "response": response_data,
@@ -531,18 +506,14 @@ class AIService:
                 commands_data = data.get("commands", [])
             else:
                 # Parse plain text response
-                commands_data = self._parse_text_suggestions(
-                    ai_response.content
-                )
+                commands_data = self._parse_text_suggestions(ai_response.content)
 
             for cmd_data in commands_data[:max_suggestions]:
                 suggestion = CommandSuggestion(
                     command=cmd_data.get("command", ""),
                     description=cmd_data.get("description", ""),
                     confidence=self._assess_confidence(cmd_data),
-                    safety_level=self._assess_safety(
-                        cmd_data.get("command", "")
-                    ),
+                    safety_level=self._assess_safety(cmd_data.get("command", "")),
                     category=cmd_data.get("category", "general"),
                     complexity=cmd_data.get("complexity", "medium"),
                     examples=cmd_data.get("examples", []),
@@ -552,9 +523,7 @@ class AIService:
                 suggestions.append(suggestion)
 
         except Exception as e:
-            logger.warning(
-                f"Failed to parse AI suggestions, using fallback: {e}"
-            )
+            logger.warning(f"Failed to parse AI suggestions, using fallback: {e}")
             # Fallback: create a single suggestion from the response
             suggestions = [
                 CommandSuggestion(
@@ -581,17 +550,15 @@ class AIService:
 
             explanation = CommandExplanation(
                 command=original_command,
-                summary=content.split("\n")[0]
-                if content
-                else "No explanation available",
+                summary=(
+                    content.split("\n")[0] if content else "No explanation available"
+                ),
                 detailed_explanation=content,
                 components=self._extract_command_components(original_command),
-                examples=self._extract_examples(content)
-                if include_examples
-                else [],
-                alternatives=self._extract_alternatives(content)
-                if include_alternatives
-                else [],
+                examples=self._extract_examples(content) if include_examples else [],
+                alternatives=(
+                    self._extract_alternatives(content) if include_alternatives else []
+                ),
             )
 
             return explanation
@@ -628,9 +595,7 @@ class AIService:
                 analysis.immediate_fixes = self._extract_solutions(content)
 
             if include_prevention:
-                analysis.prevention_tips = self._extract_prevention_tips(
-                    content
-                )
+                analysis.prevention_tips = self._extract_prevention_tips(content)
 
             return analysis
 
@@ -693,9 +658,7 @@ class AIService:
             ConfidenceLevel.LOW: 0.3,
         }
 
-        scores = [
-            confidence_values.get(s.confidence, 0.5) for s in suggestions
-        ]
+        scores = [confidence_values.get(s.confidence, 0.5) for s in suggestions]
         return sum(scores) / len(scores)
 
     def _calculate_explanation_confidence(
@@ -787,13 +750,9 @@ class AIService:
         """Assess error severity."""
         error_lower = error_output.lower()
 
-        if any(
-            word in error_lower for word in ["critical", "fatal", "corrupted"]
-        ):
+        if any(word in error_lower for word in ["critical", "fatal", "corrupted"]):
             return "critical"
-        elif any(
-            word in error_lower for word in ["error", "failed", "denied"]
-        ):
+        elif any(word in error_lower for word in ["error", "failed", "denied"]):
             return "high"
         elif any(word in error_lower for word in ["warning", "deprecated"]):
             return "medium"
@@ -837,9 +796,7 @@ class AIService:
 
         return suggestions[:5]  # Limit to 5 suggestions
 
-    def _extract_command_components(
-        self, command: str
-    ) -> List[Dict[str, str]]:
+    def _extract_command_components(self, command: str) -> List[Dict[str, str]]:
         """Extract command components."""
         # Simple component extraction
         parts = command.split()
@@ -914,9 +871,7 @@ class AIService:
         lines = content.split("\n")
 
         for line in lines:
-            if any(
-                word in line.lower() for word in ["solution", "fix", "try"]
-            ):
+            if any(word in line.lower() for word in ["solution", "fix", "try"]):
                 solutions.append(
                     {
                         "solution": line.strip(),
@@ -932,9 +887,7 @@ class AIService:
         lines = content.split("\n")
 
         for line in lines:
-            if any(
-                word in line.lower() for word in ["prevent", "avoid", "tip"]
-            ):
+            if any(word in line.lower() for word in ["prevent", "avoid", "tip"]):
                 tips.append(line.strip())
 
         return tips[:3]  # Limit to 3 tips

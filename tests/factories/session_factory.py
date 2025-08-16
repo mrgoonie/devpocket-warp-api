@@ -32,16 +32,12 @@ class SessionFactory(factory.Factory):
             "android": fake.random_element(
                 ["Samsung Galaxy", "Google Pixel", "OnePlus", "Xiaomi"]
             ),
-            "web": fake.random_element(
-                ["Chrome", "Firefox", "Safari", "Edge"]
-            ),
+            "web": fake.random_element(["Chrome", "Firefox", "Safari", "Edge"]),
         }.get(obj.device_type, "Unknown Device")
     )
 
     # Session metadata
-    session_name = factory.LazyFunction(
-        lambda: fake.word().title() + " Session"
-    )
+    session_name = factory.LazyFunction(lambda: fake.word().title() + " Session")
     session_type = fuzzy.FuzzyChoice(["terminal", "ssh", "pty"])
 
     # Connection information
@@ -123,9 +119,7 @@ class WebSessionFactory(SessionFactory):
 
     device_type = "web"
     device_name = "Chrome Browser"
-    user_agent = (
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
-    )
+    user_agent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
 
 
 class MobileSessionFactory(SessionFactory):

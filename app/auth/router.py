@@ -246,9 +246,7 @@ async def login_user(
             user = await user_repo.get_by_email(form_data.username)
 
         # Check if user exists and password is correct
-        if not user or not verify_password(
-            form_data.password, user.password_hash
-        ):
+        if not user or not verify_password(form_data.password, user.password_hash):
             # Increment failed login attempts if user exists
             if user:
                 user.increment_failed_login()
@@ -424,7 +422,7 @@ async def logout_user(
     description="Get current authenticated user information",
 )
 async def get_current_user_info(
-    current_user: Annotated[User, Depends(get_current_active_user)]
+    current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> UserResponse:
     """Get current user information."""
     return UserResponse.from_orm(current_user)
@@ -584,7 +582,7 @@ async def change_password(
     description="Get current account lock status and failed login attempts",
 )
 async def get_account_status(
-    current_user: Annotated[User, Depends(get_current_user)]
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> AccountLockInfo:
     """Get account lock status information."""
     return AccountLockInfo(

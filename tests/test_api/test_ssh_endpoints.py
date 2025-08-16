@@ -55,15 +55,11 @@ class TestSSHProfileEndpoints:
             "username": "user",
         }
 
-        response = await async_client.post(
-            "/api/ssh/profiles", json=profile_data
-        )
+        response = await async_client.post("/api/ssh/profiles", json=profile_data)
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
-    async def test_create_ssh_profile_invalid_data(
-        self, async_client, auth_headers
-    ):
+    async def test_create_ssh_profile_invalid_data(self, async_client, auth_headers):
         """Test SSH profile creation with invalid data."""
         invalid_data = {
             "name": "",  # Empty name
@@ -89,9 +85,7 @@ class TestSSHProfileEndpoints:
         test_session.add_all([profile1, profile2])
         await test_session.commit()
 
-        response = await async_client.get(
-            "/api/ssh/profiles", headers=auth_headers
-        )
+        response = await async_client.get("/api/ssh/profiles", headers=auth_headers)
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -103,9 +97,7 @@ class TestSSHProfileEndpoints:
 
     async def test_get_ssh_profiles_empty(self, async_client, auth_headers):
         """Test getting SSH profiles when user has none."""
-        response = await async_client.get(
-            "/api/ssh/profiles", headers=auth_headers
-        )
+        response = await async_client.get("/api/ssh/profiles", headers=auth_headers)
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -283,9 +275,7 @@ class TestSSHProfileEndpoints:
 class TestSSHKeyEndpoints:
     """Test SSH key management endpoints."""
 
-    async def test_create_ssh_key_success(
-        self, async_client, auth_headers, test_user
-    ):
+    async def test_create_ssh_key_success(self, async_client, auth_headers, test_user):
         """Test successful SSH key creation."""
         key_data = {
             "name": "My Development Key",
@@ -337,9 +327,7 @@ class TestSSHKeyEndpoints:
         test_session.add_all([key1, key2])
         await test_session.commit()
 
-        response = await async_client.get(
-            "/api/ssh/keys", headers=auth_headers
-        )
+        response = await async_client.get("/api/ssh/keys", headers=auth_headers)
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -545,9 +533,7 @@ class TestSSHConfigGeneration:
         self, async_client, auth_headers, test_user, test_session
     ):
         """Test generating SSH config for single profile."""
-        key = SSHKeyFactory(
-            user_id=test_user.id, file_path="/home/user/.ssh/id_rsa"
-        )
+        key = SSHKeyFactory(user_id=test_user.id, file_path="/home/user/.ssh/id_rsa")
         profile = SSHProfileFactory(
             user_id=test_user.id,
             ssh_key_id=key.id,
@@ -594,9 +580,7 @@ class TestSSHConfigGeneration:
         test_session.add_all([key1, key2, profile1, profile2])
         await test_session.commit()
 
-        response = await async_client.get(
-            "/api/ssh/config", headers=auth_headers
-        )
+        response = await async_client.get("/api/ssh/config", headers=auth_headers)
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -656,15 +640,9 @@ class TestSSHStatistics:
     ):
         """Test getting SSH key statistics."""
         # Create keys with different usage patterns
-        key1 = SSHKeyFactory(
-            user_id=test_user.id, usage_count=100, key_type="rsa"
-        )
-        key2 = SSHKeyFactory(
-            user_id=test_user.id, usage_count=50, key_type="ed25519"
-        )
-        key3 = SSHKeyFactory(
-            user_id=test_user.id, usage_count=25, key_type="ecdsa"
-        )
+        key1 = SSHKeyFactory(user_id=test_user.id, usage_count=100, key_type="rsa")
+        key2 = SSHKeyFactory(user_id=test_user.id, usage_count=50, key_type="ed25519")
+        key3 = SSHKeyFactory(user_id=test_user.id, usage_count=25, key_type="ecdsa")
 
         test_session.add_all([key1, key2, key3])
         await test_session.commit()

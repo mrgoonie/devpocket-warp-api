@@ -22,12 +22,8 @@ class UserFactory(factory.Factory):
     # Basic user information
     email = factory.Sequence(lambda n: f"user{n}@example.com")
     username = factory.Sequence(lambda n: f"user{n}")
-    hashed_password = factory.LazyFunction(
-        lambda: hash_password("TestPassword123!")
-    )
-    full_name = factory.LazyAttribute(
-        lambda obj: f"{obj.username.title()} User"
-    )
+    hashed_password = factory.LazyFunction(lambda: hash_password("TestPassword123!"))
+    full_name = factory.LazyAttribute(lambda obj: f"{obj.username.title()} User")
     role = UserRole.USER.value
 
     # Account status

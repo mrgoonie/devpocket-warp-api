@@ -29,9 +29,7 @@ class TestDbSeedScript:
 
         # Make it executable for testing
         script_path.chmod(0o755)
-        assert os.access(
-            script_path, os.X_OK
-        ), "db_seed.sh should be executable"
+        assert os.access(script_path, os.X_OK), "db_seed.sh should be executable"
 
     def test_script_syntax_is_valid(self, script_runner):
         """Test that the script has valid bash syntax."""
@@ -60,9 +58,7 @@ class TestDbSeedScript:
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open)
-    def test_seed_all_types_default(
-        self, mock_file, mock_run, script_runner, mock_env
-    ):
+    def test_seed_all_types_default(self, mock_file, mock_run, script_runner, mock_env):
         """Test seeding all types with default count."""
         mock_run.side_effect = [
             # db_utils.py test
@@ -96,9 +92,7 @@ class TestDbSeedScript:
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open)
-    def test_seed_ssh_connections(
-        self, mock_file, mock_run, script_runner, mock_env
-    ):
+    def test_seed_ssh_connections(self, mock_file, mock_run, script_runner, mock_env):
         """Test seeding SSH connections."""
         mock_run.side_effect = [
             # db_utils.py test
@@ -146,9 +140,7 @@ class TestDbSeedScript:
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open)
-    def test_seed_sync_data(
-        self, mock_file, mock_run, script_runner, mock_env
-    ):
+    def test_seed_sync_data(self, mock_file, mock_run, script_runner, mock_env):
         """Test seeding sync data."""
         mock_run.side_effect = [
             # db_utils.py test
@@ -163,9 +155,7 @@ class TestDbSeedScript:
         assert result.returncode == 0
 
     @patch("subprocess.run")
-    def test_database_connection_failure(
-        self, mock_run, script_runner, mock_env
-    ):
+    def test_database_connection_failure(self, mock_run, script_runner, mock_env):
         """Test handling of database connection failure."""
         # Mock failed database connection
         mock_run.return_value = MagicMock(returncode=1)
@@ -182,9 +172,7 @@ class TestDbSeedScript:
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open)
-    def test_seeding_script_failure(
-        self, mock_file, mock_run, script_runner, mock_env
-    ):
+    def test_seeding_script_failure(self, mock_file, mock_run, script_runner, mock_env):
         """Test handling of seeding script failure."""
         mock_run.side_effect = [
             # db_utils.py test - success
@@ -200,9 +188,7 @@ class TestDbSeedScript:
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open)
-    def test_stats_only_option(
-        self, mock_file, mock_run, script_runner, mock_env
-    ):
+    def test_stats_only_option(self, mock_file, mock_run, script_runner, mock_env):
         """Test the stats-only option."""
         mock_run.side_effect = [
             # db_utils.py test
@@ -218,9 +204,7 @@ class TestDbSeedScript:
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open)
-    def test_stats_after_seeding(
-        self, mock_file, mock_run, script_runner, mock_env
-    ):
+    def test_stats_after_seeding(self, mock_file, mock_run, script_runner, mock_env):
         """Test showing stats after seeding."""
         mock_run.side_effect = [
             # db_utils.py test
@@ -232,17 +216,13 @@ class TestDbSeedScript:
         ]
 
         with patch.dict(os.environ, mock_env):
-            result = script_runner.run_script(
-                "db_seed.sh", ["users", "10", "--stats"]
-            )
+            result = script_runner.run_script("db_seed.sh", ["users", "10", "--stats"])
 
         assert result.returncode == 0
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open)
-    def test_stats_script_failure(
-        self, mock_file, mock_run, script_runner, mock_env
-    ):
+    def test_stats_script_failure(self, mock_file, mock_run, script_runner, mock_env):
         """Test handling when stats script fails."""
         mock_run.side_effect = [
             # db_utils.py test
@@ -264,9 +244,7 @@ class TestDbSeedScript:
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open)
-    def test_argument_parsing_order(
-        self, mock_file, mock_run, script_runner, mock_env
-    ):
+    def test_argument_parsing_order(self, mock_file, mock_run, script_runner, mock_env):
         """Test that arguments are parsed correctly regardless of order."""
         mock_run.side_effect = [
             # db_utils.py test
@@ -303,18 +281,14 @@ class TestDbSeedScript:
         assert result.returncode == 0
 
     @patch("subprocess.run")
-    def test_virtual_environment_activation(
-        self, mock_run, script_runner, mock_env
-    ):
+    def test_virtual_environment_activation(self, mock_run, script_runner, mock_env):
         """Test virtual environment activation when available."""
         with patch("os.path.isdir") as mock_isdir:
             mock_isdir.return_value = True
             mock_run.return_value = MagicMock(returncode=0)
 
             with patch.dict(os.environ, mock_env):
-                result = script_runner.run_script(
-                    "db_seed.sh", ["--stats-only"]
-                )
+                result = script_runner.run_script("db_seed.sh", ["--stats-only"])
 
         assert result.returncode == 0
 
@@ -393,9 +367,7 @@ class TestDbSeedScript:
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open)
-    def test_stats_script_content(
-        self, mock_file, mock_run, script_runner, mock_env
-    ):
+    def test_stats_script_content(self, mock_file, mock_run, script_runner, mock_env):
         """Test that stats script content is properly generated."""
         mock_run.side_effect = [
             # db_utils.py test
@@ -429,14 +401,11 @@ class TestDbSeedScript:
                     MagicMock(returncode=0),
                 ]
 
-                result = script_runner.run_script(
-                    "db_seed.sh", [seed_type, "1"]
-                )
+                result = script_runner.run_script("db_seed.sh", [seed_type, "1"])
 
                 # Should not fail due to invalid seed type
                 assert (
-                    result.returncode == 0
-                    or "Invalid seed type" not in result.stderr
+                    result.returncode == 0 or "Invalid seed type" not in result.stderr
                 )
 
     @patch("subprocess.run")
@@ -459,9 +428,7 @@ class TestDbSeedScript:
         assert result.returncode != 0
 
     @patch("subprocess.run")
-    def test_working_directory_handling(
-        self, mock_run, script_runner, mock_env
-    ):
+    def test_working_directory_handling(self, mock_run, script_runner, mock_env):
         """Test that script handles working directory changes properly."""
         mock_run.return_value = MagicMock(returncode=0)
 
@@ -472,9 +439,7 @@ class TestDbSeedScript:
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open)
-    def test_cleanup_on_failure(
-        self, mock_file, mock_run, script_runner, mock_env
-    ):
+    def test_cleanup_on_failure(self, mock_file, mock_run, script_runner, mock_env):
         """Test that temporary files are cleaned up even on failure."""
         mock_run.side_effect = [
             # db_utils.py test
@@ -511,9 +476,7 @@ class TestDbSeedScript:
             mock_run.return_value = MagicMock(returncode=0)
 
             with patch.dict(os.environ, custom_env):
-                result = script_runner.run_script(
-                    "db_seed.sh", ["--stats-only"]
-                )
+                result = script_runner.run_script("db_seed.sh", ["--stats-only"])
 
         assert result.returncode == 0
 
@@ -547,9 +510,7 @@ class TestDbSeedScript:
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open)
-    def test_clean_force_option(
-        self, mock_file, mock_run, script_runner, mock_env
-    ):
+    def test_clean_force_option(self, mock_file, mock_run, script_runner, mock_env):
         """Test the --clean-force option skips confirmation."""
         mock_run.side_effect = [
             # db_utils.py test
@@ -596,16 +557,11 @@ class TestDbSeedScript:
             call.args[0] for call in mock_file().write.call_args_list
         )
         assert "ssh" in written_content.lower()
-        assert (
-            "DELETE FROM ssh_profiles" in written_content
-            or "ssh" in written_content
-        )
+        assert "DELETE FROM ssh_profiles" in written_content or "ssh" in written_content
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open)
-    def test_reset_database_option(
-        self, mock_file, mock_run, script_runner, mock_env
-    ):
+    def test_reset_database_option(self, mock_file, mock_run, script_runner, mock_env):
         """Test the --reset option resets entire database."""
         mock_run.side_effect = [
             # db_utils.py test
@@ -619,9 +575,7 @@ class TestDbSeedScript:
         # Mock user confirmation input
         with patch("builtins.input", return_value="y"):
             with patch.dict(os.environ, mock_env):
-                result = script_runner.run_script(
-                    "db_seed.sh", ["--reset", "all", "5"]
-                )
+                result = script_runner.run_script("db_seed.sh", ["--reset", "all", "5"])
 
         assert result.returncode == 0
         output = result.stdout + result.stderr
@@ -629,9 +583,7 @@ class TestDbSeedScript:
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open)
-    def test_reset_force_option(
-        self, mock_file, mock_run, script_runner, mock_env
-    ):
+    def test_reset_force_option(self, mock_file, mock_run, script_runner, mock_env):
         """Test the --reset-force option skips confirmation."""
         mock_run.side_effect = [
             # db_utils.py test
@@ -663,9 +615,7 @@ class TestDbSeedScript:
         ]
 
         with patch.dict(os.environ, mock_env):
-            result = script_runner.run_script(
-                "db_seed.sh", ["--upsert", "users", "10"]
-            )
+            result = script_runner.run_script("db_seed.sh", ["--upsert", "users", "10"])
 
         assert result.returncode == 0
 
@@ -681,9 +631,7 @@ class TestDbSeedScript:
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open)
-    def test_env_file_option(
-        self, mock_file, mock_run, script_runner, temp_dir
-    ):
+    def test_env_file_option(self, mock_file, mock_run, script_runner, temp_dir):
         """Test the --env-file option uses custom environment file."""
         # Create a custom env file
         custom_env_file = temp_dir / "custom.env"
@@ -748,9 +696,7 @@ class TestDbSeedScript:
         # Mock user cancellation
         with patch("builtins.input", return_value="n"):
             with patch.dict(os.environ, mock_env):
-                result = script_runner.run_script(
-                    "db_seed.sh", ["--reset", "all", "5"]
-                )
+                result = script_runner.run_script("db_seed.sh", ["--reset", "all", "5"])
 
         assert result.returncode == 0
         output = result.stdout + result.stderr
@@ -871,8 +817,7 @@ class TestDbSeedScript:
         assert "sample_commands" in written_content
         assert "exit_code" in written_content
         assert (
-            "ai_suggested" in written_content
-            or "was_ai_suggested" in written_content
+            "ai_suggested" in written_content or "was_ai_suggested" in written_content
         )
 
     @patch("subprocess.run")
@@ -1034,9 +979,7 @@ class TestDbSeedScript:
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open)
-    def test_option_combinations(
-        self, mock_file, mock_run, script_runner, mock_env
-    ):
+    def test_option_combinations(self, mock_file, mock_run, script_runner, mock_env):
         """Test various option combinations work correctly."""
         mock_run.side_effect = [
             # db_utils.py test
@@ -1121,15 +1064,11 @@ class TestDbSeedIntegration:
         }
 
         with patch.dict(os.environ, db_env):
-            result = script_runner.run_script(
-                "db_seed.sh", ["users", "5", "--stats"]
-            )
+            result = script_runner.run_script("db_seed.sh", ["users", "5", "--stats"])
 
         assert result.returncode == 0
         output = result.stdout + result.stderr
-        assert (
-            "Creating 5 sample users" in output or "Created 5 users" in output
-        )
+        assert "Creating 5 sample users" in output or "Created 5 users" in output
         assert "Database seeding completed" in output
 
     @pytest.mark.slow
@@ -1141,12 +1080,8 @@ class TestDbSeedIntegration:
 
         with patch.dict(os.environ, db_env):
             # Run twice to test upsert conflict handling
-            result1 = script_runner.run_script(
-                "db_seed.sh", ["--upsert", "users", "3"]
-            )
-            result2 = script_runner.run_script(
-                "db_seed.sh", ["--upsert", "users", "3"]
-            )
+            result1 = script_runner.run_script("db_seed.sh", ["--upsert", "users", "3"])
+            result2 = script_runner.run_script("db_seed.sh", ["--upsert", "users", "3"])
 
         assert result1.returncode == 0
         assert result2.returncode == 0
@@ -1208,7 +1143,4 @@ class TestDbSeedIntegration:
         output = result.stdout + result.stderr
         assert "Database cleaning completed" in output
         assert "Database seeding completed" in output
-        assert (
-            "Database statistics" in output
-            or "table statistics" in output.lower()
-        )
+        assert "Database statistics" in output or "table statistics" in output.lower()

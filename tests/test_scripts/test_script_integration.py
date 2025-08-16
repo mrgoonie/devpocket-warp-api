@@ -81,9 +81,7 @@ class TestScriptIntegration:
 
         for script_name in scripts:
             result = script_runner.run_script(script_name, ["--help"])
-            assert (
-                result.returncode == 0
-            ), f"Script {script_name} should provide help"
+            assert result.returncode == 0, f"Script {script_name} should provide help"
             assert (
                 "USAGE:" in result.stdout
             ), f"Script {script_name} help should contain usage"
@@ -180,9 +178,7 @@ class TestScriptIntegration:
 
         with patch("shutil.which", return_value="/usr/bin/pytest"):
             with patch.dict(os.environ, mock_env):
-                result1 = script_runner.run_script(
-                    "run_tests.sh", ["-t", "unit"]
-                )
+                result1 = script_runner.run_script("run_tests.sh", ["-t", "unit"])
 
         assert result1.returncode == 0
 
@@ -200,16 +196,12 @@ class TestScriptIntegration:
         with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
             with patch("os.path.exists", return_value=True):
                 with patch.dict(os.environ, mock_env):
-                    result2 = script_runner.run_script(
-                        "format_code.sh", ["--check"]
-                    )
+                    result2 = script_runner.run_script("format_code.sh", ["--check"])
 
         assert result2.returncode == 0
 
     @patch("subprocess.run")
-    def test_script_error_handling_chain(
-        self, mock_run, script_runner, mock_env
-    ):
+    def test_script_error_handling_chain(self, mock_run, script_runner, mock_env):
         """Test error handling when scripts fail in sequence."""
         # First script fails
         mock_run.return_value = MagicMock(returncode=1)
@@ -247,15 +239,11 @@ class TestScriptIntegration:
 
             # Run first script with env1
             with patch.dict(os.environ, env1):
-                result1 = script_runner.run_script(
-                    "format_code.sh", ["--stats-only"]
-                )
+                result1 = script_runner.run_script("format_code.sh", ["--stats-only"])
 
             # Run second script with env2
             with patch.dict(os.environ, env2):
-                result2 = script_runner.run_script(
-                    "format_code.sh", ["--stats-only"]
-                )
+                result2 = script_runner.run_script("format_code.sh", ["--stats-only"])
 
         assert result1.returncode == 0
         assert result2.returncode == 0
@@ -273,9 +261,7 @@ class TestScriptIntegration:
 
                 with patch("shutil.which", return_value="/usr/bin/tool"):
                     with patch("os.path.exists", return_value=True):
-                        result = script_runner.run_script(
-                            script_name, args or []
-                        )
+                        result = script_runner.run_script(script_name, args or [])
                         results.put((script_name, result.returncode))
 
         # Start multiple scripts concurrently
@@ -325,15 +311,11 @@ class TestScriptIntegration:
         for script_name, args in scripts_to_test:
             result = script_runner.run_script(script_name, args)
 
-            assert (
-                result.returncode == 0
-            ), f"Help for {script_name} should work"
+            assert result.returncode == 0, f"Help for {script_name} should work"
 
             # Check for consistent output patterns
             output = result.stdout
-            assert (
-                "USAGE:" in output
-            ), f"Script {script_name} should have usage section"
+            assert "USAGE:" in output, f"Script {script_name} should have usage section"
             assert (
                 "OPTIONS:" in output
             ), f"Script {script_name} should have options section"
@@ -360,9 +342,7 @@ class TestScriptIntegration:
 
                 # Check for consistent logging patterns
                 output = result.stdout + result.stderr
-                if (
-                    output
-                ):  # Some scripts may not produce output with mocked calls
+                if output:  # Some scripts may not produce output with mocked calls
                     # Look for timestamp patterns and log levels
                     has_logging = any(
                         level in output
@@ -393,9 +373,7 @@ class TestScriptIntegration:
 
             with patch("shutil.which", return_value="/usr/bin/tool"):
                 with patch("os.path.exists", return_value=True):
-                    result = script_runner.run_script(
-                        script_name, args, timeout=30
-                    )
+                    result = script_runner.run_script(script_name, args, timeout=30)
 
             execution_time = time.time() - start_time
 
@@ -463,9 +441,7 @@ class TestScriptIntegration:
 
         for script_name in help_tests:
             result = script_runner.run_script(script_name, ["--help"])
-            assert (
-                result.returncode == 0
-            ), f"Help for {script_name} should return 0"
+            assert result.returncode == 0, f"Help for {script_name} should return 0"
 
     def test_script_documentation_completeness(self, script_runner):
         """Test that all scripts have complete documentation."""
@@ -507,9 +483,7 @@ class TestScriptIntegration:
             with patch("os.remove") as mock_remove:
                 with patch.dict(os.environ, mock_env):
                     # Scripts that create temporary files
-                    result = script_runner.run_script(
-                        "db_seed.sh", ["--stats-only"]
-                    )
+                    result = script_runner.run_script("db_seed.sh", ["--stats-only"])
 
                 assert result.returncode == 0
 

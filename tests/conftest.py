@@ -67,9 +67,7 @@ async def _cleanup_test_data(engine):
 
         if tables:
             # Disable foreign key checks temporarily
-            await conn.execute(
-                text("SET session_replication_role = 'replica'")
-            )
+            await conn.execute(text("SET session_replication_role = 'replica'"))
 
             # Truncate all tables
             for table in tables:
@@ -253,9 +251,7 @@ async def test_user(user_repository, user_data) -> User:
 
     hashed_password = hash_password(user_data["password"])
     create_data = {k: v for k, v in user_data.items() if k != "password"}
-    user = await user_repository.create(
-        **create_data, hashed_password=hashed_password
-    )
+    user = await user_repository.create(**create_data, hashed_password=hashed_password)
     return user
 
 
@@ -288,8 +284,7 @@ async def premium_user(user_repository, user_data) -> User:
         is_verified=True,
         verified_at=datetime.now(timezone.utc),
         subscription_tier="premium",
-        subscription_expires_at=datetime.now(timezone.utc)
-        + timedelta(days=30),
+        subscription_expires_at=datetime.now(timezone.utc) + timedelta(days=30),
     )
     return user
 
@@ -412,6 +407,4 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "security: Security tests")
     config.addinivalue_line("markers", "performance: Performance tests")
     config.addinivalue_line("markers", "slow: Slow running tests")
-    config.addinivalue_line(
-        "markers", "external: Tests requiring external services"
-    )
+    config.addinivalue_line("markers", "external: Tests requiring external services")

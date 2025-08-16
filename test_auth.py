@@ -40,13 +40,9 @@ def test_password_security():
         is_strong_weak, errors_weak = is_password_strong(weak_password)
         is_strong_strong, errors_strong = is_password_strong(strong_password)
 
-        assert (
-            not is_strong_weak
-        ), "Weak password should not be considered strong"
+        assert not is_strong_weak, "Weak password should not be considered strong"
         assert is_strong_strong, "Strong password should be considered strong"
-        assert (
-            len(errors_weak) > 0
-        ), "Weak password should have validation errors"
+        assert len(errors_weak) > 0, "Weak password should have validation errors"
         assert (
             len(errors_strong) == 0
         ), "Strong password should have no validation errors"
@@ -98,9 +94,7 @@ def test_jwt_tokens():
         # Test access token creation
         access_token = create_access_token(user_data)
         assert access_token is not None, "Access token should be created"
-        assert (
-            len(access_token) > 10
-        ), "Access token should have reasonable length"
+        assert len(access_token) > 10, "Access token should have reasonable length"
 
         print("✓ Access token creation working")
 
@@ -129,9 +123,7 @@ def test_jwt_tokens():
 
         # Test token verification
         verified_payload = verify_token(access_token)
-        assert (
-            verified_payload is not None
-        ), "Token verification should succeed"
+        assert verified_payload is not None, "Token verification should succeed"
         assert (
             verified_payload["sub"] == user_data["sub"]
         ), "Verified payload should match"
@@ -189,12 +181,8 @@ def test_schemas():
         }
 
         user_create = UserCreate(**valid_user_data)
-        assert (
-            user_create.email == "test@example.com"
-        ), "Email should be set correctly"
-        assert (
-            user_create.username == "testuser"
-        ), "Username should be set correctly"
+        assert user_create.email == "test@example.com", "Email should be set correctly"
+        assert user_create.username == "testuser", "Username should be set correctly"
 
         print("✓ UserCreate schema validation working")
 
@@ -247,9 +235,7 @@ def main():
     print(f"Test Results: {passed}/{total} tests passed")
 
     if passed == total:
-        print(
-            "🎉 All tests passed! Authentication system is working correctly."
-        )
+        print("🎉 All tests passed! Authentication system is working correctly.")
         return True
     else:
         print("❌ Some tests failed. Please check the implementation.")

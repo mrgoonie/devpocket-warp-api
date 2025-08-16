@@ -245,9 +245,7 @@ def main():
                         failed_tests += 1
                 else:
                     # Skip complex tests that require extensive mocking
-                    print(
-                        f"   ⏭️  {test_name} (skipped - requires complex mocking)"
-                    )
+                    print(f"   ⏭️  {test_name} (skipped - requires complex mocking)")
 
         except Exception as e:
             print(f"Error processing {test_file}: {e}")

@@ -264,9 +264,7 @@ def is_token_blacklisted_sync(token: str) -> bool:
     return False
 
 
-async def blacklist_token(
-    token: str, expires_at: Optional[datetime] = None
-) -> None:
+async def blacklist_token(token: str, expires_at: Optional[datetime] = None) -> None:
     """
     Add a token to the blacklist.
 
@@ -285,9 +283,7 @@ async def blacklist_token(
                 payload = decode_token(token)
                 exp_timestamp = payload.get("exp")
                 if exp_timestamp:
-                    expires_at = datetime.fromtimestamp(
-                        exp_timestamp, tz=timezone.utc
-                    )
+                    expires_at = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
             except JWTError:
                 # If we can't decode the token, use a default expiration
                 expires_at = datetime.now(timezone.utc) + timedelta(days=1)

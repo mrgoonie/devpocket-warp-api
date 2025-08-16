@@ -30,11 +30,7 @@ class CommandRepository(BaseRepository[Command]):
         if status_filter:
             query = query.where(Command.status == status_filter)
 
-        query = (
-            query.order_by(desc(Command.created_at))
-            .offset(offset)
-            .limit(limit)
-        )
+        query = query.order_by(desc(Command.created_at)).offset(offset).limit(limit)
 
         result = await self.session.execute(query)
         return result.scalars().all()
@@ -59,11 +55,7 @@ class CommandRepository(BaseRepository[Command]):
         if search_term:
             query = query.where(Command.command.ilike(f"%{search_term}%"))
 
-        query = (
-            query.order_by(desc(Command.created_at))
-            .offset(offset)
-            .limit(limit)
-        )
+        query = query.order_by(desc(Command.created_at)).offset(offset).limit(limit)
 
         result = await self.session.execute(query)
         return result.scalars().all()
@@ -81,15 +73,11 @@ class CommandRepository(BaseRepository[Command]):
         if user_id:
             from app.models.session import Session
 
-            query = query.join(
-                Session, Command.session_id == Session.id
-            ).where(Session.user_id == user_id)
+            query = query.join(Session, Command.session_id == Session.id).where(
+                Session.user_id == user_id
+            )
 
-        query = (
-            query.order_by(desc(Command.created_at))
-            .offset(offset)
-            .limit(limit)
-        )
+        query = query.order_by(desc(Command.created_at)).offset(offset).limit(limit)
 
         result = await self.session.execute(query)
         return result.scalars().all()
@@ -105,16 +93,14 @@ class CommandRepository(BaseRepository[Command]):
         elif user_id:
             from app.models.session import Session
 
-            query = query.join(
-                Session, Command.session_id == Session.id
-            ).where(Session.user_id == user_id)
+            query = query.join(Session, Command.session_id == Session.id).where(
+                Session.user_id == user_id
+            )
 
         result = await self.session.execute(query)
         return result.scalars().all()
 
-    async def create_command(
-        self, session_id: str, command: str, **kwargs
-    ) -> Command:
+    async def create_command(self, session_id: str, command: str, **kwargs) -> Command:
         """Create a new command."""
         cmd = Command(session_id=session_id, command=command, **kwargs)
 
@@ -128,9 +114,7 @@ class CommandRepository(BaseRepository[Command]):
 
         return cmd
 
-    async def start_command_execution(
-        self, command_id: str
-    ) -> Optional[Command]:
+    async def start_command_execution(self, command_id: str) -> Optional[Command]:
         """Mark command as started."""
         command = await self.get_by_id(command_id)
         if command:
@@ -181,24 +165,18 @@ class CommandRepository(BaseRepository[Command]):
         limit: int = 100,
     ) -> List[Command]:
         """Search commands by command text."""
-        query = select(Command).where(
-            Command.command.ilike(f"%{search_term}%")
-        )
+        query = select(Command).where(Command.command.ilike(f"%{search_term}%"))
 
         if session_id:
             query = query.where(Command.session_id == session_id)
         elif user_id:
             from app.models.session import Session
 
-            query = query.join(
-                Session, Command.session_id == Session.id
-            ).where(Session.user_id == user_id)
+            query = query.join(Session, Command.session_id == Session.id).where(
+                Session.user_id == user_id
+            )
 
-        query = (
-            query.order_by(desc(Command.created_at))
-            .offset(offset)
-            .limit(limit)
-        )
+        query = query.order_by(desc(Command.created_at)).offset(offset).limit(limit)
 
         result = await self.session.execute(query)
         return result.scalars().all()
@@ -216,15 +194,11 @@ class CommandRepository(BaseRepository[Command]):
         if user_id:
             from app.models.session import Session
 
-            query = query.join(
-                Session, Command.session_id == Session.id
-            ).where(Session.user_id == user_id)
+            query = query.join(Session, Command.session_id == Session.id).where(
+                Session.user_id == user_id
+            )
 
-        query = (
-            query.order_by(desc(Command.created_at))
-            .offset(offset)
-            .limit(limit)
-        )
+        query = query.order_by(desc(Command.created_at)).offset(offset).limit(limit)
 
         result = await self.session.execute(query)
         return result.scalars().all()
@@ -238,15 +212,11 @@ class CommandRepository(BaseRepository[Command]):
         if user_id:
             from app.models.session import Session
 
-            query = query.join(
-                Session, Command.session_id == Session.id
-            ).where(Session.user_id == user_id)
+            query = query.join(Session, Command.session_id == Session.id).where(
+                Session.user_id == user_id
+            )
 
-        query = (
-            query.order_by(desc(Command.created_at))
-            .offset(offset)
-            .limit(limit)
-        )
+        query = query.order_by(desc(Command.created_at)).offset(offset).limit(limit)
 
         result = await self.session.execute(query)
         return result.scalars().all()
@@ -268,15 +238,11 @@ class CommandRepository(BaseRepository[Command]):
         elif user_id:
             from app.models.session import Session
 
-            query = query.join(
-                Session, Command.session_id == Session.id
-            ).where(Session.user_id == user_id)
+            query = query.join(Session, Command.session_id == Session.id).where(
+                Session.user_id == user_id
+            )
 
-        query = (
-            query.order_by(desc(Command.created_at))
-            .offset(offset)
-            .limit(limit)
-        )
+        query = query.order_by(desc(Command.created_at)).offset(offset).limit(limit)
 
         result = await self.session.execute(query)
         return result.scalars().all()
@@ -344,18 +310,15 @@ class CommandRepository(BaseRepository[Command]):
         ).group_by(Command.command)
 
         if user_id:
-            query = query.join(
-                Session, Command.session_id == Session.id
-            ).where(Session.user_id == user_id)
+            query = query.join(Session, Command.session_id == Session.id).where(
+                Session.user_id == user_id
+            )
 
         query = query.order_by(desc("usage_count")).limit(limit)
 
         result = await self.session.execute(query)
 
-        return [
-            {"command": row[0], "usage_count": row[1]}
-            for row in result.fetchall()
-        ]
+        return [{"command": row[0], "usage_count": row[1]} for row in result.fetchall()]
 
     async def cleanup_old_commands(
         self, days_old: int = 90, keep_successful: bool = True
@@ -366,13 +329,9 @@ class CommandRepository(BaseRepository[Command]):
         conditions = [Command.created_at < cutoff_date]
 
         if keep_successful:
-            conditions.extend(
-                [Command.status != "success", Command.exit_code != 0]
-            )
+            conditions.extend([Command.status != "success", Command.exit_code != 0])
 
-        result = await self.session.execute(
-            select(Command).where(and_(*conditions))
-        )
+        result = await self.session.execute(select(Command).where(and_(*conditions)))
 
         old_commands = result.scalars().all()
 

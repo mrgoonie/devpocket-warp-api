@@ -25,22 +25,16 @@ class Session(BaseModel):
     )
 
     # Device information
-    device_id: Mapped[str] = mapped_column(
-        String(255), nullable=False, index=True
-    )
+    device_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
 
     device_type: Mapped[str] = mapped_column(
         String(20), nullable=False, index=True
     )  # ios, android, web
 
-    device_name: Mapped[Optional[str]] = mapped_column(
-        String(100), nullable=True
-    )
+    device_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
     # Session metadata
-    session_name: Mapped[Optional[str]] = mapped_column(
-        String(100), nullable=True
-    )
+    session_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
     session_type: Mapped[str] = mapped_column(
         String(20),
@@ -76,9 +70,7 @@ class Session(BaseModel):
 
     ssh_port: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
-    ssh_username: Mapped[Optional[str]] = mapped_column(
-        String(100), nullable=True
-    )
+    ssh_username: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
     # Terminal configuration
     terminal_cols: Mapped[int] = mapped_column(

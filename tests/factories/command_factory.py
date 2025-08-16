@@ -46,9 +46,7 @@ class CommandFactory(factory.Factory):
     )
 
     # Command execution results
-    output = factory.LazyAttribute(
-        lambda obj: _generate_command_output(obj.command)
-    )
+    output = factory.LazyAttribute(lambda obj: _generate_command_output(obj.command))
     error_output = None
     exit_code = 0
 
@@ -63,9 +61,11 @@ class CommandFactory(factory.Factory):
         lambda: datetime.now(timezone.utc) - timedelta(seconds=1)
     )
     execution_time = factory.LazyAttribute(
-        lambda obj: (obj.completed_at - obj.started_at).total_seconds()
-        if obj.started_at and obj.completed_at
-        else None
+        lambda obj: (
+            (obj.completed_at - obj.started_at).total_seconds()
+            if obj.started_at and obj.completed_at
+            else None
+        )
     )
 
     # Command metadata
@@ -96,14 +96,10 @@ class CommandFactory(factory.Factory):
     ai_explanation = None
 
     # Command classification
-    command_type = factory.LazyAttribute(
-        lambda obj: _classify_command(obj.command)
-    )
+    command_type = factory.LazyAttribute(lambda obj: _classify_command(obj.command))
 
     # Security flags
-    is_sensitive = factory.LazyAttribute(
-        lambda obj: _check_sensitive(obj.command)
-    )
+    is_sensitive = factory.LazyAttribute(lambda obj: _check_sensitive(obj.command))
 
 
 class SuccessfulCommandFactory(CommandFactory):
@@ -178,9 +174,7 @@ class AISuggestedCommandFactory(CommandFactory):
     """Factory for AI-suggested Command."""
 
     was_ai_suggested = True
-    ai_explanation = factory.LazyAttribute(
-        lambda obj: f"AI suggested: {obj.command}"
-    )
+    ai_explanation = factory.LazyAttribute(lambda obj: f"AI suggested: {obj.command}")
     command = factory.LazyFunction(
         lambda: fake.random_element(
             [
@@ -370,8 +364,7 @@ def _classify_command(command: str) -> str:
     ):
         return "file_operation"
     elif any(
-        command_lower.startswith(cmd)
-        for cmd in ["ping", "curl", "wget", "ssh", "scp"]
+        command_lower.startswith(cmd) for cmd in ["ping", "curl", "wget", "ssh", "scp"]
     ):
         return "network"
     elif any(
@@ -380,8 +373,7 @@ def _classify_command(command: str) -> str:
     ):
         return "system"
     elif any(
-        command_lower.startswith(cmd)
-        for cmd in ["docker", "kubectl", "python", "node"]
+        command_lower.startswith(cmd) for cmd in ["docker", "kubectl", "python", "node"]
     ):
         return "development"
     else:

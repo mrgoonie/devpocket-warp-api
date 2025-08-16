@@ -133,30 +133,22 @@ class TestCurrentUser:
     @pytest.mark.asyncio
     async def test_get_current_user_no_token(self, test_session):
         """Test authentication without token."""
-        with pytest.raises(
-            AuthenticationError, match="Authentication token required"
-        ):
+        with pytest.raises(AuthenticationError, match="Authentication token required"):
             await get_current_user(test_session, None)
 
     @pytest.mark.asyncio
-    async def test_get_current_user_invalid_token(
-        self, test_session, mock_redis
-    ):
+    async def test_get_current_user_invalid_token(self, test_session, mock_redis):
         """Test authentication with invalid token."""
         set_redis_client(mock_redis)
         mock_redis.get.return_value = None
 
         invalid_token = "invalid.jwt.token"
 
-        with pytest.raises(
-            AuthenticationError, match="Invalid or expired token"
-        ):
+        with pytest.raises(AuthenticationError, match="Invalid or expired token"):
             await get_current_user(test_session, invalid_token)
 
     @pytest.mark.asyncio
-    async def test_get_current_user_blacklisted_token(
-        self, test_session, mock_redis
-    ):
+    async def test_get_current_user_blacklisted_token(self, test_session, mock_redis):
         """Test authentication with blacklisted token."""
         set_redis_client(mock_redis)
 
@@ -170,15 +162,11 @@ class TestCurrentUser:
         # Mock Redis to return blacklisted
         mock_redis.get.return_value = "blacklisted"
 
-        with pytest.raises(
-            AuthenticationError, match="Token has been revoked"
-        ):
+        with pytest.raises(AuthenticationError, match="Token has been revoked"):
             await get_current_user(test_session, token)
 
     @pytest.mark.asyncio
-    async def test_get_current_user_user_not_found(
-        self, test_session, mock_redis
-    ):
+    async def test_get_current_user_user_not_found(self, test_session, mock_redis):
         """Test authentication when user doesn't exist."""
         set_redis_client(mock_redis)
         mock_redis.get.return_value = None
@@ -190,9 +178,7 @@ class TestCurrentUser:
             await get_current_user(test_session, token)
 
     @pytest.mark.asyncio
-    async def test_get_current_user_malformed_token(
-        self, test_session, mock_redis
-    ):
+    async def test_get_current_user_malformed_token(self, test_session, mock_redis):
         """Test authentication with malformed token payload."""
         set_redis_client(mock_redis)
         mock_redis.get.return_value = None
@@ -226,9 +212,7 @@ class TestActiveUser:
         user = VerifiedUserFactory()
         user.is_active = False
 
-        with pytest.raises(
-            InactiveUserError, match="Account has been deactivated"
-        ):
+        with pytest.raises(InactiveUserError, match="Account has been deactivated"):
             await get_current_active_user(user)
 
     @pytest.mark.asyncio
@@ -238,9 +222,7 @@ class TestActiveUser:
         user.is_active = True
         user.is_verified = False
 
-        with pytest.raises(
-            InactiveUserError, match="Email verification required"
-        ):
+        with pytest.raises(InactiveUserError, match="Email verification required"):
             await get_current_active_user(user)
 
     @pytest.mark.asyncio
@@ -254,9 +236,7 @@ class TestActiveUser:
         for _ in range(5):
             user.increment_failed_login()
 
-        with pytest.raises(
-            InactiveUserError, match="Account is temporarily locked"
-        ):
+        with pytest.raises(InactiveUserError, match="Account is temporarily locked"):
             await get_current_active_user(user)
 
 
@@ -302,9 +282,7 @@ class TestOptionalUser:
 
         invalid_token = "invalid.jwt.token"
 
-        optional_user = await get_optional_current_user(
-            test_session, invalid_token
-        )
+        optional_user = await get_optional_current_user(test_session, invalid_token)
 
         assert optional_user is None
 
@@ -399,9 +377,7 @@ class TestUserFromToken:
         assert result_user.id == user.id
 
     @pytest.mark.asyncio
-    async def test_get_user_from_token_blacklisted(
-        self, test_session, mock_redis
-    ):
+    async def test_get_user_from_token_blacklisted(self, test_session, mock_redis):
         """Test getting user from blacklisted token."""
         set_redis_client(mock_redis)
 
@@ -413,9 +389,7 @@ class TestUserFromToken:
         assert result_user is None
 
     @pytest.mark.asyncio
-    async def test_get_user_from_token_invalid_token(
-        self, test_session, mock_redis
-    ):
+    async def test_get_user_from_token_invalid_token(self, test_session, mock_redis):
         """Test getting user from invalid token."""
         set_redis_client(mock_redis)
         mock_redis.get.return_value = None
@@ -427,9 +401,7 @@ class TestUserFromToken:
         assert result_user is None
 
     @pytest.mark.asyncio
-    async def test_get_user_from_token_inactive_user(
-        self, test_session, mock_redis
-    ):
+    async def test_get_user_from_token_inactive_user(self, test_session, mock_redis):
         """Test getting inactive user from token."""
         set_redis_client(mock_redis)
 
@@ -448,9 +420,7 @@ class TestUserFromToken:
         assert result_user is None
 
     @pytest.mark.asyncio
-    async def test_get_user_from_token_unverified_user(
-        self, test_session, mock_redis
-    ):
+    async def test_get_user_from_token_unverified_user(self, test_session, mock_redis):
         """Test getting unverified user from token."""
         set_redis_client(mock_redis)
 
@@ -554,15 +524,11 @@ class TestDependencyIntegration:
         assert current_user.id == user.id
 
         # Second step should fail
-        with pytest.raises(
-            InactiveUserError, match="Email verification required"
-        ):
+        with pytest.raises(InactiveUserError, match="Email verification required"):
             await get_current_active_user(current_user)
 
     @pytest.mark.asyncio
-    async def test_subscription_tier_with_auth_chain(
-        self, test_session, mock_redis
-    ):
+    async def test_subscription_tier_with_auth_chain(self, test_session, mock_redis):
         """Test subscription tier check with full auth chain."""
         set_redis_client(mock_redis)
 

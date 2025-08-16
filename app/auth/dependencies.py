@@ -147,7 +147,7 @@ async def get_current_user(
 
 
 async def get_current_active_user(
-    current_user: Annotated[User, Depends(get_current_user)]
+    current_user: Annotated[User, Depends(get_current_user)],
 ) -> User:
     """
     Get the current authenticated and active user.
@@ -162,21 +162,15 @@ async def get_current_active_user(
         InactiveUserError: If user account is inactive
     """
     if not current_user.is_active:
-        logger.warning(
-            f"Inactive user attempted access: {current_user.username}"
-        )
+        logger.warning(f"Inactive user attempted access: {current_user.username}")
         raise InactiveUserError("Account has been deactivated")
 
     if not current_user.is_verified:
-        logger.warning(
-            f"Unverified user attempted access: {current_user.username}"
-        )
+        logger.warning(f"Unverified user attempted access: {current_user.username}")
         raise InactiveUserError("Email verification required")
 
     if current_user.is_locked():
-        logger.warning(
-            f"Locked user attempted access: {current_user.username}"
-        )
+        logger.warning(f"Locked user attempted access: {current_user.username}")
         raise InactiveUserError("Account is temporarily locked")
 
     return current_user
@@ -242,7 +236,7 @@ def require_pro_tier() -> callable:
     """Dependency factory for Pro tier requirement."""
 
     async def _require_pro(
-        current_user: Annotated[User, Depends(get_current_active_user)]
+        current_user: Annotated[User, Depends(get_current_active_user)],
     ) -> User:
         return await require_subscription_tier("pro", current_user)
 
@@ -253,7 +247,7 @@ def require_team_tier() -> callable:
     """Dependency factory for Team tier requirement."""
 
     async def _require_team(
-        current_user: Annotated[User, Depends(get_current_active_user)]
+        current_user: Annotated[User, Depends(get_current_active_user)],
     ) -> User:
         return await require_subscription_tier("team", current_user)
 
@@ -264,7 +258,7 @@ def require_enterprise_tier() -> callable:
     """Dependency factory for Enterprise tier requirement."""
 
     async def _require_enterprise(
-        current_user: Annotated[User, Depends(get_current_active_user)]
+        current_user: Annotated[User, Depends(get_current_active_user)],
     ) -> User:
         return await require_subscription_tier("enterprise", current_user)
 

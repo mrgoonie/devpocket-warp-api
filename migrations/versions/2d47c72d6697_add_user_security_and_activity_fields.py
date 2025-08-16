@@ -5,6 +5,7 @@ Revises: 2f441b98e37b
 Create Date: 2025-08-16 20:15:00.000000
 
 """
+
 from typing import Sequence, Union
 
 from alembic import op
@@ -65,27 +66,21 @@ def upgrade() -> None:
     if not column_exists("users", "locked_until"):
         op.add_column(
             "users",
-            sa.Column(
-                "locked_until", sa.DateTime(timezone=True), nullable=True
-            ),
+            sa.Column("locked_until", sa.DateTime(timezone=True), nullable=True),
         )
 
     # Add activity tracking field (only if it doesn't exist)
     if not column_exists("users", "last_login_at"):
         op.add_column(
             "users",
-            sa.Column(
-                "last_login_at", sa.DateTime(timezone=True), nullable=True
-            ),
+            sa.Column("last_login_at", sa.DateTime(timezone=True), nullable=True),
         )
 
     # Add verification timestamp (only if it doesn't exist)
     if not column_exists("users", "verified_at"):
         op.add_column(
             "users",
-            sa.Column(
-                "verified_at", sa.DateTime(timezone=True), nullable=True
-            ),
+            sa.Column("verified_at", sa.DateTime(timezone=True), nullable=True),
         )
 
 

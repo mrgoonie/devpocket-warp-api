@@ -27,9 +27,7 @@ class TestDbMigrateScript:
 
         # Make it executable for testing
         script_path.chmod(0o755)
-        assert os.access(
-            script_path, os.X_OK
-        ), "db_migrate.sh should be executable"
+        assert os.access(script_path, os.X_OK), "db_migrate.sh should be executable"
 
     def test_script_syntax_is_valid(self, script_runner):
         """Test that the script has valid bash syntax."""
@@ -56,9 +54,7 @@ class TestDbMigrateScript:
         assert "DevPocket API - Database Migration Script" in result.stdout
 
     @patch("subprocess.run")
-    def test_migration_to_head_success(
-        self, mock_run, script_runner, mock_env
-    ):
+    def test_migration_to_head_success(self, mock_run, script_runner, mock_env):
         """Test successful migration to head."""
         # Mock successful subprocess calls
         mock_run.side_effect = [
@@ -80,9 +76,7 @@ class TestDbMigrateScript:
         assert result.returncode == 0
 
     @patch("subprocess.run")
-    def test_migration_specific_revision(
-        self, mock_run, script_runner, mock_env
-    ):
+    def test_migration_specific_revision(self, mock_run, script_runner, mock_env):
         """Test migration to a specific revision."""
         revision = "abc123"
         mock_run.side_effect = [
@@ -146,9 +140,7 @@ class TestDbMigrateScript:
         assert result.returncode == 0
 
     @patch("subprocess.run")
-    def test_database_connection_failure(
-        self, mock_run, script_runner, mock_env
-    ):
+    def test_database_connection_failure(self, mock_run, script_runner, mock_env):
         """Test handling of database connection failure."""
         # Mock failed database connection
         mock_run.return_value = MagicMock(returncode=1)
@@ -180,9 +172,7 @@ class TestDbMigrateScript:
         ]
 
         with patch.dict(os.environ, mock_env):
-            result = script_runner.run_script(
-                "db_migrate.sh", ["invalid_target"]
-            )
+            result = script_runner.run_script("db_migrate.sh", ["invalid_target"])
 
         assert result.returncode != 0
 
@@ -265,23 +255,17 @@ class TestDbMigrateScript:
         mock_run.return_value = MagicMock(returncode=0)
 
         with patch.dict(os.environ, mock_env):
-            result = script_runner.run_script(
-                "db_migrate.sh", ["--check-only"]
-            )
+            result = script_runner.run_script("db_migrate.sh", ["--check-only"])
 
         assert result.returncode == 0
 
     def test_unknown_option(self, script_runner):
         """Test handling of unknown options."""
-        result = script_runner.run_script(
-            "db_migrate.sh", ["--invalid-option"]
-        )
+        result = script_runner.run_script("db_migrate.sh", ["--invalid-option"])
         assert result.returncode != 0
 
     @patch("subprocess.run")
-    def test_virtual_environment_activation(
-        self, mock_run, script_runner, mock_env
-    ):
+    def test_virtual_environment_activation(self, mock_run, script_runner, mock_env):
         """Test virtual environment activation when available."""
         # Create a mock venv directory structure
         with patch("os.path.isdir") as mock_isdir:
@@ -289,16 +273,12 @@ class TestDbMigrateScript:
             mock_run.return_value = MagicMock(returncode=0)
 
             with patch.dict(os.environ, mock_env):
-                result = script_runner.run_script(
-                    "db_migrate.sh", ["--check-only"]
-                )
+                result = script_runner.run_script("db_migrate.sh", ["--check-only"])
 
         assert result.returncode == 0
 
     @patch("subprocess.run")
-    def test_current_migration_status_check(
-        self, mock_run, script_runner, mock_env
-    ):
+    def test_current_migration_status_check(self, mock_run, script_runner, mock_env):
         """Test that current migration status is checked."""
         mock_run.side_effect = [
             # db_utils.py test
@@ -346,9 +326,7 @@ class TestDbMigrateScript:
         mock_run.return_value = MagicMock(returncode=0)
 
         with patch.dict(os.environ, mock_env):
-            result = script_runner.run_script(
-                "db_migrate.sh", ["--check-only"]
-            )
+            result = script_runner.run_script("db_migrate.sh", ["--check-only"])
 
         assert result.returncode == 0
 
@@ -358,9 +336,7 @@ class TestDbMigrateScript:
         mock_run.return_value = MagicMock(returncode=0)
 
         with patch.dict(os.environ, mock_env):
-            result = script_runner.run_script(
-                "db_migrate.sh", ["--check-only"]
-            )
+            result = script_runner.run_script("db_migrate.sh", ["--check-only"])
 
         # Check for logging patterns
         output = result.stdout + result.stderr
@@ -368,9 +344,7 @@ class TestDbMigrateScript:
         assert "Starting database migration script" in output
 
     @patch("subprocess.run")
-    def test_generate_migration_failure(
-        self, mock_run, script_runner, mock_env
-    ):
+    def test_generate_migration_failure(self, mock_run, script_runner, mock_env):
         """Test handling of migration generation failure."""
         mock_run.side_effect = [
             # db_utils.py test - success
@@ -380,9 +354,7 @@ class TestDbMigrateScript:
         ]
 
         with patch.dict(os.environ, mock_env):
-            result = script_runner.run_script(
-                "db_migrate.sh", ["-g", "Test migration"]
-            )
+            result = script_runner.run_script("db_migrate.sh", ["-g", "Test migration"])
 
         assert result.returncode != 0
 
@@ -413,9 +385,7 @@ class TestDbMigrateScript:
         mock_run.return_value = MagicMock(returncode=0)
 
         with patch.dict(os.environ, custom_env):
-            result = script_runner.run_script(
-                "db_migrate.sh", ["--check-only"]
-            )
+            result = script_runner.run_script("db_migrate.sh", ["--check-only"])
 
         assert result.returncode == 0
 
@@ -443,9 +413,7 @@ class TestDbMigrateScript:
         assert "Dry run completed" in output
 
     @patch("subprocess.run")
-    def test_dry_run_with_specific_target(
-        self, mock_run, script_runner, mock_env
-    ):
+    def test_dry_run_with_specific_target(self, mock_run, script_runner, mock_env):
         """Test dry run with specific migration target."""
         target = "def456"
         mock_run.side_effect = [
@@ -458,9 +426,7 @@ class TestDbMigrateScript:
         ]
 
         with patch.dict(os.environ, mock_env):
-            result = script_runner.run_script(
-                "db_migrate.sh", ["--dry-run", target]
-            )
+            result = script_runner.run_script("db_migrate.sh", ["--dry-run", target])
 
         assert result.returncode == 0
         output = result.stdout + result.stderr
@@ -499,9 +465,7 @@ class TestDbMigrateScript:
         )
 
     @patch("subprocess.run")
-    def test_force_option_skips_confirmation(
-        self, mock_run, script_runner, mock_env
-    ):
+    def test_force_option_skips_confirmation(self, mock_run, script_runner, mock_env):
         """Test the --force option skips user confirmation."""
         mock_run.side_effect = [
             # db_utils.py test
@@ -558,9 +522,7 @@ class TestDbMigrateScript:
         assert "Environment file path required" in output
 
     @patch("subprocess.run")
-    def test_backup_creation_success(
-        self, mock_run, script_runner, mock_env, temp_dir
-    ):
+    def test_backup_creation_success(self, mock_run, script_runner, mock_env, temp_dir):
         """Test successful backup creation before migration."""
         # Mock pg_dump availability and success
         with patch("shutil.which", return_value="/usr/bin/pg_dump"):
@@ -583,16 +545,12 @@ class TestDbMigrateScript:
                 ]
 
                 with patch.dict(os.environ, mock_env):
-                    result = script_runner.run_script(
-                        "db_migrate.sh", ["--force"]
-                    )
+                    result = script_runner.run_script("db_migrate.sh", ["--force"])
 
                 assert result.returncode == 0
 
     @patch("subprocess.run")
-    def test_backup_creation_failure_warning(
-        self, mock_run, script_runner, mock_env
-    ):
+    def test_backup_creation_failure_warning(self, mock_run, script_runner, mock_env):
         """Test that backup failure shows warning but continues migration."""
         with patch("shutil.which", return_value="/usr/bin/pg_dump"):
             mock_run.side_effect = [
@@ -617,10 +575,7 @@ class TestDbMigrateScript:
 
             assert result.returncode == 0
             output = result.stdout + result.stderr
-            assert (
-                "Failed to create database backup" in output
-                or "WARN" in output
-            )
+            assert "Failed to create database backup" in output or "WARN" in output
 
     @patch("subprocess.run")
     def test_no_pg_dump_available(self, mock_run, script_runner, mock_env):
@@ -649,9 +604,7 @@ class TestDbMigrateScript:
             assert "pg_dump not found" in output or "skipping backup" in output
 
     @patch("subprocess.run")
-    def test_migration_verification_success(
-        self, mock_run, script_runner, mock_env
-    ):
+    def test_migration_verification_success(self, mock_run, script_runner, mock_env):
         """Test migration verification after successful migration."""
         target_revision = "def456"
         mock_run.side_effect = [
@@ -666,9 +619,7 @@ class TestDbMigrateScript:
             # alembic upgrade
             MagicMock(returncode=0),
             # alembic current (verification)
-            MagicMock(
-                returncode=0, stdout=target_revision[:12]
-            ),  # First 12 chars
+            MagicMock(returncode=0, stdout=target_revision[:12]),  # First 12 chars
         ]
 
         with patch.dict(os.environ, mock_env):
@@ -681,9 +632,7 @@ class TestDbMigrateScript:
         assert "Migration verification passed" in output
 
     @patch("subprocess.run")
-    def test_migration_verification_failure(
-        self, mock_run, script_runner, mock_env
-    ):
+    def test_migration_verification_failure(self, mock_run, script_runner, mock_env):
         """Test migration verification failure warning."""
         mock_run.side_effect = [
             # db_utils.py test
@@ -708,8 +657,7 @@ class TestDbMigrateScript:
         assert result.returncode == 0
         output = result.stdout + result.stderr
         assert (
-            "Migration verification failed" in output
-            or "target not reached" in output
+            "Migration verification failed" in output or "target not reached" in output
         )
 
     @patch("subprocess.run")
@@ -741,9 +689,7 @@ class TestDbMigrateScript:
 
         assert result.returncode == 0
         output = result.stdout + result.stderr
-        assert (
-            "Migration will change" in output or "Pending migrations" in output
-        )
+        assert "Migration will change" in output or "Pending migrations" in output
 
     @patch("subprocess.run")
     def test_no_migration_needed(self, mock_run, script_runner, mock_env):
@@ -766,24 +712,17 @@ class TestDbMigrateScript:
 
         assert result.returncode == 0
         output = result.stdout + result.stderr
-        assert (
-            "No migration needed" in output
-            or "database is up to date" in output
-        )
+        assert "No migration needed" in output or "database is up to date" in output
 
     def test_invalid_option_combinations(self, script_runner):
         """Test handling of invalid option combinations."""
         # Test conflicting options
-        result = script_runner.run_script(
-            "db_migrate.sh", ["--dry-run", "--force"]
-        )
+        result = script_runner.run_script("db_migrate.sh", ["--dry-run", "--force"])
         # This should work - force doesn't conflict with dry-run
         # But we test that script handles multiple options properly
 
         # Test unknown option
-        result = script_runner.run_script(
-            "db_migrate.sh", ["--unknown-option"]
-        )
+        result = script_runner.run_script("db_migrate.sh", ["--unknown-option"])
         assert result.returncode != 0
         output = result.stdout + result.stderr
         assert "Unknown option" in output
@@ -794,9 +733,7 @@ class TestDbMigrateScript:
         mock_run.return_value = MagicMock(returncode=0)
 
         with patch.dict(os.environ, mock_env):
-            result = script_runner.run_script(
-                "db_migrate.sh", ["--check-only"]
-            )
+            result = script_runner.run_script("db_migrate.sh", ["--check-only"])
 
         output = result.stdout + result.stderr
 
@@ -835,9 +772,7 @@ class TestDbMigrateIntegration:
         }
 
         with patch.dict(os.environ, db_env):
-            result = script_runner.run_script(
-                "db_migrate.sh", ["--check-only"]
-            )
+            result = script_runner.run_script("db_migrate.sh", ["--check-only"])
 
         assert result.returncode == 0
         output = result.stdout + result.stderr
@@ -884,9 +819,7 @@ class TestDbMigrateIntegration:
 
         with patch.dict(os.environ, db_env):
             # Test that we can get current status
-            result = script_runner.run_script(
-                "db_migrate.sh", ["--dry-run", "head"]
-            )
+            result = script_runner.run_script("db_migrate.sh", ["--dry-run", "head"])
 
         assert result.returncode == 0
         output = result.stdout + result.stderr

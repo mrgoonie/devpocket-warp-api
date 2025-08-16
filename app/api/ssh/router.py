@@ -80,13 +80,9 @@ async def create_ssh_profile(
 async def list_ssh_profiles(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-    active_only: bool = Query(
-        default=True, description="Show only active profiles"
-    ),
+    active_only: bool = Query(default=True, description="Show only active profiles"),
     offset: int = Query(default=0, ge=0, description="Pagination offset"),
-    limit: int = Query(
-        default=50, ge=1, le=100, description="Pagination limit"
-    ),
+    limit: int = Query(default=50, ge=1, le=100, description="Pagination limit"),
 ) -> SSHProfileListResponse:
     """Get user's SSH profiles with pagination."""
     service = SSHProfileService(db)
@@ -163,9 +159,7 @@ async def search_ssh_profiles(
 ) -> SSHProfileListResponse:
     """Search SSH profiles with filters and pagination."""
     service = SSHProfileService(db)
-    profiles, total = await service.search_profiles(
-        current_user, search_request
-    )
+    profiles, total = await service.search_profiles(current_user, search_request)
 
     return SSHProfileListResponse(
         profiles=profiles,
@@ -219,13 +213,9 @@ async def create_ssh_key(
 async def list_ssh_keys(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-    active_only: bool = Query(
-        default=True, description="Show only active keys"
-    ),
+    active_only: bool = Query(default=True, description="Show only active keys"),
     offset: int = Query(default=0, ge=0, description="Pagination offset"),
-    limit: int = Query(
-        default=50, ge=1, le=100, description="Pagination limit"
-    ),
+    limit: int = Query(default=50, ge=1, le=100, description="Pagination limit"),
 ) -> SSHKeyListResponse:
     """Get user's SSH keys with pagination."""
     service = SSHKeyService(db)
@@ -233,9 +223,7 @@ async def list_ssh_keys(
         current_user, active_only=active_only, offset=offset, limit=limit
     )
 
-    return SSHKeyListResponse(
-        keys=keys, total=total, offset=offset, limit=limit
-    )
+    return SSHKeyListResponse(keys=keys, total=total, offset=offset, limit=limit)
 
 
 @router.get(
@@ -358,9 +346,7 @@ async def test_profile_connection(
     db: Annotated[AsyncSession, Depends(get_db)],
     ssh_key_id: str = Query(None, description="SSH key ID for authentication"),
     password: str = Body(None, description="Password for authentication"),
-    timeout: int = Query(
-        default=30, ge=5, le=60, description="Connection timeout"
-    ),
+    timeout: int = Query(default=30, ge=5, le=60, description="Connection timeout"),
 ) -> SSHConnectionTestResponse:
     """Test SSH connection for a specific profile."""
     # Create test request for the profile
@@ -388,9 +374,7 @@ async def test_profile_connection(
 async def bulk_delete_profiles(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-    profile_ids: List[str] = Body(
-        ..., description="List of profile IDs to delete"
-    ),
+    profile_ids: List[str] = Body(..., description="List of profile IDs to delete"),
 ) -> BulkOperationResponse:
     """Delete multiple SSH profiles in a single operation."""
     service = SSHProfileService(db)

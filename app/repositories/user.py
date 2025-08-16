@@ -20,9 +20,7 @@ class UserRepository(BaseRepository[User]):
 
     async def get_by_email(self, email: str) -> Optional[User]:
         """Get user by email address."""
-        result = await self.session.execute(
-            select(User).where(User.email == email)
-        )
+        result = await self.session.execute(select(User).where(User.email == email))
         return result.scalar_one_or_none()
 
     async def get_by_username(self, username: str) -> Optional[User]:
@@ -32,9 +30,7 @@ class UserRepository(BaseRepository[User]):
         )
         return result.scalar_one_or_none()
 
-    async def get_by_email_or_username(
-        self, identifier: str
-    ) -> Optional[User]:
+    async def get_by_email_or_username(self, identifier: str) -> Optional[User]:
         """Get user by email or username."""
         result = await self.session.execute(
             select(User).where(
@@ -46,9 +42,7 @@ class UserRepository(BaseRepository[User]):
     async def get_with_settings(self, user_id: str) -> Optional[User]:
         """Get user with settings."""
         result = await self.session.execute(
-            select(User)
-            .where(User.id == user_id)
-            .options(selectinload(User.settings))
+            select(User).where(User.id == user_id).options(selectinload(User.settings))
         )
         return result.scalar_one_or_none()
 
@@ -90,9 +84,7 @@ class UserRepository(BaseRepository[User]):
 
         return user
 
-    async def is_email_taken(
-        self, email: str, exclude_user_id: str = None
-    ) -> bool:
+    async def is_email_taken(self, email: str, exclude_user_id: str = None) -> bool:
         """Check if email is already taken by another user."""
         query = select(func.count(User.id)).where(User.email == email)
 
@@ -114,9 +106,7 @@ class UserRepository(BaseRepository[User]):
         result = await self.session.execute(query)
         return result.scalar() > 0
 
-    async def get_active_users(
-        self, offset: int = 0, limit: int = 100
-    ) -> List[User]:
+    async def get_active_users(self, offset: int = 0, limit: int = 100) -> List[User]:
         """Get all active users."""
         result = await self.session.execute(
             select(User)

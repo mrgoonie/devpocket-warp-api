@@ -40,9 +40,7 @@ class SSHProfileRepository(BaseRepository[SSHProfile]):
         result = await self.session.execute(query)
         return result.scalars().all()
 
-    async def get_profile_with_key(
-        self, profile_id: str
-    ) -> Optional[SSHProfile]:
+    async def get_profile_with_key(self, profile_id: str) -> Optional[SSHProfile]:
         """Get SSH profile with SSH key loaded."""
         result = await self.session.execute(
             select(SSHProfile)
@@ -111,9 +109,7 @@ class SSHProfileRepository(BaseRepository[SSHProfile]):
             query = query.where(SSHProfile.user_id == user_id)
 
         query = (
-            query.order_by(desc(SSHProfile.last_used_at))
-            .offset(offset)
-            .limit(limit)
+            query.order_by(desc(SSHProfile.last_used_at)).offset(offset).limit(limit)
         )
 
         result = await self.session.execute(query)
@@ -155,15 +151,11 @@ class SSHProfileRepository(BaseRepository[SSHProfile]):
         )
         return result.scalars().all()
 
-    async def deactivate_profile(
-        self, profile_id: str
-    ) -> Optional[SSHProfile]:
+    async def deactivate_profile(self, profile_id: str) -> Optional[SSHProfile]:
         """Deactivate an SSH profile."""
         return await self.update(profile_id, is_active=False)
 
-    async def reactivate_profile(
-        self, profile_id: str
-    ) -> Optional[SSHProfile]:
+    async def reactivate_profile(self, profile_id: str) -> Optional[SSHProfile]:
         """Reactivate an SSH profile."""
         return await self.update(profile_id, is_active=True)
 
@@ -196,23 +188,17 @@ class SSHKeyRepository(BaseRepository[SSHKey]):
         result = await self.session.execute(query)
         return result.scalars().all()
 
-    async def get_key_by_fingerprint(
-        self, fingerprint: str
-    ) -> Optional[SSHKey]:
+    async def get_key_by_fingerprint(self, fingerprint: str) -> Optional[SSHKey]:
         """Get SSH key by fingerprint."""
         result = await self.session.execute(
             select(SSHKey).where(SSHKey.fingerprint == fingerprint)
         )
         return result.scalar_one_or_none()
 
-    async def get_key_by_name(
-        self, user_id: str, name: str
-    ) -> Optional[SSHKey]:
+    async def get_key_by_name(self, user_id: str, name: str) -> Optional[SSHKey]:
         """Get SSH key by name for a user."""
         result = await self.session.execute(
-            select(SSHKey).where(
-                and_(SSHKey.user_id == user_id, SSHKey.name == name)
-            )
+            select(SSHKey).where(and_(SSHKey.user_id == user_id, SSHKey.name == name))
         )
         return result.scalar_one_or_none()
 
@@ -234,9 +220,7 @@ class SSHKeyRepository(BaseRepository[SSHKey]):
         self, fingerprint: str, exclude_key_id: str = None
     ) -> bool:
         """Check if fingerprint already exists."""
-        query = select(func.count(SSHKey.id)).where(
-            SSHKey.fingerprint == fingerprint
-        )
+        query = select(func.count(SSHKey.id)).where(SSHKey.fingerprint == fingerprint)
 
         if exclude_key_id:
             query = query.where(SSHKey.id != exclude_key_id)
@@ -287,18 +271,14 @@ class SSHKeyRepository(BaseRepository[SSHKey]):
         """Get SSH keys by type."""
         result = await self.session.execute(
             select(SSHKey)
-            .where(
-                and_(SSHKey.user_id == user_id, SSHKey.key_type == key_type)
-            )
+            .where(and_(SSHKey.user_id == user_id, SSHKey.key_type == key_type))
             .order_by(desc(SSHKey.created_at))
             .offset(offset)
             .limit(limit)
         )
         return result.scalars().all()
 
-    async def get_most_used_keys(
-        self, user_id: str, limit: int = 10
-    ) -> List[SSHKey]:
+    async def get_most_used_keys(self, user_id: str, limit: int = 10) -> List[SSHKey]:
         """Get most frequently used SSH keys."""
         result = await self.session.execute(
             select(SSHKey)

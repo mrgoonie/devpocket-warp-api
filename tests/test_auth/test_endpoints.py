@@ -27,9 +27,7 @@ class TestRegistrationEndpoint:
             "full_name": "New User",
         }
 
-        response = await async_client.post(
-            "/api/auth/register", json=user_data
-        )
+        response = await async_client.post("/api/auth/register", json=user_data)
 
         assert response.status_code == status.HTTP_201_CREATED
         data = response.json()
@@ -42,9 +40,7 @@ class TestRegistrationEndpoint:
         assert data["is_verified"] is False  # Should start unverified
 
     @pytest.mark.asyncio
-    async def test_register_user_duplicate_email(
-        self, async_client, test_session
-    ):
+    async def test_register_user_duplicate_email(self, async_client, test_session):
         """Test registration with duplicate email."""
         # Create existing user
         existing_user = VerifiedUserFactory()
@@ -58,18 +54,14 @@ class TestRegistrationEndpoint:
             "full_name": "New User",
         }
 
-        response = await async_client.post(
-            "/api/auth/register", json=user_data
-        )
+        response = await async_client.post("/api/auth/register", json=user_data)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         data = response.json()
         assert "email" in data["detail"].lower()
 
     @pytest.mark.asyncio
-    async def test_register_user_duplicate_username(
-        self, async_client, test_session
-    ):
+    async def test_register_user_duplicate_username(self, async_client, test_session):
         """Test registration with duplicate username."""
         # Create existing user
         existing_user = VerifiedUserFactory()
@@ -83,9 +75,7 @@ class TestRegistrationEndpoint:
             "full_name": "New User",
         }
 
-        response = await async_client.post(
-            "/api/auth/register", json=user_data
-        )
+        response = await async_client.post("/api/auth/register", json=user_data)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         data = response.json()
@@ -101,9 +91,7 @@ class TestRegistrationEndpoint:
             "full_name": "New User",
         }
 
-        response = await async_client.post(
-            "/api/auth/register", json=user_data
-        )
+        response = await async_client.post("/api/auth/register", json=user_data)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         data = response.json()
@@ -119,9 +107,7 @@ class TestRegistrationEndpoint:
             "full_name": "New User",
         }
 
-        response = await async_client.post(
-            "/api/auth/register", json=user_data
-        )
+        response = await async_client.post("/api/auth/register", json=user_data)
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
@@ -133,9 +119,7 @@ class TestRegistrationEndpoint:
             # Missing username, password, full_name
         }
 
-        response = await async_client.post(
-            "/api/auth/register", json=incomplete_data
-        )
+        response = await async_client.post("/api/auth/register", json=incomplete_data)
 
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
 
@@ -299,9 +283,7 @@ class TestLoginEndpoint:
         assert "locked" in data["detail"].lower()
 
     @pytest.mark.asyncio
-    async def test_login_failed_attempt_tracking(
-        self, async_client, test_session
-    ):
+    async def test_login_failed_attempt_tracking(self, async_client, test_session):
         """Test failed login attempt tracking."""
         password = "SecurePass123!"
         user = VerifiedUserFactory()
@@ -333,13 +315,9 @@ class TestLogoutEndpoint:
 
     @pytest.mark.asyncio
     @pytest.mark.asyncio
-    async def test_logout_success(
-        self, async_client, auth_headers, mock_redis
-    ):
+    async def test_logout_success(self, async_client, auth_headers, mock_redis):
         """Test successful logout."""
-        response = await async_client.post(
-            "/api/auth/logout", headers=auth_headers
-        )
+        response = await async_client.post("/api/auth/logout", headers=auth_headers)
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -374,9 +352,7 @@ class TestRefreshTokenEndpoint:
 
         refresh_data = {"refresh_token": refresh_token}
 
-        response = await async_client.post(
-            "/api/auth/refresh", json=refresh_data
-        )
+        response = await async_client.post("/api/auth/refresh", json=refresh_data)
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -390,9 +366,7 @@ class TestRefreshTokenEndpoint:
         """Test refresh with invalid token."""
         refresh_data = {"refresh_token": "invalid.refresh.token"}
 
-        response = await async_client.post(
-            "/api/auth/refresh", json=refresh_data
-        )
+        response = await async_client.post("/api/auth/refresh", json=refresh_data)
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -407,9 +381,7 @@ class TestRefreshTokenEndpoint:
         access_token = create_access_token({"sub": user.id})
         refresh_data = {"refresh_token": access_token}
 
-        response = await async_client.post(
-            "/api/auth/refresh", json=refresh_data
-        )
+        response = await async_client.post("/api/auth/refresh", json=refresh_data)
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -445,9 +417,7 @@ class TestPasswordResetEndpoints:
         mock_send_email.assert_called_once_with(user.email)
 
     @pytest.mark.asyncio
-    async def test_request_password_reset_nonexistent_email(
-        self, async_client
-    ):
+    async def test_request_password_reset_nonexistent_email(self, async_client):
         """Test password reset request for non-existent email."""
         reset_data = {"email": "nonexistent@example.com"}
 
@@ -459,9 +429,7 @@ class TestPasswordResetEndpoints:
         assert response.status_code == status.HTTP_200_OK
 
     @pytest.mark.asyncio
-    async def test_confirm_password_reset_success(
-        self, async_client, test_session
-    ):
+    async def test_confirm_password_reset_success(self, async_client, test_session):
         """Test successful password reset confirmation."""
         user = VerifiedUserFactory()
         test_session.add(user)
@@ -577,9 +545,7 @@ class TestEmailVerificationEndpoints:
         assert "already verified" in data["detail"].lower()
 
     @pytest.mark.asyncio
-    async def test_confirm_email_verification_success(
-        self, async_client, test_session
-    ):
+    async def test_confirm_email_verification_success(self, async_client, test_session):
         """Test successful email verification confirmation."""
         user = UserFactory()
         user.is_verified = False
@@ -605,13 +571,9 @@ class TestEmailVerificationEndpoints:
         assert user.is_verified is True
 
     @pytest.mark.asyncio
-    async def test_confirm_email_verification_invalid_token(
-        self, async_client
-    ):
+    async def test_confirm_email_verification_invalid_token(self, async_client):
         """Test email verification with invalid token."""
-        response = await async_client.get(
-            "/api/auth/verify-email/invalid.token"
-        )
+        response = await async_client.get("/api/auth/verify-email/invalid.token")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         data = response.json()
@@ -625,9 +587,7 @@ class TestProtectedEndpoints:
 
     @pytest.mark.asyncio
     @pytest.mark.asyncio
-    async def test_protected_endpoint_with_auth(
-        self, async_client, auth_headers
-    ):
+    async def test_protected_endpoint_with_auth(self, async_client, auth_headers):
         """Test accessing protected endpoint with valid authentication."""
         response = await async_client.get("/api/auth/me", headers=auth_headers)
 
@@ -719,9 +679,7 @@ class TestRateLimiting:
                 "full_name": f"User {i}",
             }
 
-            response = await async_client.post(
-                "/api/auth/register", json=user_data
-            )
+            response = await async_client.post("/api/auth/register", json=user_data)
 
             if i < 5:
                 # Should succeed or fail with validation error

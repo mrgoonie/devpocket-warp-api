@@ -436,9 +436,7 @@ class TestSecurityEdgeCases:
             "sub": "test@example.com",
             "exp": datetime.now(timezone.utc) + timedelta(hours=1),
         }
-        wrong_algo_token = jose_jwt.encode(
-            payload, "wrong_secret", algorithm="HS512"
-        )
+        wrong_algo_token = jose_jwt.encode(payload, "wrong_secret", algorithm="HS512")
 
         with pytest.raises(JWTError):
             decode_token(wrong_algo_token)

@@ -73,9 +73,7 @@ async def validate_api_key(
     result = await service.validate_api_key(validation_request.api_key)
 
     if result.valid:
-        logger.info(
-            f"API key validated successfully for user {current_user.username}"
-        )
+        logger.info(f"API key validated successfully for user {current_user.username}")
     else:
         logger.warning(
             f"API key validation failed for user {current_user.username}: {result.error}"
@@ -134,18 +132,12 @@ async def suggest_command(
     service = AIService(db)
 
     try:
-        result = await service.suggest_command(
-            current_user, suggestion_request
-        )
-        logger.info(
-            f"Command suggestions generated for user {current_user.username}"
-        )
+        result = await service.suggest_command(current_user, suggestion_request)
+        logger.info(f"Command suggestions generated for user {current_user.username}")
         return result
 
     except Exception as e:
-        logger.error(
-            f"Command suggestion error for user {current_user.username}: {e}"
-        )
+        logger.error(f"Command suggestion error for user {current_user.username}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate command suggestions: {str(e)}",
@@ -167,18 +159,12 @@ async def explain_command(
     service = AIService(db)
 
     try:
-        result = await service.explain_command(
-            current_user, explanation_request
-        )
-        logger.info(
-            f"Command explanation generated for user {current_user.username}"
-        )
+        result = await service.explain_command(current_user, explanation_request)
+        logger.info(f"Command explanation generated for user {current_user.username}")
         return result
 
     except Exception as e:
-        logger.error(
-            f"Command explanation error for user {current_user.username}: {e}"
-        )
+        logger.error(f"Command explanation error for user {current_user.username}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to explain command: {str(e)}",
@@ -201,15 +187,11 @@ async def explain_error(
 
     try:
         result = await service.analyze_error(current_user, error_request)
-        logger.info(
-            f"Error analysis generated for user {current_user.username}"
-        )
+        logger.info(f"Error analysis generated for user {current_user.username}")
         return result
 
     except Exception as e:
-        logger.error(
-            f"Error analysis error for user {current_user.username}: {e}"
-        )
+        logger.error(f"Error analysis error for user {current_user.username}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to analyze error: {str(e)}",
@@ -231,12 +213,8 @@ async def optimize_command(
     service = AIService(db)
 
     try:
-        result = await service.optimize_command(
-            current_user, optimization_request
-        )
-        logger.info(
-            f"Command optimization generated for user {current_user.username}"
-        )
+        result = await service.optimize_command(current_user, optimization_request)
+        logger.info(f"Command optimization generated for user {current_user.username}")
         return result
 
     except Exception as e:
@@ -267,9 +245,7 @@ async def process_batch_requests(
     service = AIService(db)
 
     try:
-        result = await service.process_batch_requests(
-            current_user, batch_request
-        )
+        result = await service.process_batch_requests(current_user, batch_request)
         logger.info(
             f"Batch AI processing completed for user {current_user.username}: "
             f"{result.success_count} successful, {result.error_count} failed"
@@ -277,9 +253,7 @@ async def process_batch_requests(
         return result
 
     except Exception as e:
-        logger.error(
-            f"Batch AI processing error for user {current_user.username}: {e}"
-        )
+        logger.error(f"Batch AI processing error for user {current_user.username}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to process batch requests: {str(e)}",
@@ -408,9 +382,7 @@ async def quick_suggest(
             include_explanations=True,
         )
 
-        result = await service.suggest_command(
-            current_user, suggestion_request
-        )
+        result = await service.suggest_command(current_user, suggestion_request)
 
         # Return simplified response
         return {

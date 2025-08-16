@@ -104,18 +104,14 @@ class SSHClientService:
 
             # Run connection test in executor to avoid blocking
             loop = asyncio.get_event_loop()
-            await loop.run_in_executor(
-                None, lambda: client.connect(**connect_params)
-            )
+            await loop.run_in_executor(None, lambda: client.connect(**connect_params))
 
             # Get server information
             transport = client.get_transport()
             if transport:
                 server_version = transport.remote_version
                 server_cipher = (
-                    transport.get_cipher()[0]
-                    if transport.get_cipher()
-                    else "unknown"
+                    transport.get_cipher()[0] if transport.get_cipher() else "unknown"
                 )
 
                 result["server_info"] = {
@@ -136,9 +132,9 @@ class SSHClientService:
                     result["message"] = "Connection successful"
                     result["details"]["command_test"] = "passed"
                 else:
-                    result[
-                        "message"
-                    ] = "Connection established but command execution failed"
+                    result["message"] = (
+                        "Connection established but command execution failed"
+                    )
                     result["details"]["command_test"] = "failed"
                     result["details"]["command_output"] = test_output
 
@@ -146,16 +142,12 @@ class SSHClientService:
                 # Connection successful but command failed
                 logger.warning(f"SSH command test failed: {cmd_error}")
                 result["success"] = True  # Connection itself is successful
-                result[
-                    "message"
-                ] = "Connection successful (command test failed)"
+                result["message"] = "Connection successful (command test failed)"
                 result["details"]["command_test"] = "failed"
                 result["details"]["command_error"] = str(cmd_error)
 
         except paramiko.AuthenticationException as e:
-            logger.warning(
-                f"SSH authentication failed for {username}@{host}: {e}"
-            )
+            logger.warning(f"SSH authentication failed for {username}@{host}: {e}")
             result["message"] = f"Authentication failed: {str(e)}"
             result["details"]["error_type"] = "authentication"
 
@@ -176,9 +168,9 @@ class SSHClientService:
 
         except ConnectionRefusedError:
             logger.warning(f"Connection refused for {host}:{port}")
-            result[
-                "message"
-            ] = f"Connection refused. Is SSH server running on port {port}?"
+            result["message"] = (
+                f"Connection refused. Is SSH server running on port {port}?"
+            )
             result["details"]["error_type"] = "connection_refused"
 
         except Exception as e:
@@ -224,17 +216,13 @@ class SSHClientService:
             key_file = io.StringIO(private_key_data)
 
             # Load the key with optional passphrase
-            private_key = key_class.from_private_key(
-                key_file, password=passphrase
-            )
+            private_key = key_class.from_private_key(key_file, password=passphrase)
 
             return private_key
 
         except Exception as e:
             logger.error(f"Failed to load {key_type} key: {e}")
-            raise Exception(
-                f"Invalid {key_type} key format or incorrect passphrase"
-            )
+            raise Exception(f"Invalid {key_type} key format or incorrect passphrase")
 
     async def get_host_key(
         self, host: str, port: int = 22, timeout: int = 10

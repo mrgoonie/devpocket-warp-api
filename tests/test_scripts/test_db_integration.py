@@ -43,15 +43,11 @@ class TestDatabaseIntegration:
         """Test db_utils.py operations."""
         with patch.dict(os.environ, db_env):
             # Test database connection
-            result = script_runner.run_script(
-                "../scripts/db_utils.py", ["test"]
-            )
+            result = script_runner.run_script("../scripts/db_utils.py", ["test"])
             assert result.returncode == 0
 
             # Test health check
-            result = script_runner.run_script(
-                "../scripts/db_utils.py", ["health"]
-            )
+            result = script_runner.run_script("../scripts/db_utils.py", ["health"])
             assert result.returncode == 0
             assert "healthy" in result.stdout.lower()
 
@@ -60,9 +56,7 @@ class TestDatabaseIntegration:
         """Test migration script with real database."""
         with patch.dict(os.environ, db_env):
             # Test connection check
-            result = script_runner.run_script(
-                "db_migrate.sh", ["--check-only"]
-            )
+            result = script_runner.run_script("db_migrate.sh", ["--check-only"])
             assert result.returncode == 0
 
             # Test dry run
@@ -143,9 +137,7 @@ class TestDatabaseIntegration:
 
         # Check specific expected constraints
         constraint_map = {
-            row["table_name"]
-            + "."
-            + row["column_name"]: row["foreign_table_name"]
+            row["table_name"] + "." + row["column_name"]: row["foreign_table_name"]
             for row in constraints
         }
 
@@ -184,15 +176,11 @@ class TestDatabaseIntegration:
         """Test upsert conflict resolution."""
         with patch.dict(os.environ, db_env):
             # First seeding
-            result1 = script_runner.run_script(
-                "db_seed.sh", ["--upsert", "users", "2"]
-            )
+            result1 = script_runner.run_script("db_seed.sh", ["--upsert", "users", "2"])
             assert result1.returncode == 0
 
             # Second seeding (should handle conflicts)
-            result2 = script_runner.run_script(
-                "db_seed.sh", ["--upsert", "users", "2"]
-            )
+            result2 = script_runner.run_script("db_seed.sh", ["--upsert", "users", "2"])
             assert result2.returncode == 0
 
     @pytest.mark.slow
@@ -209,9 +197,7 @@ class TestDatabaseIntegration:
 
             # Check data integrity
             # Users should exist
-            user_count = await db_connection.fetchval(
-                "SELECT COUNT(*) FROM users"
-            )
+            user_count = await db_connection.fetchval("SELECT COUNT(*) FROM users")
             assert user_count >= 2
 
             # SSH profiles should reference valid users
@@ -250,18 +236,14 @@ class TestDatabaseIntegration:
             execution_time = end_time - start_time
 
             # Should complete within reasonable time (30 seconds)
-            assert (
-                execution_time < 30
-            ), f"Seeding took too long: {execution_time}s"
+            assert execution_time < 30, f"Seeding took too long: {execution_time}s"
 
     @pytest.mark.slow
     def test_error_recovery(self, script_runner, db_env):
         """Test error recovery scenarios."""
         with patch.dict(os.environ, db_env):
             # Test with invalid seed type (should fail gracefully)
-            result = script_runner.run_script(
-                "db_seed.sh", ["invalid_type", "5"]
-            )
+            result = script_runner.run_script("db_seed.sh", ["invalid_type", "5"])
             assert result.returncode != 0
 
             # Subsequent valid operation should work
@@ -297,8 +279,7 @@ class TestDatabaseIntegration:
             assert "Cleaning data types" in output
             assert "Database seeding completed" in output
             assert (
-                "Database statistics" in output
-                or "table statistics" in output.lower()
+                "Database statistics" in output or "table statistics" in output.lower()
             )
 
     @pytest.mark.slow
@@ -318,9 +299,7 @@ class TestDatabaseIntegration:
             initial_count = len(initial_tables)
 
             # Perform operations
-            script_runner.run_script(
-                "db_seed.sh", ["--clean-force", "users", "5"]
-            )
+            script_runner.run_script("db_seed.sh", ["--clean-force", "users", "5"])
             script_runner.run_script("db_seed.sh", ["ssh", "3"])
 
             # Check final state
@@ -337,9 +316,7 @@ class TestDatabaseIntegration:
             assert initial_count == final_count
 
             # Data should be present
-            user_count = await db_connection.fetchval(
-                "SELECT COUNT(*) FROM users"
-            )
+            user_count = await db_connection.fetchval("SELECT COUNT(*) FROM users")
             assert user_count >= 5
 
     @pytest.mark.slow
@@ -347,15 +324,11 @@ class TestDatabaseIntegration:
         """Test migration safety features."""
         with patch.dict(os.environ, db_env):
             # Test dry run doesn't change anything
-            result = script_runner.run_script(
-                "db_migrate.sh", ["--dry-run", "head"]
-            )
+            result = script_runner.run_script("db_migrate.sh", ["--dry-run", "head"])
             assert result.returncode == 0
 
             # Test backup functionality (if pg_dump available)
-            result = script_runner.run_script(
-                "db_migrate.sh", ["--check-only"]
-            )
+            result = script_runner.run_script("db_migrate.sh", ["--check-only"])
             assert result.returncode == 0
 
     @pytest.mark.slow
@@ -363,9 +336,7 @@ class TestDatabaseIntegration:
         """Test logging and monitoring capabilities."""
         with patch.dict(os.environ, db_env):
             # Run operations and check for proper logging
-            result = script_runner.run_script(
-                "db_seed.sh", ["users", "3", "--stats"]
-            )
+            result = script_runner.run_script("db_seed.sh", ["users", "3", "--stats"])
             assert result.returncode == 0
 
             output = result.stdout + result.stderr
@@ -379,9 +350,7 @@ class TestDatabaseIntegration:
             ]
 
             for pattern in log_patterns:
-                assert (
-                    pattern in output
-                ), f"Expected log pattern '{pattern}' not found"
+                assert pattern in output, f"Expected log pattern '{pattern}' not found"
 
 
 @pytest.mark.integration
@@ -399,9 +368,7 @@ class TestDatabaseUtilsIntegration:
     def test_db_utils_test_command(self, script_runner, db_env):
         """Test db_utils.py test command."""
         with patch.dict(os.environ, db_env):
-            result = script_runner.run_script(
-                "../scripts/db_utils.py", ["test"]
-            )
+            result = script_runner.run_script("../scripts/db_utils.py", ["test"])
             assert result.returncode == 0
             assert "completed successfully" in result.stdout
 
@@ -409,9 +376,7 @@ class TestDatabaseUtilsIntegration:
     def test_db_utils_health_command(self, script_runner, db_env):
         """Test db_utils.py health command."""
         with patch.dict(os.environ, db_env):
-            result = script_runner.run_script(
-                "../scripts/db_utils.py", ["health"]
-            )
+            result = script_runner.run_script("../scripts/db_utils.py", ["health"])
             assert result.returncode == 0
             assert "healthy" in result.stdout.lower()
 
@@ -423,9 +388,7 @@ class TestDatabaseUtilsIntegration:
         }
 
         with patch.dict(os.environ, invalid_env):
-            result = script_runner.run_script(
-                "../scripts/db_utils.py", ["test"]
-            )
+            result = script_runner.run_script("../scripts/db_utils.py", ["test"])
             assert result.returncode != 0
             assert "failed" in result.stdout.lower()
 
@@ -441,9 +404,7 @@ class TestDatabaseUtilsIntegration:
     def test_db_utils_invalid_command(self, script_runner, db_env):
         """Test db_utils.py with invalid command."""
         with patch.dict(os.environ, db_env):
-            result = script_runner.run_script(
-                "../scripts/db_utils.py", ["invalid"]
-            )
+            result = script_runner.run_script("../scripts/db_utils.py", ["invalid"])
             assert result.returncode != 0
             assert "Unknown command" in result.stdout
 
@@ -464,9 +425,7 @@ class TestEndToEndWorkflows:
         """Test complete development workflow."""
         with patch.dict(os.environ, db_env):
             # 1. Check database health
-            result = script_runner.run_script(
-                "../scripts/db_utils.py", ["health"]
-            )
+            result = script_runner.run_script("../scripts/db_utils.py", ["health"])
             assert result.returncode == 0
 
             # 2. Check migration status
@@ -492,15 +451,11 @@ class TestEndToEndWorkflows:
             assert result.returncode == 0
 
             # 2. Migration with safety checks
-            result = script_runner.run_script(
-                "db_migrate.sh", ["--check-only"]
-            )
+            result = script_runner.run_script("db_migrate.sh", ["--check-only"])
             assert result.returncode == 0
 
             # 3. Conservative data seeding
-            result = script_runner.run_script(
-                "db_seed.sh", ["--upsert", "users", "2"]
-            )
+            result = script_runner.run_script("db_seed.sh", ["--upsert", "users", "2"])
             assert result.returncode == 0
 
     @pytest.mark.slow
@@ -508,9 +463,7 @@ class TestEndToEndWorkflows:
         """Test disaster recovery workflow simulation."""
         with patch.dict(os.environ, db_env):
             # 1. Health check to assess damage
-            result = script_runner.run_script(
-                "../scripts/db_utils.py", ["health"]
-            )
+            result = script_runner.run_script("../scripts/db_utils.py", ["health"])
             # Should work even if some data is missing
 
             # 2. Reset if necessary (commented out for safety)
@@ -558,9 +511,7 @@ class TestEndToEndWorkflows:
             assert result.returncode == 0
 
             # 3. Add specific test scenarios
-            result = script_runner.run_script(
-                "db_seed.sh", ["--upsert", "users", "5"]
-            )
+            result = script_runner.run_script("db_seed.sh", ["--upsert", "users", "5"])
             assert result.returncode == 0
 
             # 4. Verify test environment

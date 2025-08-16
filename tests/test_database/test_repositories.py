@@ -323,9 +323,7 @@ class TestSessionRepository:
         )
 
         # Get active sessions
-        active_sessions = await session_repo.get_active_sessions_for_user(
-            user.id
-        )
+        active_sessions = await session_repo.get_active_sessions_for_user(user.id)
 
         assert len(active_sessions) == 1
         assert active_sessions[0].id == active_session.id
@@ -613,8 +611,7 @@ class TestSSHProfileRepository:
                 "host": "freq.com",
                 "username": "user",
                 "connection_count": 50,
-                "last_used_at": datetime.now(timezone.utc)
-                - timedelta(hours=1),
+                "last_used_at": datetime.now(timezone.utc) - timedelta(hours=1),
             }
         )
 
@@ -992,9 +989,7 @@ class TestSyncDataRepository:
         )
 
         # Get commands sync data
-        commands_sync = await sync_repo.get_sync_data_by_type(
-            user.id, "commands"
-        )
+        commands_sync = await sync_repo.get_sync_data_by_type(user.id, "commands")
 
         assert len(commands_sync) == 1
         assert commands_sync[0].sync_type == "commands"
@@ -1065,9 +1060,7 @@ class TestSyncDataRepository:
 
         # Create conflict
         conflicting_data = {"theme": "light"}
-        conflict_sync = await sync_repo.create_conflict(
-            sync_data.id, conflicting_data
-        )
+        conflict_sync = await sync_repo.create_conflict(sync_data.id, conflicting_data)
 
         assert conflict_sync.has_conflict is True
 
@@ -1110,9 +1103,7 @@ class TestSyncDataRepository:
         )
 
         # Manually set old date
-        old_date = datetime.now(timezone.utc) - timedelta(
-            days=91
-        )  # 91 days old
+        old_date = datetime.now(timezone.utc) - timedelta(days=91)  # 91 days old
         old_sync.last_modified_at = old_date
         old_sync.created_at = old_date
         await test_session.commit()

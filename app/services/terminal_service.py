@@ -42,9 +42,7 @@ class TerminalService:
         """
         try:
             # Get active sessions from database
-            sessions = await self.session_repo.get_user_active_sessions(
-                user_id
-            )
+            sessions = await self.session_repo.get_user_active_sessions(user_id)
 
             session_list = []
             for session in sessions:
@@ -55,9 +53,11 @@ class TerminalService:
                     "device_type": session.device_type,
                     "device_name": session.device_name,
                     "created_at": session.created_at.isoformat(),
-                    "last_activity_at": session.last_activity_at.isoformat()
-                    if session.last_activity_at
-                    else None,
+                    "last_activity_at": (
+                        session.last_activity_at.isoformat()
+                        if session.last_activity_at
+                        else None
+                    ),
                     "terminal_size": {
                         "cols": session.terminal_cols,
                         "rows": session.terminal_rows,
@@ -79,9 +79,7 @@ class TerminalService:
             return session_list
 
         except Exception as e:
-            logger.error(
-                f"Failed to get active sessions for user {user_id}: {e}"
-            )
+            logger.error(f"Failed to get active sessions for user {user_id}: {e}")
             return []
 
     async def get_session_details(
@@ -105,18 +103,14 @@ class TerminalService:
 
             # Get connection status
             is_connected = session_id in connection_manager.session_connections
-            connection_id = connection_manager.session_connections.get(
-                session_id
-            )
+            connection_id = connection_manager.session_connections.get(session_id)
 
             # Get terminal session status if connected
             terminal_status = None
             if is_connected and connection_id:
                 connection = connection_manager.connections.get(connection_id)
                 if connection:
-                    terminal_session = connection.get_terminal_session(
-                        session_id
-                    )
+                    terminal_session = connection.get_terminal_session(session_id)
                     if terminal_session:
                         terminal_status = terminal_session.get_status()
 
@@ -128,12 +122,12 @@ class TerminalService:
                 "device_name": session.device_name,
                 "device_id": session.device_id,
                 "created_at": session.created_at.isoformat(),
-                "last_activity_at": session.last_activity_at.isoformat()
-                if session.last_activity_at
-                else None,
-                "ended_at": session.ended_at.isoformat()
-                if session.ended_at
-                else None,
+                "last_activity_at": (
+                    session.last_activity_at.isoformat()
+                    if session.last_activity_at
+                    else None
+                ),
+                "ended_at": session.ended_at.isoformat() if session.ended_at else None,
                 "is_active": session.is_active,
                 "terminal_size": {
                     "cols": session.terminal_cols,
@@ -159,9 +153,7 @@ class TerminalService:
             return session_details
 
         except Exception as e:
-            logger.error(
-                f"Failed to get session details for {session_id}: {e}"
-            )
+            logger.error(f"Failed to get session details for {session_id}: {e}")
             return None
 
     async def terminate_session(self, session_id: str, user_id: str) -> bool:
@@ -187,15 +179,11 @@ class TerminalService:
 
             # Disconnect WebSocket connection if active
             if session_id in connection_manager.session_connections:
-                connection_id = connection_manager.session_connections[
-                    session_id
-                ]
+                connection_id = connection_manager.session_connections[session_id]
                 connection = connection_manager.connections.get(connection_id)
 
                 if connection:
-                    terminal_session = connection.get_terminal_session(
-                        session_id
-                    )
+                    terminal_session = connection.get_terminal_session(session_id)
                     if terminal_session:
                         await terminal_session.stop()
                         connection.remove_terminal_session(session_id)
@@ -259,9 +247,9 @@ class TerminalService:
                     "device_type": session.device_type,
                     "device_name": session.device_name,
                     "created_at": session.created_at.isoformat(),
-                    "ended_at": session.ended_at.isoformat()
-                    if session.ended_at
-                    else None,
+                    "ended_at": (
+                        session.ended_at.isoformat() if session.ended_at else None
+                    ),
                     "duration": session.duration,
                     "command_count": session.command_count,
                     "is_active": session.is_active,
@@ -292,9 +280,7 @@ class TerminalService:
             }
 
         except Exception as e:
-            logger.error(
-                f"Failed to get session history for user {user_id}: {e}"
-            )
+            logger.error(f"Failed to get session history for user {user_id}: {e}")
             return {
                 "sessions": [],
                 "pagination": {
@@ -320,9 +306,9 @@ class TerminalService:
             }
 
             # Get details for each connection (limited for performance)
-            for conn_id, connection in list(
-                connection_manager.connections.items()
-            )[:10]:
+            for conn_id, connection in list(connection_manager.connections.items())[
+                :10
+            ]:
                 conn_details = {
                     "connection_id": conn_id,
                     "user_id": connection.user_id,

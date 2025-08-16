@@ -36,11 +36,7 @@ class SessionRepository(BaseRepository[Session]):
         if session_type:
             query = query.where(Session.session_type == session_type)
 
-        query = (
-            query.order_by(desc(Session.created_at))
-            .offset(offset)
-            .limit(limit)
-        )
+        query = query.order_by(desc(Session.created_at)).offset(offset).limit(limit)
 
         result = await self.session.execute(query)
         return result.scalars().all()
@@ -53,9 +49,7 @@ class SessionRepository(BaseRepository[Session]):
         self, user_id: str, session_type: Optional[str] = None
     ) -> int:
         """Get total session count for a user."""
-        query = select(func.count(Session.id)).where(
-            Session.user_id == user_id
-        )
+        query = select(func.count(Session.id)).where(Session.user_id == user_id)
 
         if session_type:
             query = query.where(Session.session_type == session_type)
@@ -73,9 +67,7 @@ class SessionRepository(BaseRepository[Session]):
             query = query.where(Session.user_id == user_id)
 
         query = (
-            query.order_by(desc(Session.last_activity_at))
-            .offset(offset)
-            .limit(limit)
+            query.order_by(desc(Session.last_activity_at)).offset(offset).limit(limit)
         )
 
         result = await self.session.execute(query)
@@ -98,11 +90,7 @@ class SessionRepository(BaseRepository[Session]):
         """Get sessions for a specific device."""
         result = await self.session.execute(
             select(Session)
-            .where(
-                and_(
-                    Session.user_id == user_id, Session.device_id == device_id
-                )
-            )
+            .where(and_(Session.user_id == user_id, Session.device_id == device_id))
             .order_by(desc(Session.created_at))
             .offset(offset)
             .limit(limit)
@@ -202,9 +190,7 @@ class SessionRepository(BaseRepository[Session]):
 
     async def end_session(self, session_id: str) -> Optional[Session]:
         """End a session."""
-        return await self.update(
-            session_id, is_active=False, ended_at=datetime.now()
-        )
+        return await self.update(session_id, is_active=False, ended_at=datetime.now())
 
     async def resize_terminal(
         self, session_id: str, cols: int, rows: int
@@ -217,13 +203,9 @@ class SessionRepository(BaseRepository[Session]):
             last_activity_at=datetime.now(),
         )
 
-    async def end_inactive_sessions(
-        self, inactive_threshold_minutes: int = 30
-    ) -> int:
+    async def end_inactive_sessions(self, inactive_threshold_minutes: int = 30) -> int:
         """End sessions that have been inactive for too long."""
-        threshold_time = datetime.now() - timedelta(
-            minutes=inactive_threshold_minutes
-        )
+        threshold_time = datetime.now() - timedelta(minutes=inactive_threshold_minutes)
 
         result = await self.session.execute(
             select(Session).where(
@@ -297,9 +279,7 @@ class SessionRepository(BaseRepository[Session]):
         if device_type:
             query = query.where(Session.device_type == device_type)
 
-        result = await self.session.execute(
-            query.order_by(desc(Session.created_at))
-        )
+        result = await self.session.execute(query.order_by(desc(Session.created_at)))
         sessions = result.scalars().all()
 
         # Group by device_id
@@ -344,9 +324,7 @@ class SessionRepository(BaseRepository[Session]):
         if keep_active:
             conditions.append(Session.is_active == False)
 
-        result = await self.session.execute(
-            select(Session).where(and_(*conditions))
-        )
+        result = await self.session.execute(select(Session).where(and_(*conditions)))
 
         old_sessions = result.scalars().all()
 

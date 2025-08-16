@@ -30,9 +30,7 @@ class TestRunTestsScript:
 
         # Make it executable for testing
         script_path.chmod(0o755)
-        assert os.access(
-            script_path, os.X_OK
-        ), "run_tests.sh should be executable"
+        assert os.access(script_path, os.X_OK), "run_tests.sh should be executable"
 
     def test_script_syntax_is_valid(self, script_runner):
         """Test that the script has valid bash syntax."""
@@ -94,9 +92,7 @@ class TestRunTestsScript:
 
         with patch("shutil.which", return_value="/usr/bin/pytest"):
             with patch.dict(os.environ, mock_env):
-                result = script_runner.run_script(
-                    "run_tests.sh", ["-t", "unit"]
-                )
+                result = script_runner.run_script("run_tests.sh", ["-t", "unit"])
 
         assert result.returncode == 0
 
@@ -123,9 +119,7 @@ class TestRunTestsScript:
 
     @patch("subprocess.run")
     @patch("os.makedirs")
-    def test_run_api_tests(
-        self, mock_makedirs, mock_run, script_runner, mock_env
-    ):
+    def test_run_api_tests(self, mock_makedirs, mock_run, script_runner, mock_env):
         """Test running API tests."""
         mock_run.side_effect = [
             # Database check
@@ -136,9 +130,7 @@ class TestRunTestsScript:
 
         with patch("shutil.which", return_value="/usr/bin/pytest"):
             with patch.dict(os.environ, mock_env):
-                result = script_runner.run_script(
-                    "run_tests.sh", ["-t", "api"]
-                )
+                result = script_runner.run_script("run_tests.sh", ["-t", "api"])
 
         assert result.returncode == 0
 
@@ -157,17 +149,13 @@ class TestRunTestsScript:
 
         with patch("shutil.which", return_value="/usr/bin/pytest"):
             with patch.dict(os.environ, mock_env):
-                result = script_runner.run_script(
-                    "run_tests.sh", ["tests/test_auth/"]
-                )
+                result = script_runner.run_script("run_tests.sh", ["tests/test_auth/"])
 
         assert result.returncode == 0
 
     @patch("subprocess.run")
     @patch("os.makedirs")
-    def test_run_with_markers(
-        self, mock_makedirs, mock_run, script_runner, mock_env
-    ):
+    def test_run_with_markers(self, mock_makedirs, mock_run, script_runner, mock_env):
         """Test running tests with specific markers."""
         mock_run.side_effect = [
             # Database check
@@ -178,17 +166,13 @@ class TestRunTestsScript:
 
         with patch("shutil.which", return_value="/usr/bin/pytest"):
             with patch.dict(os.environ, mock_env):
-                result = script_runner.run_script(
-                    "run_tests.sh", ["-m", "not slow"]
-                )
+                result = script_runner.run_script("run_tests.sh", ["-m", "not slow"])
 
         assert result.returncode == 0
 
     @patch("subprocess.run")
     @patch("os.makedirs")
-    def test_run_parallel_tests(
-        self, mock_makedirs, mock_run, script_runner, mock_env
-    ):
+    def test_run_parallel_tests(self, mock_makedirs, mock_run, script_runner, mock_env):
         """Test running tests in parallel."""
         mock_run.side_effect = [
             # Database check
@@ -206,9 +190,7 @@ class TestRunTestsScript:
 
     @patch("subprocess.run")
     @patch("os.makedirs")
-    def test_run_verbose_tests(
-        self, mock_makedirs, mock_run, script_runner, mock_env
-    ):
+    def test_run_verbose_tests(self, mock_makedirs, mock_run, script_runner, mock_env):
         """Test running tests with verbose output."""
         mock_run.side_effect = [
             # Database check
@@ -225,9 +207,7 @@ class TestRunTestsScript:
 
     @patch("subprocess.run")
     @patch("os.makedirs")
-    def test_run_quiet_tests(
-        self, mock_makedirs, mock_run, script_runner, mock_env
-    ):
+    def test_run_quiet_tests(self, mock_makedirs, mock_run, script_runner, mock_env):
         """Test running tests with quiet output."""
         mock_run.side_effect = [
             # Database check
@@ -274,9 +254,7 @@ class TestRunTestsScript:
 
         with patch("shutil.which", return_value="/usr/bin/pytest"):
             with patch.dict(os.environ, mock_env):
-                result = script_runner.run_script(
-                    "run_tests.sh", ["--no-db-check"]
-                )
+                result = script_runner.run_script("run_tests.sh", ["--no-db-check"])
 
         assert result.returncode == 0
 
@@ -289,9 +267,7 @@ class TestRunTestsScript:
 
     @patch("subprocess.run")
     @patch("builtins.open", new_callable=mock_open)
-    def test_database_check_failure(
-        self, mock_file, mock_run, script_runner, mock_env
-    ):
+    def test_database_check_failure(self, mock_file, mock_run, script_runner, mock_env):
         """Test handling of database check failure."""
         mock_run.return_value = MagicMock(returncode=1)
 
@@ -327,9 +303,7 @@ class TestRunTestsScript:
         with patch("os.path.exists", return_value=True):
             with patch("shutil.rmtree") as mock_rmtree:
                 with patch("os.remove") as mock_remove:
-                    result = script_runner.run_script(
-                        "run_tests.sh", ["--clean-only"]
-                    )
+                    result = script_runner.run_script("run_tests.sh", ["--clean-only"])
 
         assert result.returncode == 0
 
@@ -350,26 +324,20 @@ class TestRunTestsScript:
             with patch("shutil.rmtree"):
                 with patch("os.remove"):
                     with patch.dict(os.environ, mock_env):
-                        result = script_runner.run_script(
-                            "run_tests.sh", ["--clean"]
-                        )
+                        result = script_runner.run_script("run_tests.sh", ["--clean"])
 
         assert result.returncode == 0
 
     def test_summary_only_option(self, script_runner):
         """Test the summary-only option."""
         with patch("os.path.isdir", return_value=True):
-            result = script_runner.run_script(
-                "run_tests.sh", ["--summary-only"]
-            )
+            result = script_runner.run_script("run_tests.sh", ["--summary-only"])
 
         assert result.returncode == 0
 
     def test_invalid_test_type(self, script_runner):
         """Test handling of invalid test type."""
-        result = script_runner.run_script(
-            "run_tests.sh", ["-t", "invalid_type"]
-        )
+        result = script_runner.run_script("run_tests.sh", ["-t", "invalid_type"])
         assert result.returncode != 0
 
     def test_unknown_option(self, script_runner):
@@ -379,27 +347,21 @@ class TestRunTestsScript:
 
     @patch("subprocess.run")
     @patch("os.makedirs")
-    def test_markers_option_missing_value(
-        self, mock_makedirs, mock_run, script_runner
-    ):
+    def test_markers_option_missing_value(self, mock_makedirs, mock_run, script_runner):
         """Test markers option without value."""
         result = script_runner.run_script("run_tests.sh", ["-m"])
         assert result.returncode != 0
 
     @patch("subprocess.run")
     @patch("os.makedirs")
-    def test_type_option_missing_value(
-        self, mock_makedirs, mock_run, script_runner
-    ):
+    def test_type_option_missing_value(self, mock_makedirs, mock_run, script_runner):
         """Test type option without value."""
         result = script_runner.run_script("run_tests.sh", ["-t"])
         assert result.returncode != 0
 
     @patch("subprocess.run")
     @patch("os.makedirs")
-    def test_all_test_types(
-        self, mock_makedirs, mock_run, script_runner, mock_env
-    ):
+    def test_all_test_types(self, mock_makedirs, mock_run, script_runner, mock_env):
         """Test all valid test types."""
         valid_types = [
             "all",
@@ -426,13 +388,9 @@ class TestRunTestsScript:
 
             with patch("shutil.which", return_value="/usr/bin/pytest"):
                 with patch.dict(os.environ, mock_env):
-                    result = script_runner.run_script(
-                        "run_tests.sh", ["-t", test_type]
-                    )
+                    result = script_runner.run_script("run_tests.sh", ["-t", test_type])
 
-            assert (
-                result.returncode == 0
-            ), f"Test type '{test_type}' should be valid"
+            assert result.returncode == 0, f"Test type '{test_type}' should be valid"
 
     @patch("subprocess.run")
     @patch("os.makedirs")
@@ -451,9 +409,7 @@ class TestRunTestsScript:
 
             with patch("shutil.which", return_value="/usr/bin/pytest"):
                 with patch.dict(os.environ, mock_env):
-                    result = script_runner.run_script(
-                        "run_tests.sh", ["--no-db-check"]
-                    )
+                    result = script_runner.run_script("run_tests.sh", ["--no-db-check"])
 
         assert result.returncode == 0
 
@@ -636,9 +592,7 @@ class TestRunTestsScript:
             mock_run.return_value = MagicMock(returncode=0)
 
             with patch("shutil.which", return_value="/usr/bin/pytest"):
-                result = script_runner.run_script(
-                    "run_tests.sh", ["--no-db-check"]
-                )
+                result = script_runner.run_script("run_tests.sh", ["--no-db-check"])
 
         # Check for logging patterns
         output = result.stdout + result.stderr
@@ -658,9 +612,7 @@ class TestRunTestsScript:
 
             with patch("shutil.which", return_value="/usr/bin/pytest"):
                 with patch.dict(os.environ, custom_env):
-                    result = script_runner.run_script(
-                        "run_tests.sh", ["--no-db-check"]
-                    )
+                    result = script_runner.run_script("run_tests.sh", ["--no-db-check"])
 
         assert result.returncode == 0
 

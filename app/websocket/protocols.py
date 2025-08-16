@@ -236,9 +236,7 @@ def parse_message(data: Dict[str, Any]) -> TerminalMessage:
     try:
         return message_class(**data)
     except Exception as e:
-        raise ValueError(
-            f"Invalid message format for {message_type}: {str(e)}"
-        )
+        raise ValueError(f"Invalid message format for {message_type}: {str(e)}")
 
 
 def create_output_message(session_id: str, data: str) -> OutputMessage:

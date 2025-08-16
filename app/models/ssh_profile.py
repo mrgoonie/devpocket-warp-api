@@ -171,9 +171,7 @@ class SSHKey(BaseModel):
     )
 
     # Encrypted private key (stored as encrypted binary data)
-    encrypted_private_key: Mapped[bytes] = mapped_column(
-        LargeBinary, nullable=False
-    )
+    encrypted_private_key: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
 
     # Public key (stored as text)
     public_key: Mapped[str] = mapped_column(Text, nullable=False)

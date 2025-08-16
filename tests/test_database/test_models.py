@@ -69,9 +69,7 @@ class TestUserModel:
 
     async def test_user_account_locking(self, test_session):
         """Test user account locking mechanism."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
 
         # Test initial state
         assert not user.is_locked()
@@ -111,9 +109,7 @@ class TestUserModel:
 
     async def test_user_to_dict(self, test_session):
         """Test user to_dict conversion."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
 
         user_dict = user.to_dict()
 
@@ -124,16 +120,12 @@ class TestUserModel:
 
     async def test_user_relationships(self, test_session):
         """Test user model relationships."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()  # Get user ID
 
         # Add related objects
-        session = Session(
-            user_id=user.id, device_id="device123", device_type="web"
-        )
+        session = Session(user_id=user.id, device_id="device123", device_type="web")
         ssh_profile = SSHProfile(
             user_id=user.id,
             name="Test Server",
@@ -159,9 +151,7 @@ class TestUserSettingsModel:
 
     async def test_user_settings_creation(self, test_session):
         """Test user settings creation."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()
 
@@ -181,9 +171,7 @@ class TestUserSettingsModel:
 
     async def test_user_settings_relationship(self, test_session):
         """Test user-settings relationship."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()
 
@@ -206,9 +194,7 @@ class TestSessionModel:
 
     async def test_session_creation(self, test_session):
         """Test session creation."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()
 
@@ -231,9 +217,7 @@ class TestSessionModel:
 
     async def test_session_ssh_properties(self, test_session):
         """Test SSH session properties."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()
 
@@ -260,15 +244,11 @@ class TestSessionModel:
 
     async def test_session_activity_tracking(self, test_session):
         """Test session activity tracking."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()
 
-        session = Session(
-            user_id=user.id, device_id="device123", device_type="web"
-        )
+        session = Session(user_id=user.id, device_id="device123", device_type="web")
         test_session.add(session)
         await test_session.commit()
 
@@ -287,15 +267,11 @@ class TestSessionModel:
 
     async def test_session_terminal_resize(self, test_session):
         """Test terminal resize functionality."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()
 
-        session = Session(
-            user_id=user.id, device_id="device123", device_type="web"
-        )
+        session = Session(user_id=user.id, device_id="device123", device_type="web")
         test_session.add(session)
         await test_session.commit()
 
@@ -313,9 +289,7 @@ class TestSSHProfileModel:
 
     async def test_ssh_profile_creation(self, test_session):
         """Test SSH profile creation."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()
 
@@ -337,9 +311,7 @@ class TestSSHProfileModel:
 
     async def test_ssh_profile_connection_tracking(self, test_session):
         """Test connection attempt tracking."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()
 
@@ -368,9 +340,7 @@ class TestSSHProfileModel:
 
     async def test_ssh_profile_success_rate(self, test_session):
         """Test success rate calculation."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()
 
@@ -401,9 +371,7 @@ class TestSSHKeyModel:
 
     async def test_ssh_key_creation(self, test_session):
         """Test SSH key creation."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()
 
@@ -427,9 +395,7 @@ class TestSSHKeyModel:
 
     async def test_ssh_key_usage_tracking(self, test_session):
         """Test SSH key usage tracking."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()
 
@@ -475,21 +441,15 @@ class TestCommandModel:
 
     async def test_command_creation(self, test_session):
         """Test command creation."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()
 
-        session = Session(
-            user_id=user.id, device_id="device123", device_type="web"
-        )
+        session = Session(user_id=user.id, device_id="device123", device_type="web")
         test_session.add(session)
         await test_session.flush()
 
-        command = Command(
-            session_id=session.id, command="ls -la", status="pending"
-        )
+        command = Command(session_id=session.id, command="ls -la", status="pending")
         test_session.add(command)
         await test_session.commit()
 
@@ -501,15 +461,11 @@ class TestCommandModel:
 
     async def test_command_execution_lifecycle(self, test_session):
         """Test command execution lifecycle."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()
 
-        session = Session(
-            user_id=user.id, device_id="device123", device_type="web"
-        )
+        session = Session(user_id=user.id, device_id="device123", device_type="web")
         test_session.add(session)
         await test_session.flush()
 
@@ -525,9 +481,7 @@ class TestCommandModel:
         assert command.started_at is not None
 
         # Complete execution
-        command.complete_execution(
-            exit_code=0, output="hello\n", error_output=None
-        )
+        command.complete_execution(exit_code=0, output="hello\n", error_output=None)
         assert command.status == "success"
         assert command.exit_code == 0
         assert command.output == "hello\n"
@@ -570,9 +524,7 @@ class TestSyncDataModel:
 
     async def test_sync_data_creation(self, test_session):
         """Test sync data creation."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()
 
@@ -595,9 +547,7 @@ class TestSyncDataModel:
 
     async def test_sync_data_update(self, test_session):
         """Test sync data update."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()
 
@@ -626,9 +576,7 @@ class TestSyncDataModel:
 
     async def test_sync_data_conflict_handling(self, test_session):
         """Test sync data conflict handling."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()
 
@@ -666,9 +614,7 @@ class TestSyncDataModel:
 
     async def test_sync_data_deletion(self, test_session):
         """Test sync data deletion."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()
 
@@ -699,16 +645,12 @@ class TestModelRelationships:
 
     async def test_user_cascade_deletion(self, test_session):
         """Test that related objects are deleted when user is deleted."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()
 
         # Create related objects
-        session = Session(
-            user_id=user.id, device_id="device123", device_type="web"
-        )
+        session = Session(user_id=user.id, device_id="device123", device_type="web")
         ssh_profile = SSHProfile(
             user_id=user.id,
             name="Test Server",
@@ -752,15 +694,11 @@ class TestModelRelationships:
 
     async def test_session_command_relationship(self, test_session):
         """Test session-command relationship."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()
 
-        session = Session(
-            user_id=user.id, device_id="device123", device_type="web"
-        )
+        session = Session(user_id=user.id, device_id="device123", device_type="web")
         test_session.add(session)
         await test_session.flush()
 
@@ -779,9 +717,7 @@ class TestModelRelationships:
 
     async def test_ssh_profile_key_relationship(self, test_session):
         """Test SSH profile and key relationship."""
-        user = User(
-            email="test@example.com", username="testuser", password_hash="hash"
-        )
+        user = User(email="test@example.com", username="testuser", password_hash="hash")
         test_session.add(user)
         await test_session.flush()
 

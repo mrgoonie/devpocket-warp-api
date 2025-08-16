@@ -77,9 +77,7 @@ class SSHHandler:
 
             # Create SSH client
             self.ssh_client = SSHClient()
-            self.ssh_client.set_missing_host_key_policy(
-                paramiko.AutoAddPolicy()
-            )
+            self.ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
             # Prepare connection parameters
             connect_params = {
@@ -94,9 +92,7 @@ class SSHHandler:
             # Add authentication
             if self.ssh_key:
                 try:
-                    private_key = self.ssh_service._load_private_key(
-                        self.ssh_key
-                    )
+                    private_key = self.ssh_service._load_private_key(self.ssh_key)
                     connect_params["pkey"] = private_key
                     auth_method = "publickey"
                 except Exception as e:
@@ -126,9 +122,11 @@ class SSHHandler:
             if transport:
                 self.server_info = {
                     "version": transport.remote_version,
-                    "cipher": transport.get_cipher()[0]
-                    if transport.get_cipher()
-                    else "unknown",
+                    "cipher": (
+                        transport.get_cipher()[0]
+                        if transport.get_cipher()
+                        else "unknown"
+                    ),
                     "host_key_type": transport.get_host_key().get_name(),
                     "auth_method": auth_method,
                 }
@@ -273,9 +271,9 @@ class SSHHandler:
             # Map common signals to key sequences
             signal_sequences = {
                 "SIGINT": "\x03",  # Ctrl+C
-                "SIGQUIT": "\x1C",  # Ctrl+\
+                "SIGQUIT": "\x1c",  # Ctrl+\
                 "SIGTERM": "\x15",  # Ctrl+U
-                "SIGTSTP": "\x1A",  # Ctrl+Z
+                "SIGTSTP": "\x1a",  # Ctrl+Z
             }
 
             sequence = signal_sequences.get(signal_name.upper())
@@ -284,9 +282,7 @@ class SSHHandler:
                 logger.debug(f"Sent {signal_name} signal via key sequence")
                 return True
             else:
-                logger.warning(
-                    f"No key sequence mapping for signal: {signal_name}"
-                )
+                logger.warning(f"No key sequence mapping for signal: {signal_name}")
                 return False
 
         except Exception as e:
@@ -312,11 +308,7 @@ class SSHHandler:
         """Read output from SSH channel in a separate thread."""
         logger.debug("Starting SSH output reading loop")
 
-        while (
-            self._running
-            and self.ssh_channel
-            and not self._stop_event.is_set()
-        ):
+        while self._running and self.ssh_channel and not self._stop_event.is_set():
             try:
                 if self.ssh_channel.recv_ready():
                     # Read available data
@@ -324,9 +316,7 @@ class SSHHandler:
                     if data:
                         # Decode and send via callback
                         try:
-                            output_text = data.decode(
-                                "utf-8", errors="replace"
-                            )
+                            output_text = data.decode("utf-8", errors="replace")
                             # Schedule callback in asyncio loop
                             asyncio.run_coroutine_threadsafe(
                                 self.output_callback(output_text),
@@ -343,9 +333,7 @@ class SSHHandler:
                 if self.ssh_channel.recv_stderr_ready():
                     stderr_data = self.ssh_channel.recv_stderr(1024)
                     if stderr_data:
-                        stderr_text = stderr_data.decode(
-                            "utf-8", errors="replace"
-                        )
+                        stderr_text = stderr_data.decode("utf-8", errors="replace")
                         # Send stderr as regular output (many terminals do this)
                         asyncio.run_coroutine_threadsafe(
                             self.output_callback(stderr_text),

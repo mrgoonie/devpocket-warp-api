@@ -35,9 +35,7 @@ class TestAPIPerformance:
     @pytest.mark.asyncio
     async def test_auth_endpoint_performance(self, performance_app, benchmark):
         """Test authentication endpoint performance."""
-        async with AsyncClient(
-            app=performance_app, base_url="http://test"
-        ) as client:
+        async with AsyncClient(app=performance_app, base_url="http://test") as client:
 
             def auth_request():
                 return asyncio.run(
@@ -58,18 +56,14 @@ class TestAPIPerformance:
                 200,
                 401,
             ]  # Should respond quickly regardless
-            assert (
-                benchmark.stats["mean"] < 0.5
-            )  # Should complete within 500ms
+            assert benchmark.stats["mean"] < 0.5  # Should complete within 500ms
 
     @pytest.mark.asyncio
     async def test_user_profile_performance(
         self, performance_app, auth_headers, benchmark
     ):
         """Test user profile retrieval performance."""
-        async with AsyncClient(
-            app=performance_app, base_url="http://test"
-        ) as client:
+        async with AsyncClient(app=performance_app, base_url="http://test") as client:
 
             def profile_request():
                 return asyncio.run(
@@ -80,18 +74,14 @@ class TestAPIPerformance:
 
             # Performance assertions
             assert result.status_code == 200
-            assert (
-                benchmark.stats["mean"] < 0.2
-            )  # Should complete within 200ms
+            assert benchmark.stats["mean"] < 0.2  # Should complete within 200ms
 
     @pytest.mark.asyncio
     async def test_ssh_profile_list_performance(
         self, performance_app, auth_headers, benchmark
     ):
         """Test SSH profile listing performance."""
-        async with AsyncClient(
-            app=performance_app, base_url="http://test"
-        ) as client:
+        async with AsyncClient(app=performance_app, base_url="http://test") as client:
 
             def ssh_profiles_request():
                 return asyncio.run(
@@ -102,9 +92,7 @@ class TestAPIPerformance:
 
             # Performance assertions
             assert result.status_code == 200
-            assert (
-                benchmark.stats["mean"] < 0.3
-            )  # Should complete within 300ms
+            assert benchmark.stats["mean"] < 0.3  # Should complete within 300ms
 
     @pytest.mark.asyncio
     async def test_concurrent_api_requests(
@@ -143,9 +131,7 @@ class TestDatabasePerformance:
         """Test user database query performance."""
 
         def user_query():
-            return asyncio.run(
-                user_repository.get_by_email("test@example.com")
-            )
+            return asyncio.run(user_repository.get_by_email("test@example.com"))
 
         result = benchmark(user_query)
 
@@ -174,9 +160,7 @@ class TestDatabasePerformance:
         assert benchmark.stats["mean"] < 2.0  # 100 inserts within 2 seconds
 
     @pytest.mark.asyncio
-    async def test_complex_query_performance(
-        self, command_repository, benchmark
-    ):
+    async def test_complex_query_performance(self, command_repository, benchmark):
         """Test complex database query performance."""
 
         def complex_query():
@@ -191,9 +175,7 @@ class TestDatabasePerformance:
         assert benchmark.stats["mean"] < 0.5  # Complex query within 500ms
 
     @pytest.mark.asyncio
-    async def test_database_connection_pool_performance(
-        self, db_session, benchmark
-    ):
+    async def test_database_connection_pool_performance(self, db_session, benchmark):
         """Test database connection pool efficiency."""
 
         def connection_pool_test():
@@ -202,9 +184,7 @@ class TestDatabasePerformance:
                     return await session.execute("SELECT 1")
 
             # Test multiple concurrent connections
-            return asyncio.run(
-                asyncio.gather(*[get_connection() for _ in range(20)])
-            )
+            return asyncio.run(asyncio.gather(*[get_connection() for _ in range(20)]))
 
         results = benchmark(connection_pool_test)
 
@@ -314,9 +294,7 @@ class TestSSHPerformance:
 
         # Performance assertions
         assert result["exit_code"] == 0
-        assert (
-            benchmark.stats["mean"] < 1.0
-        )  # Command execution within 1 second
+        assert benchmark.stats["mean"] < 1.0  # Command execution within 1 second
 
     @pytest.mark.asyncio
     async def test_ssh_file_transfer_performance(self, ssh_client, benchmark):
@@ -344,9 +322,7 @@ class TestAIServicePerformance:
         """Test AI command suggestion response time."""
 
         def ai_suggest():
-            with patch.object(
-                ai_service, "openrouter_service"
-            ) as mock_service:
+            with patch.object(ai_service, "openrouter_service") as mock_service:
                 mock_service.generate_command.return_value = {
                     "command": "ls -la",
                     "explanation": "Lists files with details",
@@ -369,21 +345,15 @@ class TestAIServicePerformance:
         """Test AI API key validation caching performance."""
 
         def cached_validation():
-            with patch.object(
-                ai_service, "openrouter_service"
-            ) as mock_service:
+            with patch.object(ai_service, "openrouter_service") as mock_service:
                 mock_service.validate_api_key.return_value = True
 
                 # First call - should hit API
                 api_key = "test-key-123"
-                result1 = asyncio.run(
-                    ai_service.validate_user_api_key(api_key)
-                )
+                result1 = asyncio.run(ai_service.validate_user_api_key(api_key))
 
                 # Second call - should use cache
-                result2 = asyncio.run(
-                    ai_service.validate_user_api_key(api_key)
-                )
+                result2 = asyncio.run(ai_service.validate_user_api_key(api_key))
 
                 return result1, result2
 
@@ -414,9 +384,7 @@ class TestSynchronizationPerformance:
 
             with patch.object(sync_service, "sync_repository") as mock_repo:
                 mock_repo.bulk_create.return_value = sync_items
-                return asyncio.run(
-                    sync_service.bulk_sync("user-123", sync_items)
-                )
+                return asyncio.run(sync_service.bulk_sync("user-123", sync_items))
 
         result = benchmark(sync_processing)
 
@@ -425,9 +393,7 @@ class TestSynchronizationPerformance:
         assert benchmark.stats["mean"] < 1.0  # 100 items sync within 1 second
 
     @pytest.mark.asyncio
-    async def test_real_time_sync_notification_time(
-        self, sync_service, benchmark
-    ):
+    async def test_real_time_sync_notification_time(self, sync_service, benchmark):
         """Test real-time sync notification performance."""
 
         def sync_notification():
@@ -463,9 +429,7 @@ class TestSynchronizationPerformance:
 
         # Performance assertions
         assert result["value"] == "B"
-        assert (
-            benchmark.stats["mean"] < 0.01
-        )  # Conflict resolution within 10ms
+        assert benchmark.stats["mean"] < 0.01  # Conflict resolution within 10ms
 
 
 class TestLoadTesting:
@@ -484,9 +448,7 @@ class TestLoadTesting:
                 for i in range(50):
                     tasks.append(client.get(f"/api/auth/profile"))
 
-                responses = await asyncio.gather(
-                    *tasks, return_exceptions=True
-                )
+                responses = await asyncio.gather(*tasks, return_exceptions=True)
                 return responses
 
         def load_test_sync():
@@ -497,9 +459,7 @@ class TestLoadTesting:
         # Performance assertions
         assert len(responses) == 50
         success_count = sum(
-            1
-            for r in responses
-            if hasattr(r, "status_code") and r.status_code == 200
+            1 for r in responses if hasattr(r, "status_code") and r.status_code == 200
         )
         assert success_count >= 45  # At least 90% success rate
         assert benchmark.stats["mean"] < 5.0  # All requests within 5 seconds
@@ -510,9 +470,7 @@ class TestLoadTesting:
 
         def database_load_test():
             async def concurrent_queries():
-                tasks = [
-                    user_repository.get_by_id(f"user-{i}") for i in range(20)
-                ]
+                tasks = [user_repository.get_by_id(f"user-{i}") for i in range(20)]
                 return await asyncio.gather(*tasks, return_exceptions=True)
 
             return asyncio.run(concurrent_queries())
@@ -551,9 +509,7 @@ class TestLoadTesting:
 
         # Performance assertions
         assert memory_increase_mb < 50  # Memory increase should be reasonable
-        assert (
-            benchmark.stats["mean"] < 1.0
-        )  # Memory allocation within 1 second
+        assert benchmark.stats["mean"] < 1.0  # Memory allocation within 1 second
 
 
 class TestPerformanceBaselines:

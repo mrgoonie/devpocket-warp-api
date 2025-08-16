@@ -200,9 +200,9 @@ def setup_exception_handlers(app: FastAPI) -> None:
             content={
                 "error": {
                     "code": 500,
-                    "message": "Internal server error"
-                    if not settings.app_debug
-                    else str(exc),
+                    "message": (
+                        "Internal server error" if not settings.app_debug else str(exc)
+                    ),
                     "type": "internal_error",
                 }
             },
@@ -258,9 +258,7 @@ def setup_routes(app: FastAPI) -> None:
                 status_code=503,
                 content={
                     "status": "unhealthy",
-                    "error": str(e)
-                    if settings.app_debug
-                    else "Service unavailable",
+                    "error": str(e) if settings.app_debug else "Service unavailable",
                 },
             )
 
