@@ -211,9 +211,7 @@ class TestScriptVerification:
                 ]
 
                 for marker_args in marker_tests:
-                    script_runner.run_script(
-                        "run_tests.sh", marker_args, timeout=5
-                    )
+                    script_runner.run_script("run_tests.sh", marker_args, timeout=5)
                     # Should not fail due to marker syntax
                     # (actual execution mocked, so we just check parsing)
 
@@ -234,9 +232,7 @@ class TestScriptVerification:
 
             for dangerous_input in dangerous_inputs:
                 # Scripts should either reject these or handle them safely
-                script_runner.run_script(
-                    "format_code.sh", [dangerous_input], timeout=5
-                )
+                script_runner.run_script("format_code.sh", [dangerous_input], timeout=5)
                 # Should either fail safely or handle the input properly
                 # We don't want the script to hang or execute dangerous commands
 
