@@ -13,8 +13,10 @@ def run_command(command: str, description: str = None) -> int:
     """Run a shell command and return the exit code."""
     if description:
         print(f"🔄 {description}")
-    
-    result = subprocess.run(command, shell=True, cwd=Path(__file__).parent.parent)
+
+    result = subprocess.run(
+        command, shell=True, cwd=Path(__file__).parent.parent
+    )
     return result.returncode
 
 
@@ -23,7 +25,7 @@ def start_server():
     print("🚀 Starting DevPocket API development server...")
     return run_command(
         "source venv/bin/activate && python main.py",
-        "Starting FastAPI server with hot reload"
+        "Starting FastAPI server with hot reload",
     )
 
 
@@ -32,7 +34,7 @@ def install_deps():
     print("📦 Installing dependencies...")
     return run_command(
         "source venv/bin/activate && pip install -r requirements.txt",
-        "Installing Python dependencies"
+        "Installing Python dependencies",
     )
 
 
@@ -40,8 +42,7 @@ def format_code():
     """Format code with black."""
     print("🎨 Formatting code...")
     return run_command(
-        "source venv/bin/activate && black .",
-        "Running black formatter"
+        "source venv/bin/activate && black .", "Running black formatter"
     )
 
 
@@ -49,8 +50,7 @@ def lint_code():
     """Lint code with ruff."""
     print("🔍 Linting code...")
     return run_command(
-        "source venv/bin/activate && ruff check .",
-        "Running ruff linter"
+        "source venv/bin/activate && ruff check .", "Running ruff linter"
     )
 
 
@@ -58,8 +58,7 @@ def type_check():
     """Type check with mypy."""
     print("🏷️ Type checking...")
     return run_command(
-        "source venv/bin/activate && mypy app/",
-        "Running mypy type checker"
+        "source venv/bin/activate && mypy app/", "Running mypy type checker"
     )
 
 
@@ -68,27 +67,27 @@ def run_tests():
     print("🧪 Running tests...")
     return run_command(
         "source venv/bin/activate && python -m pytest tests/ -v",
-        "Running pytest"
+        "Running pytest",
     )
 
 
 def check_all():
     """Run all checks (format, lint, type check, tests)."""
     print("✅ Running all checks...")
-    
+
     checks = [
         ("Format code", format_code),
         ("Lint code", lint_code),
         ("Type check", type_check),
         ("Run tests", run_tests),
     ]
-    
+
     failed = []
-    
+
     for check_name, check_func in checks:
         if check_func() != 0:
             failed.append(check_name)
-    
+
     if failed:
         print(f"\n❌ Failed checks: {', '.join(failed)}")
         return 1
@@ -101,15 +100,15 @@ def create_env():
     """Create .env file from template."""
     env_file = Path(__file__).parent.parent / ".env"
     env_example = Path(__file__).parent.parent / ".env.example"
-    
+
     if env_file.exists():
         print("⚠️  .env file already exists")
         return 0
-    
+
     if not env_example.exists():
         print("❌ .env.example file not found")
         return 1
-    
+
     try:
         env_content = env_example.read_text()
         env_file.write_text(env_content)
@@ -125,25 +124,27 @@ def setup_db():
     """Set up database."""
     print("🗄️ Setting up database...")
     print("⚠️  Make sure PostgreSQL is running")
-    
+
     commands = [
         ("python3 scripts/db_utils.py create", "Create database"),
         ("python3 scripts/db_utils.py init", "Initialize database tables"),
         ("source venv/bin/activate && alembic upgrade head", "Run migrations"),
     ]
-    
+
     for cmd, desc in commands:
         if run_command(cmd, desc) != 0:
             print(f"❌ Failed: {desc}")
             return 1
-    
+
     print("✅ Database setup completed")
     return 0
 
 
 def db_create():
     """Create database."""
-    return run_command("python3 scripts/db_utils.py create", "Creating database")
+    return run_command(
+        "python3 scripts/db_utils.py create", "Creating database"
+    )
 
 
 def db_drop():
@@ -153,17 +154,24 @@ def db_drop():
 
 def db_reset():
     """Reset database."""
-    return run_command("python3 scripts/db_utils.py reset", "Resetting database")
+    return run_command(
+        "python3 scripts/db_utils.py reset", "Resetting database"
+    )
 
 
 def db_health():
     """Check database health."""
-    return run_command("python3 scripts/db_utils.py health", "Checking database health")
+    return run_command(
+        "python3 scripts/db_utils.py health", "Checking database health"
+    )
 
 
 def migrate():
     """Run database migrations."""
-    return run_command("source venv/bin/activate && alembic upgrade head", "Running migrations")
+    return run_command(
+        "source venv/bin/activate && alembic upgrade head",
+        "Running migrations",
+    )
 
 
 def migration_create():
@@ -175,14 +183,14 @@ def migration_create():
         return 1
     return run_command(
         f"source venv/bin/activate && alembic revision --autogenerate -m '{migration_name}'",
-        f"Creating migration: {migration_name}"
+        f"Creating migration: {migration_name}",
     )
 
 
 def clean():
     """Clean up generated files."""
     print("🧹 Cleaning up...")
-    
+
     patterns = [
         "**/__pycache__",
         "**/*.pyc",
@@ -192,17 +200,18 @@ def clean():
         ".coverage",
         "htmlcov/",
     ]
-    
+
     for pattern in patterns:
         run_command(f"find . -path '{pattern}' -delete", f"Removing {pattern}")
-    
+
     print("✅ Cleanup complete")
     return 0
 
 
 def show_help():
     """Show help message."""
-    print("""
+    print(
+        """
 🔧 DevPocket API Development Script
 
 Usage: python scripts/dev.py <command>
@@ -235,7 +244,8 @@ Examples:
   python scripts/dev.py check
   python scripts/dev.py db-create
   python scripts/dev.py migrate
-""")
+"""
+    )
 
 
 def main():
@@ -243,9 +253,9 @@ def main():
     if len(sys.argv) < 2:
         show_help()
         return 0
-    
+
     command = sys.argv[1].lower()
-    
+
     commands = {
         "start": start_server,
         "install": install_deps,
@@ -265,12 +275,12 @@ def main():
         "clean": clean,
         "help": show_help,
     }
-    
+
     if command not in commands:
         print(f"❌ Unknown command: {command}")
         show_help()
         return 1
-    
+
     return commands[command]()
 
 

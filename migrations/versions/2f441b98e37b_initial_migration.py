@@ -52,7 +52,9 @@ def upgrade() -> None:
         # First check if enum exists, then create if it doesn't
         if not enum_exists("user_role"):
             bind.execute(
-                sa.text("CREATE TYPE user_role AS ENUM ('user', 'admin', 'premium')")
+                sa.text(
+                    "CREATE TYPE user_role AS ENUM ('user', 'admin', 'premium')"
+                )
             )
     except Exception as e:
         # If enum already exists, this is expected and safe to ignore
@@ -95,22 +97,46 @@ def upgrade() -> None:
             sa.Column("id", sa.UUID(), nullable=False),
             sa.Column("email", sa.String(length=255), nullable=False),
             sa.Column("username", sa.String(length=50), nullable=False),
-            sa.Column("hashed_password", sa.String(length=255), nullable=False),
+            sa.Column(
+                "hashed_password", sa.String(length=255), nullable=False
+            ),
             sa.Column("full_name", sa.String(length=255), nullable=True),
             sa.Column(
                 "role",
-                ENUM("user", "admin", "premium", name="user_role", create_type=False),
+                ENUM(
+                    "user",
+                    "admin",
+                    "premium",
+                    name="user_role",
+                    create_type=False,
+                ),
                 nullable=False,
                 server_default="user",
             ),
-            sa.Column("is_active", sa.Boolean(), nullable=False, server_default="true"),
             sa.Column(
-                "is_verified", sa.Boolean(), nullable=False, server_default="false"
+                "is_active",
+                sa.Boolean(),
+                nullable=False,
+                server_default="true",
             ),
-            sa.Column("verification_token", sa.String(length=255), nullable=True),
+            sa.Column(
+                "is_verified",
+                sa.Boolean(),
+                nullable=False,
+                server_default="false",
+            ),
+            sa.Column(
+                "verification_token", sa.String(length=255), nullable=True
+            ),
             sa.Column("reset_token", sa.String(length=255), nullable=True),
-            sa.Column("reset_token_expires", sa.DateTime(timezone=True), nullable=True),
-            sa.Column("openrouter_api_key", sa.String(length=255), nullable=True),
+            sa.Column(
+                "reset_token_expires",
+                sa.DateTime(timezone=True),
+                nullable=True,
+            ),
+            sa.Column(
+                "openrouter_api_key", sa.String(length=255), nullable=True
+            ),
             sa.Column(
                 "subscription_tier",
                 sa.String(length=50),
@@ -118,7 +144,9 @@ def upgrade() -> None:
                 server_default="free",
             ),
             sa.Column(
-                "subscription_expires_at", sa.DateTime(timezone=True), nullable=True
+                "subscription_expires_at",
+                sa.DateTime(timezone=True),
+                nullable=True,
             ),
             sa.Column(
                 "failed_login_attempts",
@@ -126,9 +154,15 @@ def upgrade() -> None:
                 nullable=False,
                 server_default="0",
             ),
-            sa.Column("locked_until", sa.DateTime(timezone=True), nullable=True),
-            sa.Column("last_login_at", sa.DateTime(timezone=True), nullable=True),
-            sa.Column("verified_at", sa.DateTime(timezone=True), nullable=True),
+            sa.Column(
+                "locked_until", sa.DateTime(timezone=True), nullable=True
+            ),
+            sa.Column(
+                "last_login_at", sa.DateTime(timezone=True), nullable=True
+            ),
+            sa.Column(
+                "verified_at", sa.DateTime(timezone=True), nullable=True
+            ),
             sa.Column(
                 "created_at",
                 sa.DateTime(timezone=True),
@@ -144,7 +178,9 @@ def upgrade() -> None:
             sa.PrimaryKeyConstraint("id"),
         )
         op.create_index("ix_users_email", "users", ["email"], unique=True)
-        op.create_index("ix_users_username", "users", ["username"], unique=True)
+        op.create_index(
+            "ix_users_username", "users", ["username"], unique=True
+        )
         op.create_index("ix_users_id", "users", ["id"])
         op.create_index("ix_users_created_at", "users", ["created_at"])
         op.create_index("ix_users_updated_at", "users", ["updated_at"])
@@ -162,14 +198,20 @@ def upgrade() -> None:
         # Modify columns
         try:
             op.alter_column("users", "username", type_=sa.String(length=50))
-            op.alter_column("users", "created_at", type_=sa.DateTime(timezone=True))
-            op.alter_column("users", "updated_at", type_=sa.DateTime(timezone=True))
+            op.alter_column(
+                "users", "created_at", type_=sa.DateTime(timezone=True)
+            )
+            op.alter_column(
+                "users", "updated_at", type_=sa.DateTime(timezone=True)
+            )
         except Exception:
             pass
 
         # Create new indexes
         op.create_index("ix_users_email", "users", ["email"], unique=True)
-        op.create_index("ix_users_username", "users", ["username"], unique=True)
+        op.create_index(
+            "ix_users_username", "users", ["username"], unique=True
+        )
         op.create_index("ix_users_id", "users", ["id"])
         op.create_index("ix_users_created_at", "users", ["created_at"])
         op.create_index("ix_users_updated_at", "users", ["updated_at"])
@@ -193,17 +235,30 @@ def upgrade() -> None:
             ),
             sa.Column("user_agent", sa.Text(), nullable=True),
             sa.Column("ip_address", sa.String(length=45), nullable=True),
-            sa.Column("is_active", sa.Boolean(), nullable=False, server_default="true"),
-            sa.Column("last_activity_at", sa.DateTime(timezone=True), nullable=True),
+            sa.Column(
+                "is_active",
+                sa.Boolean(),
+                nullable=False,
+                server_default="true",
+            ),
+            sa.Column(
+                "last_activity_at", sa.DateTime(timezone=True), nullable=True
+            ),
             sa.Column("ended_at", sa.DateTime(timezone=True), nullable=True),
             sa.Column("ssh_host", sa.String(length=255), nullable=True),
             sa.Column("ssh_port", sa.Integer(), nullable=True),
             sa.Column("ssh_username", sa.String(length=100), nullable=True),
             sa.Column(
-                "terminal_cols", sa.Integer(), nullable=False, server_default="80"
+                "terminal_cols",
+                sa.Integer(),
+                nullable=False,
+                server_default="80",
             ),
             sa.Column(
-                "terminal_rows", sa.Integer(), nullable=False, server_default="24"
+                "terminal_rows",
+                sa.Integer(),
+                nullable=False,
+                server_default="24",
             ),
             sa.Column(
                 "created_at",
@@ -217,7 +272,9 @@ def upgrade() -> None:
                 server_default=sa.text("now()"),
                 nullable=False,
             ),
-            sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
+            sa.ForeignKeyConstraint(
+                ["user_id"], ["users.id"], ondelete="CASCADE"
+            ),
             sa.PrimaryKeyConstraint("id"),
         )
         op.create_index("ix_sessions_id", "sessions", ["id"])
@@ -236,7 +293,9 @@ def upgrade() -> None:
             # Drop old columns and indexes
             op.drop_index("idx_sessions_token_hash", table_name="sessions")
             op.drop_index("idx_sessions_user_id", table_name="sessions")
-            op.drop_constraint("sessions_token_hash_key", "sessions", type_="unique")
+            op.drop_constraint(
+                "sessions_token_hash_key", "sessions", type_="unique"
+            )
             op.drop_column("sessions", "token_hash")
             op.drop_column("sessions", "expires_at")
             op.drop_column("sessions", "device_info")
@@ -260,7 +319,9 @@ def upgrade() -> None:
             )
             op.add_column(
                 "sessions",
-                sa.Column("session_name", sa.String(length=100), nullable=True),
+                sa.Column(
+                    "session_name", sa.String(length=100), nullable=True
+                ),
             )
             op.add_column(
                 "sessions",
@@ -271,43 +332,61 @@ def upgrade() -> None:
                     server_default="terminal",
                 ),
             )
-            op.add_column("sessions", sa.Column("user_agent", sa.Text(), nullable=True))
+            op.add_column(
+                "sessions", sa.Column("user_agent", sa.Text(), nullable=True)
+            )
             op.add_column(
                 "sessions",
                 sa.Column(
-                    "is_active", sa.Boolean(), nullable=False, server_default="true"
+                    "is_active",
+                    sa.Boolean(),
+                    nullable=False,
+                    server_default="true",
                 ),
             )
             op.add_column(
                 "sessions",
                 sa.Column(
-                    "last_activity_at", sa.DateTime(timezone=True), nullable=True
+                    "last_activity_at",
+                    sa.DateTime(timezone=True),
+                    nullable=True,
                 ),
             )
             op.add_column(
                 "sessions",
-                sa.Column("ended_at", sa.DateTime(timezone=True), nullable=True),
+                sa.Column(
+                    "ended_at", sa.DateTime(timezone=True), nullable=True
+                ),
             )
             op.add_column(
-                "sessions", sa.Column("ssh_host", sa.String(length=255), nullable=True)
+                "sessions",
+                sa.Column("ssh_host", sa.String(length=255), nullable=True),
             )
             op.add_column(
                 "sessions", sa.Column("ssh_port", sa.Integer(), nullable=True)
             )
             op.add_column(
                 "sessions",
-                sa.Column("ssh_username", sa.String(length=100), nullable=True),
-            )
-            op.add_column(
-                "sessions",
                 sa.Column(
-                    "terminal_cols", sa.Integer(), nullable=False, server_default="80"
+                    "ssh_username", sa.String(length=100), nullable=True
                 ),
             )
             op.add_column(
                 "sessions",
                 sa.Column(
-                    "terminal_rows", sa.Integer(), nullable=False, server_default="24"
+                    "terminal_cols",
+                    sa.Integer(),
+                    nullable=False,
+                    server_default="80",
+                ),
+            )
+            op.add_column(
+                "sessions",
+                sa.Column(
+                    "terminal_rows",
+                    sa.Integer(),
+                    nullable=False,
+                    server_default="24",
                 ),
             )
             op.add_column(
@@ -324,8 +403,12 @@ def upgrade() -> None:
 
         # Modify existing columns
         try:
-            op.alter_column("sessions", "ip_address", type_=sa.String(length=45))
-            op.alter_column("sessions", "created_at", type_=sa.DateTime(timezone=True))
+            op.alter_column(
+                "sessions", "ip_address", type_=sa.String(length=45)
+            )
+            op.alter_column(
+                "sessions", "created_at", type_=sa.DateTime(timezone=True)
+            )
         except Exception:
             pass
 
@@ -334,12 +417,20 @@ def upgrade() -> None:
             op.create_index("ix_sessions_id", "sessions", ["id"])
             op.create_index("ix_sessions_user_id", "sessions", ["user_id"])
             op.create_index("ix_sessions_device_id", "sessions", ["device_id"])
-            op.create_index("ix_sessions_device_type", "sessions", ["device_type"])
-            op.create_index("ix_sessions_is_active", "sessions", ["is_active"])
-            op.create_index("ix_sessions_created_at", "sessions", ["created_at"])
-            op.create_index("ix_sessions_updated_at", "sessions", ["updated_at"])
             op.create_index(
-                "ix_sessions_last_activity_at", "sessions", ["last_activity_at"]
+                "ix_sessions_device_type", "sessions", ["device_type"]
+            )
+            op.create_index("ix_sessions_is_active", "sessions", ["is_active"])
+            op.create_index(
+                "ix_sessions_created_at", "sessions", ["created_at"]
+            )
+            op.create_index(
+                "ix_sessions_updated_at", "sessions", ["updated_at"]
+            )
+            op.create_index(
+                "ix_sessions_last_activity_at",
+                "sessions",
+                ["last_activity_at"],
             )
         except Exception:
             pass
@@ -347,7 +438,12 @@ def upgrade() -> None:
     # Drop old tables if they exist
     # Using raw SQL with IF EXISTS to avoid transaction abortion
     bind = op.get_bind()
-    for table_name in ["workflows", "sync_queue", "command_history", "ssh_connections"]:
+    for table_name in [
+        "workflows",
+        "sync_queue",
+        "command_history",
+        "ssh_connections",
+    ]:
         try:
             bind.execute(sa.text(f"DROP TABLE IF EXISTS {table_name} CASCADE"))
         except Exception:
@@ -367,12 +463,19 @@ def upgrade() -> None:
         sa.Column("public_key", sa.Text(), nullable=False),
         sa.Column("comment", sa.String(length=255), nullable=True),
         sa.Column(
-            "has_passphrase", sa.Boolean(), nullable=False, server_default="false"
+            "has_passphrase",
+            sa.Boolean(),
+            nullable=False,
+            server_default="false",
         ),
         sa.Column("file_path", sa.String(length=500), nullable=True),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default="true"),
+        sa.Column(
+            "is_active", sa.Boolean(), nullable=False, server_default="true"
+        ),
         sa.Column("last_used_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("usage_count", sa.Integer(), nullable=False, server_default="0"),
+        sa.Column(
+            "usage_count", sa.Integer(), nullable=False, server_default="0"
+        ),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
@@ -390,7 +493,9 @@ def upgrade() -> None:
     )
     op.create_index("ix_ssh_keys_id", "ssh_keys", ["id"])
     op.create_index("ix_ssh_keys_user_id", "ssh_keys", ["user_id"])
-    op.create_index("ix_ssh_keys_fingerprint", "ssh_keys", ["fingerprint"], unique=True)
+    op.create_index(
+        "ix_ssh_keys_fingerprint", "ssh_keys", ["fingerprint"], unique=True
+    )
     op.create_index("ix_ssh_keys_created_at", "ssh_keys", ["created_at"])
     op.create_index("ix_ssh_keys_updated_at", "ssh_keys", ["updated_at"])
 
@@ -406,7 +511,10 @@ def upgrade() -> None:
             server_default="dark",
         ),
         sa.Column(
-            "terminal_font_size", sa.Integer(), nullable=False, server_default="14"
+            "terminal_font_size",
+            sa.Integer(),
+            nullable=False,
+            server_default="14",
         ),
         sa.Column(
             "terminal_font_family",
@@ -432,10 +540,20 @@ def upgrade() -> None:
             nullable=False,
             server_default="true",
         ),
-        sa.Column("sync_enabled", sa.Boolean(), nullable=False, server_default="true"),
-        sa.Column("sync_commands", sa.Boolean(), nullable=False, server_default="true"),
         sa.Column(
-            "sync_ssh_profiles", sa.Boolean(), nullable=False, server_default="true"
+            "sync_enabled", sa.Boolean(), nullable=False, server_default="true"
+        ),
+        sa.Column(
+            "sync_commands",
+            sa.Boolean(),
+            nullable=False,
+            server_default="true",
+        ),
+        sa.Column(
+            "sync_ssh_profiles",
+            sa.Boolean(),
+            nullable=False,
+            server_default="true",
         ),
         sa.Column("custom_settings", sa.JSON(), nullable=True),
         sa.Column(
@@ -455,8 +573,12 @@ def upgrade() -> None:
     )
     op.create_index("ix_user_settings_id", "user_settings", ["id"])
     op.create_index("ix_user_settings_user_id", "user_settings", ["user_id"])
-    op.create_index("ix_user_settings_created_at", "user_settings", ["created_at"])
-    op.create_index("ix_user_settings_updated_at", "user_settings", ["updated_at"])
+    op.create_index(
+        "ix_user_settings_created_at", "user_settings", ["created_at"]
+    )
+    op.create_index(
+        "ix_user_settings_updated_at", "user_settings", ["updated_at"]
+    )
 
     # Create sync_data table
     op.create_table(
@@ -467,7 +589,9 @@ def upgrade() -> None:
         sa.Column("sync_key", sa.String(length=255), nullable=False),
         sa.Column("data", sa.JSON(), nullable=False),
         sa.Column("version", sa.Integer(), nullable=False, server_default="1"),
-        sa.Column("is_deleted", sa.Boolean(), nullable=False, server_default="false"),
+        sa.Column(
+            "is_deleted", sa.Boolean(), nullable=False, server_default="false"
+        ),
         sa.Column("source_device_id", sa.String(length=255), nullable=False),
         sa.Column("source_device_type", sa.String(length=20), nullable=False),
         sa.Column("conflict_data", sa.JSON(), nullable=True),
@@ -518,7 +642,10 @@ def upgrade() -> None:
         sa.Column("error_output", sa.Text(), nullable=True),
         sa.Column("exit_code", sa.Integer(), nullable=True),
         sa.Column(
-            "status", sa.String(length=20), nullable=False, server_default="pending"
+            "status",
+            sa.String(length=20),
+            nullable=False,
+            server_default="pending",
         ),
         sa.Column("started_at", sa.DateTime(timezone=True), nullable=True),
         sa.Column("completed_at", sa.DateTime(timezone=True), nullable=True),
@@ -526,11 +653,19 @@ def upgrade() -> None:
         sa.Column("working_directory", sa.String(length=500), nullable=True),
         sa.Column("environment_vars", sa.Text(), nullable=True),
         sa.Column(
-            "was_ai_suggested", sa.Boolean(), nullable=False, server_default="false"
+            "was_ai_suggested",
+            sa.Boolean(),
+            nullable=False,
+            server_default="false",
         ),
         sa.Column("ai_explanation", sa.Text(), nullable=True),
         sa.Column("command_type", sa.String(length=50), nullable=True),
-        sa.Column("is_sensitive", sa.Boolean(), nullable=False, server_default="false"),
+        sa.Column(
+            "is_sensitive",
+            sa.Boolean(),
+            nullable=False,
+            server_default="false",
+        ),
         sa.Column(
             "created_at",
             sa.DateTime(timezone=True),
@@ -543,7 +678,9 @@ def upgrade() -> None:
             server_default=sa.text("now()"),
             nullable=False,
         ),
-        sa.ForeignKeyConstraint(["session_id"], ["sessions.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["session_id"], ["sessions.id"], ondelete="CASCADE"
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index("ix_commands_id", "commands", ["id"])
@@ -552,19 +689,29 @@ def upgrade() -> None:
     op.create_index("ix_commands_status", "commands", ["status"])
     op.create_index("ix_commands_exit_code", "commands", ["exit_code"])
     op.create_index("ix_commands_command_type", "commands", ["command_type"])
-    op.create_index("ix_commands_was_ai_suggested", "commands", ["was_ai_suggested"])
+    op.create_index(
+        "ix_commands_was_ai_suggested", "commands", ["was_ai_suggested"]
+    )
     op.create_index("ix_commands_created_at", "commands", ["created_at"])
     op.create_index("ix_commands_updated_at", "commands", ["updated_at"])
 
     # Create composite indexes for better performance
     op.create_index(
-        "idx_commands_session_created", "commands", ["session_id", "created_at"]
+        "idx_commands_session_created",
+        "commands",
+        ["session_id", "created_at"],
     )
-    op.create_index("idx_commands_status_created", "commands", ["status", "created_at"])
     op.create_index(
-        "idx_commands_ai_suggested", "commands", ["was_ai_suggested", "created_at"]
+        "idx_commands_status_created", "commands", ["status", "created_at"]
     )
-    op.create_index("idx_commands_user_command", "commands", ["session_id", "command"])
+    op.create_index(
+        "idx_commands_ai_suggested",
+        "commands",
+        ["was_ai_suggested", "created_at"],
+    )
+    op.create_index(
+        "idx_commands_user_command", "commands", ["session_id", "command"]
+    )
 
     # Create ssh_profiles table
     op.create_table(
@@ -577,10 +724,15 @@ def upgrade() -> None:
         sa.Column("port", sa.Integer(), nullable=False, server_default="22"),
         sa.Column("username", sa.String(length=100), nullable=False),
         sa.Column(
-            "auth_method", sa.String(length=20), nullable=False, server_default="key"
+            "auth_method",
+            sa.String(length=20),
+            nullable=False,
+            server_default="key",
         ),
         sa.Column("ssh_key_id", sa.UUID(), nullable=True),
-        sa.Column("compression", sa.Boolean(), nullable=False, server_default="true"),
+        sa.Column(
+            "compression", sa.Boolean(), nullable=False, server_default="true"
+        ),
         sa.Column(
             "strict_host_key_checking",
             sa.Boolean(),
@@ -588,17 +740,33 @@ def upgrade() -> None:
             server_default="true",
         ),
         sa.Column(
-            "connection_timeout", sa.Integer(), nullable=False, server_default="30"
+            "connection_timeout",
+            sa.Integer(),
+            nullable=False,
+            server_default="30",
         ),
         sa.Column("ssh_options", sa.Text(), nullable=True),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default="true"),
-        sa.Column("last_used_at", sa.DateTime(timezone=True), nullable=True),
-        sa.Column("connection_count", sa.Integer(), nullable=False, server_default="0"),
         sa.Column(
-            "successful_connections", sa.Integer(), nullable=False, server_default="0"
+            "is_active", sa.Boolean(), nullable=False, server_default="true"
+        ),
+        sa.Column("last_used_at", sa.DateTime(timezone=True), nullable=True),
+        sa.Column(
+            "connection_count",
+            sa.Integer(),
+            nullable=False,
+            server_default="0",
         ),
         sa.Column(
-            "failed_connections", sa.Integer(), nullable=False, server_default="0"
+            "successful_connections",
+            sa.Integer(),
+            nullable=False,
+            server_default="0",
+        ),
+        sa.Column(
+            "failed_connections",
+            sa.Integer(),
+            nullable=False,
+            server_default="0",
         ),
         sa.Column(
             "created_at",
@@ -613,14 +781,22 @@ def upgrade() -> None:
             nullable=False,
         ),
         sa.ForeignKeyConstraint(["user_id"], ["users.id"], ondelete="CASCADE"),
-        sa.ForeignKeyConstraint(["ssh_key_id"], ["ssh_keys.id"], ondelete="SET NULL"),
+        sa.ForeignKeyConstraint(
+            ["ssh_key_id"], ["ssh_keys.id"], ondelete="SET NULL"
+        ),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index("ix_ssh_profiles_id", "ssh_profiles", ["id"])
     op.create_index("ix_ssh_profiles_user_id", "ssh_profiles", ["user_id"])
-    op.create_index("ix_ssh_profiles_ssh_key_id", "ssh_profiles", ["ssh_key_id"])
-    op.create_index("ix_ssh_profiles_created_at", "ssh_profiles", ["created_at"])
-    op.create_index("ix_ssh_profiles_updated_at", "ssh_profiles", ["updated_at"])
+    op.create_index(
+        "ix_ssh_profiles_ssh_key_id", "ssh_profiles", ["ssh_key_id"]
+    )
+    op.create_index(
+        "ix_ssh_profiles_created_at", "ssh_profiles", ["created_at"]
+    )
+    op.create_index(
+        "ix_ssh_profiles_updated_at", "ssh_profiles", ["updated_at"]
+    )
 
 
 def downgrade() -> None:
