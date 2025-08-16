@@ -51,13 +51,7 @@ async def create_database_from_models():
             await conn.execute(text("CREATE SCHEMA public"))
             await conn.execute(text("GRANT ALL ON SCHEMA public TO public"))
 
-            # Create enum first
-            print("🏷️  Creating user_role enum...")
-            await conn.execute(
-                text("CREATE TYPE user_role AS ENUM ('user', 'admin', 'premium')")
-            )
-
-            # Create all tables from models
+            # Create all tables from models (with enum auto-creation disabled in models)
             print("📊 Creating tables from SQLAlchemy models...")
             await conn.run_sync(Base.metadata.create_all)
 
