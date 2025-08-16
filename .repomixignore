@@ -1,0 +1,17 @@
+# Cache directories
+.cache/
+tmp/
+__pycache__
+
+# Build outputs
+dist/
+build/
+docs/
+backups/
+
+# Logs
+*.log
+
+# AI tools
+.serena/
+.claude/
