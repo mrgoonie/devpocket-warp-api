@@ -3,7 +3,7 @@ Test repository CRUD operations and business logic.
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
@@ -372,7 +372,7 @@ class TestSessionRepository:
         })
         
         # Create old session
-        old_date = datetime.utcnow() - timedelta(days=31)
+        old_date = datetime.now(timezone.utc) - timedelta(days=31)
         session = await session_repo.create({
             "user_id": user.id,
             "device_id": "device123",
@@ -542,7 +542,7 @@ class TestSSHProfileRepository:
             "host": "freq.com",
             "username": "user",
             "connection_count": 50,
-            "last_used_at": datetime.utcnow() - timedelta(hours=1)
+            "last_used_at": datetime.now(timezone.utc) - timedelta(hours=1)
         })
         
         profile2 = await ssh_repo.create({
@@ -551,7 +551,7 @@ class TestSSHProfileRepository:
             "host": "rare.com",
             "username": "user",
             "connection_count": 2,
-            "last_used_at": datetime.utcnow() - timedelta(days=7)
+            "last_used_at": datetime.now(timezone.utc) - timedelta(days=7)
         })
         
         # Get frequently used profiles
@@ -985,7 +985,7 @@ class TestSyncDataRepository:
         })
         
         # Manually set old date
-        old_date = datetime.utcnow() - timedelta(days=91)  # 91 days old
+        old_date = datetime.now(timezone.utc) - timedelta(days=91)  # 91 days old
         old_sync.last_modified_at = old_date
         old_sync.created_at = old_date
         await test_session.commit()

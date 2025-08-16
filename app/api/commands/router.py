@@ -326,7 +326,7 @@ async def export_commands(
         # This is a simplified implementation
         # In production, this would create a background job for large exports
 
-        from datetime import datetime
+        from datetime import datetime, timezone
         import uuid
 
         export_id = str(uuid.uuid4())
@@ -351,8 +351,8 @@ async def export_commands(
             status="completed",
             total_commands=len(commands),
             file_url=f"/api/commands/exports/{export_id}/download",
-            expires_at=datetime.utcnow().replace(hour=23, minute=59, second=59),
-            created_at=datetime.utcnow(),
+            expires_at=datetime.now(timezone.utc).replace(hour=23, minute=59, second=59),
+            created_at=datetime.now(timezone.utc),
         )
 
     except Exception as e:

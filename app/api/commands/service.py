@@ -5,7 +5,7 @@ Contains business logic for command history, analytics, search, and related oper
 """
 
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List, Dict, Any, Tuple
 from collections import Counter, defaultdict
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -348,7 +348,7 @@ class CommandService:
             status_counter = Counter(cmd.status for cmd in all_commands)
 
             # Time-based counts
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             today = now.date()
             week_ago = now - timedelta(days=7)
             month_ago = now - timedelta(days=30)
@@ -449,7 +449,7 @@ class CommandService:
         """Get frequently used commands with analysis."""
         try:
             # Get commands from the specified time period
-            cutoff_date = datetime.utcnow() - timedelta(days=days)
+            cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
             commands = await self.command_repo.get_user_commands_since(
                 user.id, since=cutoff_date
             )
@@ -459,7 +459,7 @@ class CommandService:
                     commands=[],
                     total_analyzed=0,
                     analysis_period_days=days,
-                    generated_at=datetime.utcnow(),
+                    generated_at=datetime.now(timezone.utc),
                 )
 
             # Analyze command patterns
@@ -496,7 +496,7 @@ class CommandService:
                 commands=frequent_commands[:50],  # Limit to top 50
                 total_analyzed=len(commands),
                 analysis_period_days=days,
-                generated_at=datetime.utcnow(),
+                generated_at=datetime.now(timezone.utc),
             )
 
         except Exception as e:
@@ -570,7 +570,7 @@ class CommandService:
     async def get_command_metrics(self, user: User) -> CommandMetrics:
         """Get real-time command execution metrics."""
         try:
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             today = now.date()
             yesterday = now - timedelta(days=1)
 

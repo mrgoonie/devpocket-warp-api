@@ -4,9 +4,15 @@ Global test configuration and fixtures for DevPocket API tests.
 
 import asyncio
 import os
+import sys
 import pytest
 import pytest_asyncio
-from datetime import datetime, timedelta
+
+# Add project root to Python path for imports
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+from datetime import datetime, timedelta, timezone
 from typing import AsyncGenerator, Generator
 from unittest.mock import AsyncMock, MagicMock
 
@@ -30,9 +36,36 @@ from app.auth.security import set_redis_client
 from app.websocket.manager import connection_manager
 
 
-# Test database configuration
-TEST_DATABASE_URL = "postgresql+asyncpg://test:test@localhost:5433/devpocket_test"
-TEST_REDIS_URL = "redis://localhost:6380"
+# Test database configuration  
+# Use environment DATABASE_URL if available, otherwise fall back to localhost
+TEST_DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5433/devpocket_test")
+if not TEST_DATABASE_URL.startswith("postgresql+asyncpg://"):
+    TEST_DATABASE_URL = TEST_DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+TEST_REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6380")
+
+
+async def _cleanup_test_data(engine):
+    """Clear all test data while preserving database schema."""
+    async with engine.begin() as conn:
+        # Get all table names from the current schema
+        result = await conn.execute(text("""
+            SELECT tablename FROM pg_tables 
+            WHERE schemaname = 'public' 
+            AND tablename != 'alembic_version'
+            ORDER BY tablename
+        """))
+        tables = [row[0] for row in result.fetchall()]
+        
+        if tables:
+            # Disable foreign key checks temporarily
+            await conn.execute(text("SET session_replication_role = 'replica'"))
+            
+            # Truncate all tables
+            for table in tables:
+                await conn.execute(text(f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE"))
+            
+            # Re-enable foreign key checks
+            await conn.execute(text("SET session_replication_role = 'origin'"))
 
 
 @pytest.fixture(scope="session")
@@ -43,7 +76,7 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
     loop.close()
 
 
-@pytest.fixture(scope="session")
+@pytest_asyncio.fixture(scope="session")
 async def test_db_engine():
     """Create test database engine for the session."""
     engine = create_async_engine(
@@ -54,38 +87,45 @@ async def test_db_engine():
         connect_args={"server_settings": {"jit": "off"}},
     )
     
-    # Create all tables
+    # Tables already exist from migrations - no need to create them
+    # Just verify the engine can connect
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+        # Test connection by checking if users table exists (created by migration)
+        result = await conn.execute(text(
+            "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users')"
+        ))
+        table_exists = result.scalar()
+        if not table_exists:
+            # Fallback: create tables if migration hasn't run
+            await conn.run_sync(Base.metadata.create_all)
     
     yield engine
     
-    # Drop all tables
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-    
+    # Clean up: Clear data but preserve schema for next test run
+    await _cleanup_test_data(engine)
     await engine.dispose()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_session(test_db_engine) -> AsyncGenerator[AsyncSession, None]:
-    """Create a fresh database session for each test."""
-    async_session = sessionmaker(
+    """Create a fresh database session for each test with transaction isolation."""
+    async_session_factory = sessionmaker(
         test_db_engine, class_=AsyncSession, expire_on_commit=False
     )
     
-    async with async_session() as session:
-        # Start a transaction
-        await session.begin()
+    async with async_session_factory() as session:
+        # Start a transaction that will be rolled back after the test
+        transaction = await session.begin()
         
         try:
             yield session
         finally:
-            # Rollback the transaction
-            await session.rollback()
+            # Always rollback to ensure test isolation
+            await transaction.rollback()
+            await session.close()
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_redis() -> AsyncGenerator[aioredis.Redis, None]:
     """Create test Redis client."""
     redis_client = await aioredis.from_url(
@@ -121,13 +161,34 @@ def mock_redis() -> MagicMock:
     return mock_redis
 
 
-@pytest.fixture
-def app(test_session, mock_redis) -> FastAPI:
+@pytest_asyncio.fixture
+async def app(test_db_engine, mock_redis) -> FastAPI:
     """Create FastAPI application instance for testing."""
     app = create_application()
     
+    # Create a test session factory
+    from sqlalchemy.ext.asyncio import AsyncSession
+    from sqlalchemy.orm import sessionmaker
+    
+    test_session_factory = sessionmaker(
+        test_db_engine, class_=AsyncSession, expire_on_commit=False
+    )
+    
     # Override dependencies
-    app.dependency_overrides[get_db] = lambda: test_session
+    async def override_get_db():
+        async with test_session_factory() as session:
+            # Use transaction for each request to ensure isolation
+            transaction = await session.begin()
+            try:
+                yield session
+                await transaction.commit()
+            except Exception:
+                await transaction.rollback()
+                raise
+            finally:
+                await session.close()
+                
+    app.dependency_overrides[get_db] = override_get_db
     app.state.redis = mock_redis
     
     # Set Redis client for auth module
@@ -139,20 +200,20 @@ def app(test_session, mock_redis) -> FastAPI:
     return app
 
 
-@pytest.fixture
-def client(app) -> TestClient:
+@pytest_asyncio.fixture
+async def client(app) -> TestClient:
     """Create test client for synchronous requests."""
     return TestClient(app)
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def async_client(app) -> AsyncGenerator[AsyncClient, None]:
     """Create async test client for async requests."""
     async with AsyncClient(app=app, base_url="http://test") as ac:
         yield ac
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def user_repository(test_session) -> UserRepository:
     """Create user repository for testing."""
     return UserRepository(test_session)
@@ -170,63 +231,68 @@ def user_data() -> dict:
     }
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def test_user(user_repository, user_data) -> User:
     """Create a test user in the database."""
     from app.auth.security import hash_password
     
     hashed_password = hash_password(user_data["password"])
-    user = await user_repository.create({
-        **user_data,
-        "hashed_password": hashed_password
-    })
+    create_data = {k: v for k, v in user_data.items() if k != "password"}
+    user = await user_repository.create(
+        **create_data,
+        hashed_password=hashed_password
+    )
     return user
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def verified_user(user_repository, user_data) -> User:
     """Create a verified test user."""
     from app.auth.security import hash_password
     
     hashed_password = hash_password(user_data["password"])
-    user = await user_repository.create({
-        **user_data,
-        "hashed_password": hashed_password,
-        "is_verified": True,
-        "verified_at": datetime.utcnow()
-    })
+    create_data = {k: v for k, v in user_data.items() if k != "password"}
+    user = await user_repository.create(
+        **create_data,
+        hashed_password=hashed_password,
+        is_verified=True,
+        verified_at=datetime.now(timezone.utc)
+    )
     return user
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def premium_user(user_repository, user_data) -> User:
     """Create a premium test user."""
     from app.auth.security import hash_password
     
     hashed_password = hash_password(user_data["password"])
-    user = await user_repository.create({
-        **user_data,
-        "hashed_password": hashed_password,
-        "is_verified": True,
-        "verified_at": datetime.utcnow(),
-        "subscription_tier": "premium",
-        "subscription_expires_at": datetime.utcnow() + timedelta(days=30)
-    })
+    create_data = {k: v for k, v in user_data.items() if k != "password"}
+    user = await user_repository.create(
+        **create_data,
+        hashed_password=hashed_password,
+        is_verified=True,
+        verified_at=datetime.now(timezone.utc),
+        subscription_tier="premium",
+        subscription_expires_at=datetime.now(timezone.utc) + timedelta(days=30)
+    )
     return user
 
 
 # Authentication fixtures
-@pytest.fixture
-def auth_headers(test_user) -> dict:
+@pytest_asyncio.fixture
+async def auth_headers(test_user) -> dict:
     """Create authentication headers for test user."""
-    access_token = create_access_token({"sub": test_user.email})
+    user = test_user  # test_user is already awaited
+    access_token = create_access_token({"sub": user.email})
     return {"Authorization": f"Bearer {access_token}"}
 
 
-@pytest.fixture
-def premium_auth_headers(premium_user) -> dict:
+@pytest_asyncio.fixture
+async def premium_auth_headers(premium_user) -> dict:
     """Create authentication headers for premium user."""
-    access_token = create_access_token({"sub": premium_user.email})
+    user = premium_user  # premium_user is already awaited
+    access_token = create_access_token({"sub": user.email})
     return {"Authorization": f"Bearer {access_token}"}
 
 
@@ -299,7 +365,7 @@ def websocket_mock():
 
 
 # Test data cleanup
-@pytest.fixture(autouse=True)
+@pytest_asyncio.fixture(autouse=True)
 async def cleanup_test_data(test_session):
     """Auto cleanup test data after each test."""
     yield

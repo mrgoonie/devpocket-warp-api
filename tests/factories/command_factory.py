@@ -2,7 +2,7 @@
 Command factory for testing.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import factory
 from factory import fuzzy
 from faker import Faker
@@ -50,8 +50,8 @@ class CommandFactory(factory.Factory):
     status = "success"
     
     # Execution timing
-    started_at = factory.LazyFunction(lambda: datetime.utcnow() - timedelta(seconds=5))
-    completed_at = factory.LazyFunction(lambda: datetime.utcnow() - timedelta(seconds=1))
+    started_at = factory.LazyFunction(lambda: datetime.now(timezone.utc) - timedelta(seconds=5))
+    completed_at = factory.LazyFunction(lambda: datetime.now(timezone.utc) - timedelta(seconds=1))
     execution_time = factory.LazyAttribute(
         lambda obj: (obj.completed_at - obj.started_at).total_seconds() if obj.started_at and obj.completed_at else None
     )
@@ -124,7 +124,7 @@ class CancelledCommandFactory(CommandFactory):
     """Factory for cancelled Command."""
     
     status = "cancelled"
-    started_at = factory.LazyFunction(lambda: datetime.utcnow() - timedelta(seconds=2))
+    started_at = factory.LazyFunction(lambda: datetime.now(timezone.utc) - timedelta(seconds=2))
     completed_at = factory.LazyFunction(datetime.utcnow)
     execution_time = factory.LazyAttribute(
         lambda obj: (obj.completed_at - obj.started_at).total_seconds()
@@ -137,7 +137,7 @@ class TimeoutCommandFactory(CommandFactory):
     """Factory for timed out Command."""
     
     status = "timeout"
-    started_at = factory.LazyFunction(lambda: datetime.utcnow() - timedelta(minutes=5))
+    started_at = factory.LazyFunction(lambda: datetime.now(timezone.utc) - timedelta(minutes=5))
     completed_at = factory.LazyFunction(datetime.utcnow)
     execution_time = 300.0  # 5 minutes
     exit_code = None
@@ -253,7 +253,7 @@ class LongRunningCommandFactory(CommandFactory):
         "apt update && apt upgrade -y"
     ]))
     execution_time = fuzzy.FuzzyFloat(30.0, 300.0)  # 30 seconds to 5 minutes
-    started_at = factory.LazyFunction(lambda: datetime.utcnow() - timedelta(minutes=2))
+    started_at = factory.LazyFunction(lambda: datetime.now(timezone.utc) - timedelta(minutes=2))
     completed_at = factory.LazyAttribute(
         lambda obj: obj.started_at + timedelta(seconds=obj.execution_time)
     )

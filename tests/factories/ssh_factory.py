@@ -2,7 +2,7 @@
 SSH Profile and SSH Key factories for testing.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import factory
 from factory import fuzzy
 from faker import Faker
@@ -52,7 +52,7 @@ class SSHProfileFactory(factory.Factory):
     is_active = True
     
     # Connection statistics
-    last_used_at = factory.LazyFunction(lambda: datetime.utcnow() - timedelta(days=1))
+    last_used_at = factory.LazyFunction(lambda: datetime.now(timezone.utc) - timedelta(days=1))
     connection_count = fuzzy.FuzzyInteger(0, 100)
     successful_connections = factory.LazyAttribute(
         lambda obj: int(obj.connection_count * 0.8)  # 80% success rate
@@ -143,7 +143,7 @@ class SSHKeyFactory(factory.Factory):
     is_active = True
     
     # Usage tracking
-    last_used_at = factory.LazyFunction(lambda: datetime.utcnow() - timedelta(hours=6))
+    last_used_at = factory.LazyFunction(lambda: datetime.now(timezone.utc) - timedelta(hours=6))
     usage_count = fuzzy.FuzzyInteger(0, 50)
 
 
@@ -190,5 +190,5 @@ class ProtectedSSHKeyFactory(SSHKeyFactory):
 class FrequentlyUsedSSHKeyFactory(SSHKeyFactory):
     """Factory for frequently used SSH key."""
     
-    last_used_at = factory.LazyFunction(lambda: datetime.utcnow() - timedelta(minutes=30))
+    last_used_at = factory.LazyFunction(lambda: datetime.now(timezone.utc) - timedelta(minutes=30))
     usage_count = fuzzy.FuzzyInteger(50, 200)

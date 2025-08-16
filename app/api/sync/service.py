@@ -2,7 +2,7 @@
 Multi-device synchronization service for DevPocket API.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
@@ -42,7 +42,7 @@ class SyncService:
 
             return SyncDataResponse(
                 data=organized_data,
-                sync_timestamp=datetime.utcnow(),
+                sync_timestamp=datetime.now(timezone.utc),
                 total_items=total_items,
                 conflicts=conflicts,
                 device_count=device_count,
@@ -63,7 +63,7 @@ class SyncService:
                 user_id=user.id,
                 data_type="upload",
                 data_content=data,
-                sync_timestamp=datetime.utcnow(),
+                sync_timestamp=datetime.now(timezone.utc),
             )
 
             await self.sync_repo.create(sync_record)

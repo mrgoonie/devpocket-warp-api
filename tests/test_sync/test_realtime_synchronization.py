@@ -13,7 +13,7 @@ Tests multi-device synchronization functionality including:
 import pytest
 import asyncio
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 from typing import Dict, List
 
@@ -59,7 +59,7 @@ class TestSyncService:
             "data": {
                 "command": "ls -la",
                 "output": "file1.txt\nfile2.txt",
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             },
             "version": 1,
             "source_device_id": "device-456",
@@ -219,7 +219,7 @@ class TestCommandHistorySync:
         # Arrange
         user_id = "user-123"
         device_id = "device-456"
-        last_sync = datetime.utcnow() - timedelta(hours=1)
+        last_sync = datetime.now(timezone.utc) - timedelta(hours=1)
         
         # Act
         result = await command_sync_service.get_commands_since(user_id, device_id, last_sync)

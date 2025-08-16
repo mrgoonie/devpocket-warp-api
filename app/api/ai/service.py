@@ -5,7 +5,7 @@ Contains business logic for AI-powered features using BYOK model with OpenRouter
 """
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
@@ -77,7 +77,7 @@ class AIService:
             return APIKeyValidationResponse(
                 valid=False,
                 error=f"Validation failed: {str(e)}",
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
     async def get_usage_stats(self, api_key: str) -> AIUsageStats:
@@ -369,7 +369,7 @@ class AIService:
                 models=models,
                 total_models=len(models),
                 recommended_models=recommended_models,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
         except Exception as e:
@@ -388,7 +388,7 @@ class AIService:
             success_count = 0
             error_count = 0
             total_tokens = 0
-            start_time = datetime.utcnow()
+            start_time = datetime.now(timezone.utc)
 
             for i, req_data in enumerate(request.requests):
                 try:
@@ -425,7 +425,7 @@ class AIService:
                     results.append({"index": i, "status": "error", "error": str(e)})
                     error_count += 1
 
-            total_time = int((datetime.utcnow() - start_time).total_seconds() * 1000)
+            total_time = int((datetime.now(timezone.utc) - start_time).total_seconds() * 1000)
 
             return BatchAIResponse(
                 results=results,
@@ -433,7 +433,7 @@ class AIService:
                 error_count=error_count,
                 total_tokens_used=total_tokens,
                 total_response_time_ms=total_time,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
         except Exception as e:
@@ -458,7 +458,7 @@ class AIService:
         """Get cached response if available and not expired."""
         if cache_key in self._response_cache:
             cached_data = self._response_cache[cache_key]
-            if datetime.utcnow() - cached_data["timestamp"] < timedelta(
+            if datetime.now(timezone.utc) - cached_data["timestamp"] < timedelta(
                 seconds=self._cache_ttl
             ):
                 return cached_data["response"]
@@ -471,7 +471,7 @@ class AIService:
         """Cache response data."""
         self._response_cache[cache_key] = {
             "response": response_data,
-            "timestamp": datetime.utcnow(),
+            "timestamp": datetime.now(timezone.utc),
         }
 
     def _parse_command_suggestions(

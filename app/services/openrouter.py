@@ -8,7 +8,7 @@ for AI-powered command suggestions, explanations, and error analysis.
 import json
 import asyncio
 from typing import Optional, Dict, Any, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import httpx
 from dataclasses import dataclass
 
@@ -112,28 +112,28 @@ class OpenRouterService:
                         "models_available": len(models_data.get("data", [])),
                         "account_info": account_info,
                         "recommended_models": list(self.models.values()),
-                        "timestamp": datetime.utcnow(),
+                        "timestamp": datetime.now(timezone.utc),
                     }
                 else:
                     return {
                         "valid": False,
                         "error": f"API key validation failed: {response.status_code}",
                         "details": response.text[:200],
-                        "timestamp": datetime.utcnow(),
+                        "timestamp": datetime.now(timezone.utc),
                     }
 
         except httpx.TimeoutException:
             return {
                 "valid": False,
                 "error": "Request timeout - OpenRouter API is unreachable",
-                "timestamp": datetime.utcnow(),
+                "timestamp": datetime.now(timezone.utc),
             }
         except Exception as e:
             logger.error(f"OpenRouter API key validation error: {e}")
             return {
                 "valid": False,
                 "error": f"Validation error: {str(e)}",
-                "timestamp": datetime.utcnow(),
+                "timestamp": datetime.now(timezone.utc),
             }
 
     async def suggest_command(
@@ -369,7 +369,7 @@ class OpenRouterService:
                             "requests_per_minute": 50,  # Default limit
                             "tokens_per_minute": None,
                         },
-                        "timestamp": datetime.utcnow(),
+                        "timestamp": datetime.now(timezone.utc),
                     }
                 else:
                     raise Exception(
@@ -409,7 +409,7 @@ class OpenRouterService:
             "top_p": 0.9,
         }
 
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
 
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -418,7 +418,7 @@ class OpenRouterService:
                 )
 
                 response_time_ms = int(
-                    (datetime.utcnow() - start_time).total_seconds() * 1000
+                    (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
                 )
 
                 if response.status_code == 200:
@@ -431,7 +431,7 @@ class OpenRouterService:
                         usage=data.get("usage", {}),
                         finish_reason=choice.get("finish_reason", "unknown"),
                         response_time_ms=response_time_ms,
-                        timestamp=datetime.utcnow(),
+                        timestamp=datetime.now(timezone.utc),
                     )
                 else:
                     error_data = response.json() if response.content else {}
@@ -449,7 +449,7 @@ class OpenRouterService:
 
     async def _check_rate_limit(self, api_key: str) -> bool:
         """Check if API key is within rate limits."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         window_start = now - timedelta(seconds=self._rate_limit_window)
 
         if api_key not in self._rate_limits:

@@ -7,7 +7,7 @@ connection testing, and related operations.
 
 import asyncio
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
@@ -167,7 +167,7 @@ class SSHProfileService:
             for field, value in update_dict.items():
                 setattr(profile, field, value)
 
-            profile.updated_at = datetime.utcnow()
+            profile.updated_at = datetime.now(timezone.utc)
             updated_profile = await self.profile_repo.update(profile)
             await self.session.commit()
 
@@ -273,12 +273,12 @@ class SSHProfileService:
                 )
                 if test_result["success"]:
                     profile.last_connection_status = "connected"
-                    profile.last_successful_connection_at = datetime.utcnow()
+                    profile.last_successful_connection_at = datetime.now(timezone.utc)
                 else:
                     profile.last_connection_status = "connection_failed"
                     profile.last_error_message = test_result.get("error_message")
 
-                profile.last_connection_at = datetime.utcnow()
+                profile.last_connection_at = datetime.now(timezone.utc)
                 await self.session.commit()
 
             duration_ms = int((time.time() - start_time) * 1000)
@@ -289,7 +289,7 @@ class SSHProfileService:
                 details=test_result.get("details"),
                 duration_ms=duration_ms,
                 server_info=test_result.get("server_info"),
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
         except HTTPException:
@@ -304,7 +304,7 @@ class SSHProfileService:
                 details={"error": str(e)},
                 duration_ms=duration_ms,
                 server_info=None,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
     async def search_profiles(
@@ -524,7 +524,7 @@ class SSHKeyService:
             for field, value in update_dict.items():
                 setattr(key, field, value)
 
-            key.updated_at = datetime.utcnow()
+            key.updated_at = datetime.now(timezone.utc)
             updated_key = await self.key_repo.update(key)
             await self.session.commit()
 

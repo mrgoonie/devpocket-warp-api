@@ -2,7 +2,7 @@
 User profile and settings service for DevPocket API.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
@@ -155,7 +155,7 @@ class ProfileService:
                 "ai_preferences": settings_data.ai_preferences,
                 "sync_enabled": settings_data.sync_enabled,
                 "notifications_enabled": settings_data.notifications_enabled,
-                "updated_at": datetime.utcnow(),
+                "updated_at": datetime.now(timezone.utc),
             }
 
             if existing_settings:
@@ -214,7 +214,7 @@ class ProfileService:
 
             return {
                 "profile_completeness": self._calculate_profile_completeness(user),
-                "account_age_days": (datetime.utcnow() - user.created_at).days,
+                "account_age_days": (datetime.now(timezone.utc) - user.created_at).days,
                 "total_sessions": stats.get("total_sessions", 0),
                 "total_commands": stats.get("total_commands", 0),
                 "ssh_profiles": stats.get("ssh_profiles", 0),

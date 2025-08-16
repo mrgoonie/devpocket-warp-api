@@ -117,6 +117,10 @@ class User(BaseModel):
 
     def increment_failed_login(self) -> None:
         """Increment failed login attempts."""
+        # Initialize to 0 if None (for new instances)
+        if self.failed_login_attempts is None:
+            self.failed_login_attempts = 0
+        
         self.failed_login_attempts += 1
 
         # Lock account after 5 failed attempts

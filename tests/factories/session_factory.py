@@ -2,7 +2,7 @@
 Session factory for testing.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import factory
 from factory import fuzzy
 from faker import Faker
@@ -44,7 +44,7 @@ class SessionFactory(factory.Factory):
     
     # Session status
     is_active = True
-    last_activity_at = factory.LazyFunction(lambda: datetime.utcnow() - timedelta(minutes=5))
+    last_activity_at = factory.LazyFunction(lambda: datetime.now(timezone.utc) - timedelta(minutes=5))
     ended_at = None
     
     # SSH connection details (conditionally set for SSH sessions)
@@ -90,7 +90,7 @@ class EndedSessionFactory(SessionFactory):
     """Factory for ended Session."""
     
     is_active = False
-    ended_at = factory.LazyFunction(lambda: datetime.utcnow() - timedelta(hours=1))
+    ended_at = factory.LazyFunction(lambda: datetime.now(timezone.utc) - timedelta(hours=1))
     
     
 class SSHSessionFactory(SessionFactory):

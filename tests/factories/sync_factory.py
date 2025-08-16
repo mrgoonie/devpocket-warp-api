@@ -2,7 +2,7 @@
 Sync data factory for testing.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import factory
 from factory import fuzzy
 from faker import Faker
@@ -42,8 +42,8 @@ class SyncDataFactory(factory.Factory):
     resolved_at = None
     
     # Sync timestamps
-    synced_at = factory.LazyFunction(lambda: datetime.utcnow() - timedelta(hours=1))
-    last_modified_at = factory.LazyFunction(lambda: datetime.utcnow() - timedelta(minutes=30))
+    synced_at = factory.LazyFunction(lambda: datetime.now(timezone.utc) - timedelta(hours=1))
+    last_modified_at = factory.LazyFunction(lambda: datetime.now(timezone.utc) - timedelta(minutes=30))
 
 
 class CommandSyncDataFactory(SyncDataFactory):
@@ -148,7 +148,7 @@ class ConflictedSyncDataFactory(SyncDataFactory):
             "terminal_theme": "light",
             "font_size": 16
         },
-        "conflict_created_at": datetime.utcnow().isoformat()
+        "conflict_created_at": datetime.now(timezone.utc).isoformat()
     })
     
     resolved_at = None
@@ -157,22 +157,22 @@ class ConflictedSyncDataFactory(SyncDataFactory):
 class ResolvedConflictSyncDataFactory(ConflictedSyncDataFactory):
     """Factory for resolved conflict sync data."""
     
-    resolved_at = factory.LazyFunction(lambda: datetime.utcnow() - timedelta(hours=1))
+    resolved_at = factory.LazyFunction(lambda: datetime.now(timezone.utc) - timedelta(hours=1))
     conflict_data = None
 
 
 class RecentSyncDataFactory(SyncDataFactory):
     """Factory for recently synced data."""
     
-    synced_at = factory.LazyFunction(lambda: datetime.utcnow() - timedelta(minutes=5))
-    last_modified_at = factory.LazyFunction(lambda: datetime.utcnow() - timedelta(minutes=2))
+    synced_at = factory.LazyFunction(lambda: datetime.now(timezone.utc) - timedelta(minutes=5))
+    last_modified_at = factory.LazyFunction(lambda: datetime.now(timezone.utc) - timedelta(minutes=2))
 
 
 class OldSyncDataFactory(SyncDataFactory):
     """Factory for old sync data."""
     
-    synced_at = factory.LazyFunction(lambda: datetime.utcnow() - timedelta(days=7))
-    last_modified_at = factory.LazyFunction(lambda: datetime.utcnow() - timedelta(days=5))
+    synced_at = factory.LazyFunction(lambda: datetime.now(timezone.utc) - timedelta(days=7))
+    last_modified_at = factory.LazyFunction(lambda: datetime.now(timezone.utc) - timedelta(days=5))
     version = fuzzy.FuzzyInteger(5, 15)
 
 
@@ -201,7 +201,7 @@ class HighVersionSyncDataFactory(SyncDataFactory):
     """Factory for high version sync data (frequently updated)."""
     
     version = fuzzy.FuzzyInteger(10, 50)
-    last_modified_at = factory.LazyFunction(lambda: datetime.utcnow() - timedelta(minutes=1))
+    last_modified_at = factory.LazyFunction(lambda: datetime.now(timezone.utc) - timedelta(minutes=1))
 
 
 # Helper function to generate appropriate sync data based on type
