@@ -12,9 +12,9 @@ import sys
 # Ensure the app directory is in the Python path
 sys.path.insert(0, "/app")
 
-from sqlalchemy.ext.asyncio import create_async_engine
-from app.models.base import BaseModel
-from app.core.logging import logger
+from sqlalchemy.ext.asyncio import create_async_engine  # noqa: E402
+from app.models.base import BaseModel  # noqa: E402
+from app.core.logging import logger  # noqa: E402
 
 
 async def init_test_database():

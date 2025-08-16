@@ -765,9 +765,7 @@ class TestDbMigrateIntegration:
     def test_database_connection_real(self, script_runner):
         """Test actual database connection with real credentials."""
         # Use the actual database URL provided
-        db_env = {
-            "DATABASE_URL": "postgresql://postgres:N9fgWyjhxkNUeYrPm6C8kZVjEpLw@51.79.231.184:32749/devpocket_warp_dev"
-        }
+        db_env = {"DATABASE_URL": "postgresql://test:test@localhost:5432/test_db"}
 
         with patch.dict(os.environ, db_env):
             result = script_runner.run_script("db_migrate.sh", ["--check-only"])
@@ -782,9 +780,7 @@ class TestDbMigrateIntegration:
     @pytest.mark.slow
     def test_migration_dry_run_real(self, script_runner):
         """Test dry run against real database."""
-        db_env = {
-            "DATABASE_URL": "postgresql://postgres:N9fgWyjhxkNUeYrPm6C8kZVjEpLw@51.79.231.184:32749/devpocket_warp_dev"
-        }
+        db_env = {"DATABASE_URL": "postgresql://test:test@localhost:5432/test_db"}
 
         with patch.dict(os.environ, db_env):
             result = script_runner.run_script("db_migrate.sh", ["--dry-run"])
@@ -797,9 +793,7 @@ class TestDbMigrateIntegration:
     @pytest.mark.slow
     def test_migration_history_real(self, script_runner):
         """Test migration history against real database."""
-        db_env = {
-            "DATABASE_URL": "postgresql://postgres:N9fgWyjhxkNUeYrPm6C8kZVjEpLw@51.79.231.184:32749/devpocket_warp_dev"
-        }
+        db_env = {"DATABASE_URL": "postgresql://test:test@localhost:5432/test_db"}
 
         with patch.dict(os.environ, db_env):
             result = script_runner.run_script("db_migrate.sh", ["--history"])
@@ -811,9 +805,7 @@ class TestDbMigrateIntegration:
     @pytest.mark.slow
     def test_current_migration_status_real(self, script_runner):
         """Test checking current migration status against real database."""
-        db_env = {
-            "DATABASE_URL": "postgresql://postgres:N9fgWyjhxkNUeYrPm6C8kZVjEpLw@51.79.231.184:32749/devpocket_warp_dev"
-        }
+        db_env = {"DATABASE_URL": "postgresql://test:test@localhost:5432/test_db"}
 
         with patch.dict(os.environ, db_env):
             # Test that we can get current status

@@ -23,8 +23,8 @@ if os.path.exists(env_path):
 else:
     print(f"Warning: Environment file not found: {env_path}")
 
-from app.core.config import settings
-from app.core.logging import logger
+from app.core.config import settings  # noqa: E402
+from app.core.logging import logger  # noqa: E402
 
 
 async def create_database():

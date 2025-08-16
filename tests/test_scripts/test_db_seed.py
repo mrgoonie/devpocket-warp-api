@@ -1042,9 +1042,7 @@ class TestDbSeedIntegration:
     @pytest.mark.slow
     def test_database_connection_real(self, script_runner):
         """Test actual database connection with real credentials."""
-        db_env = {
-            "DATABASE_URL": "postgresql://postgres:N9fgWyjhxkNUeYrPm6C8kZVjEpLw@51.79.231.184:32749/devpocket_warp_dev"
-        }
+        db_env = {"DATABASE_URL": "postgresql://test:test@localhost:5432/test_db"}
 
         with patch.dict(os.environ, db_env):
             result = script_runner.run_script("db_seed.sh", ["--stats-only"])
@@ -1056,9 +1054,7 @@ class TestDbSeedIntegration:
     @pytest.mark.slow
     def test_seeding_users_real(self, script_runner):
         """Test actual user seeding against real database."""
-        db_env = {
-            "DATABASE_URL": "postgresql://postgres:N9fgWyjhxkNUeYrPm6C8kZVjEpLw@51.79.231.184:32749/devpocket_warp_dev"
-        }
+        db_env = {"DATABASE_URL": "postgresql://test:test@localhost:5432/test_db"}
 
         with patch.dict(os.environ, db_env):
             result = script_runner.run_script("db_seed.sh", ["users", "5", "--stats"])
@@ -1071,9 +1067,7 @@ class TestDbSeedIntegration:
     @pytest.mark.slow
     def test_seeding_with_upsert_real(self, script_runner):
         """Test upsert functionality against real database."""
-        db_env = {
-            "DATABASE_URL": "postgresql://postgres:N9fgWyjhxkNUeYrPm6C8kZVjEpLw@51.79.231.184:32749/devpocket_warp_dev"
-        }
+        db_env = {"DATABASE_URL": "postgresql://test:test@localhost:5432/test_db"}
 
         with patch.dict(os.environ, db_env):
             # Run twice to test upsert conflict handling
@@ -1087,9 +1081,7 @@ class TestDbSeedIntegration:
     @pytest.mark.slow
     def test_stats_real(self, script_runner):
         """Test database statistics against real database."""
-        db_env = {
-            "DATABASE_URL": "postgresql://postgres:N9fgWyjhxkNUeYrPm6C8kZVjEpLw@51.79.231.184:32749/devpocket_warp_dev"
-        }
+        db_env = {"DATABASE_URL": "postgresql://test:test@localhost:5432/test_db"}
 
         with patch.dict(os.environ, db_env):
             result = script_runner.run_script("db_seed.sh", ["--stats-only"])
@@ -1104,9 +1096,7 @@ class TestDbSeedIntegration:
     @pytest.mark.slow
     def test_clean_specific_type_real(self, script_runner):
         """Test cleaning specific data type against real database."""
-        db_env = {
-            "DATABASE_URL": "postgresql://postgres:N9fgWyjhxkNUeYrPm6C8kZVjEpLw@51.79.231.184:32749/devpocket_warp_dev"
-        }
+        db_env = {"DATABASE_URL": "postgresql://test:test@localhost:5432/test_db"}
 
         with patch.dict(os.environ, db_env):
             # First seed some data
@@ -1125,9 +1115,7 @@ class TestDbSeedIntegration:
     @pytest.mark.slow
     def test_full_workflow_real(self, script_runner):
         """Test full seeding workflow against real database."""
-        db_env = {
-            "DATABASE_URL": "postgresql://postgres:N9fgWyjhxkNUeYrPm6C8kZVjEpLw@51.79.231.184:32749/devpocket_warp_dev"
-        }
+        db_env = {"DATABASE_URL": "postgresql://test:test@localhost:5432/test_db"}
 
         with patch.dict(os.environ, db_env):
             # Clean, seed, and show stats

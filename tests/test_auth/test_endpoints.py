@@ -7,7 +7,7 @@ from datetime import timedelta
 from fastapi import status
 from unittest.mock import patch, AsyncMock
 
-from app.auth.security import create_access_token, hash_password
+from app.auth.security import create_access_token, create_refresh_token, hash_password
 from tests.factories import UserFactory, VerifiedUserFactory
 
 

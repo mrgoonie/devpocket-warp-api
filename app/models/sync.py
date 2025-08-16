@@ -3,12 +3,15 @@ Sync data model for DevPocket API.
 """
 
 from datetime import datetime
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from uuid import UUID as PyUUID
 from sqlalchemy import String, ForeignKey, Boolean, JSON, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseModel
+
+if TYPE_CHECKING:
+    from .user import User
 
 
 class SyncData(BaseModel):

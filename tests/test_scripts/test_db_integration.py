@@ -23,9 +23,7 @@ class TestDatabaseIntegration:
     @pytest.fixture
     def db_env(self):
         """Database environment configuration."""
-        return {
-            "DATABASE_URL": "postgresql://postgres:N9fgWyjhxkNUeYrPm6C8kZVjEpLw@51.79.231.184:32749/devpocket_warp_dev"
-        }
+        return {"DATABASE_URL": "postgresql://test:test@localhost:5432/test_db"}
 
     @pytest.fixture
     async def db_connection(self, db_env):
@@ -356,9 +354,7 @@ class TestDatabaseUtilsIntegration:
     @pytest.fixture
     def db_env(self):
         """Database environment configuration."""
-        return {
-            "DATABASE_URL": "postgresql://postgres:N9fgWyjhxkNUeYrPm6C8kZVjEpLw@51.79.231.184:32749/devpocket_warp_dev"
-        }
+        return {"DATABASE_URL": "postgresql://test:test@localhost:5432/test_db"}
 
     @pytest.mark.slow
     def test_db_utils_test_command(self, script_runner, db_env):
@@ -412,9 +408,7 @@ class TestEndToEndWorkflows:
     @pytest.fixture
     def db_env(self):
         """Database environment configuration."""
-        return {
-            "DATABASE_URL": "postgresql://postgres:N9fgWyjhxkNUeYrPm6C8kZVjEpLw@51.79.231.184:32749/devpocket_warp_dev"
-        }
+        return {"DATABASE_URL": "postgresql://test:test@localhost:5432/test_db"}
 
     @pytest.mark.slow
     def test_complete_development_workflow(self, script_runner, db_env):

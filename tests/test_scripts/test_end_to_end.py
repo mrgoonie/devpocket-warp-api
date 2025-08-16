@@ -26,9 +26,7 @@ class TestEndToEndWorkflows:
     @pytest.fixture
     def db_env(self):
         """Database environment configuration."""
-        return {
-            "DATABASE_URL": "postgresql://postgres:N9fgWyjhxkNUeYrPm6C8kZVjEpLw@51.79.231.184:32749/devpocket_warp_dev"
-        }
+        return {"DATABASE_URL": "postgresql://test:test@localhost:5432/test_db"}
 
     @pytest.fixture
     async def db_connection(self, db_env):
@@ -559,9 +557,7 @@ class TestWorkflowReliability:
     @pytest.fixture
     def db_env(self):
         """Database environment configuration."""
-        return {
-            "DATABASE_URL": "postgresql://postgres:N9fgWyjhxkNUeYrPm6C8kZVjEpLw@51.79.231.184:32749/devpocket_warp_dev"
-        }
+        return {"DATABASE_URL": "postgresql://test:test@localhost:5432/test_db"}
 
     @pytest.mark.slow
     def test_repeated_operations_stability(self, script_runner, db_env):
@@ -591,7 +587,7 @@ class TestWorkflowReliability:
         # Create custom env file
         env_file = temp_dir / "test.env"
         env_file.write_text(
-            "DATABASE_URL=postgresql://postgres:N9fgWyjhxkNUeYrPm6C8kZVjEpLw@51.79.231.184:32749/devpocket_warp_dev\n"
+            "DATABASE_URL=postgresql://test:test@localhost:5432/test_db\n"
         )
 
         # Test with custom env file

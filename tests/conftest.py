@@ -12,27 +12,28 @@ import pytest_asyncio
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
-from datetime import datetime, timedelta, timezone
-from typing import AsyncGenerator, Generator
-from unittest.mock import AsyncMock, MagicMock
 
-import redis.asyncio as aioredis
-from fastapi import FastAPI
-from fastapi.testclient import TestClient
-from httpx import AsyncClient
-from sqlalchemy import text
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import StaticPool
+from datetime import datetime, timedelta, timezone  # noqa: E402
+from typing import AsyncGenerator, Generator  # noqa: E402
+from unittest.mock import AsyncMock, MagicMock  # noqa: E402
 
-from main import create_application
-from app.auth.security import create_access_token
-from app.db.database import get_db
-from app.models.base import Base
-from app.models.user import User
-from app.repositories.user import UserRepository
-from app.auth.security import set_redis_client
-from app.websocket.manager import connection_manager
+import redis.asyncio as aioredis  # noqa: E402
+from fastapi import FastAPI  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+from httpx import AsyncClient  # noqa: E402
+from sqlalchemy import text  # noqa: E402
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine  # noqa: E402
+from sqlalchemy.orm import sessionmaker  # noqa: E402
+from sqlalchemy.pool import StaticPool  # noqa: E402
+
+from main import create_application  # noqa: E402
+from app.auth.security import create_access_token  # noqa: E402
+from app.db.database import get_db  # noqa: E402
+from app.models.base import Base  # noqa: E402
+from app.models.user import User  # noqa: E402
+from app.repositories.user import UserRepository  # noqa: E402
+from app.auth.security import set_redis_client  # noqa: E402
+from app.websocket.manager import connection_manager  # noqa: E402
 
 
 # Test database configuration

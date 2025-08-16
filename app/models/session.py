@@ -3,12 +3,16 @@ Session model for DevPocket API.
 """
 
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from uuid import UUID as PyUUID
 from sqlalchemy import String, ForeignKey, Integer, Text, Boolean
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseModel
+
+if TYPE_CHECKING:
+    from .user import User
+    from .command import Command
 
 
 class Session(BaseModel):

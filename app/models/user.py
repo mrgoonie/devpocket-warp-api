@@ -3,7 +3,7 @@ User model for DevPocket API.
 """
 
 from datetime import datetime, timezone
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from uuid import UUID as PyUUID
 from sqlalchemy import String, Boolean, JSON, ForeignKey
 from sqlalchemy.dialects.postgresql import ENUM
@@ -11,6 +11,11 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 import enum
 from .base import BaseModel
+
+if TYPE_CHECKING:
+    from .session import Session
+    from .ssh_profile import SSHProfile, SSHKey
+    from .sync import SyncData
 
 
 class UserRole(enum.Enum):

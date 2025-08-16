@@ -28,7 +28,8 @@ class ProfileService:
     def __init__(self, session: AsyncSession):
         self.session = session
         self.user_repo = UserRepository(session)
-        self.settings_repo = UserSettingsRepository(session)
+        # TODO: Implement UserSettingsRepository
+        # self.settings_repo = UserSettingsRepository(session)
 
     async def get_profile(self, user: User) -> UserProfileResponse:
         """Get user profile information."""
@@ -105,91 +106,21 @@ class ProfileService:
 
     async def get_settings(self, user: User) -> UserSettingsResponse:
         """Get user settings."""
-        try:
-            settings = await self.settings_repo.get_by_user_id(user.id)
-
-            if not settings:
-                # Create default settings
-                default_settings = UserSettingsModel(
-                    user_id=user.id,
-                    theme="dark",
-                    timezone="UTC",
-                    language="en",
-                    terminal_preferences={},
-                    ai_preferences={},
-                    sync_enabled=True,
-                    notifications_enabled=True,
-                )
-                settings = await self.settings_repo.create(default_settings)
-                await self.session.commit()
-
-            return UserSettingsResponse(
-                user_id=str(settings.user_id),
-                theme=settings.theme,
-                timezone=settings.timezone,
-                language=settings.language,
-                terminal_preferences=settings.terminal_preferences or {},
-                ai_preferences=settings.ai_preferences or {},
-                sync_enabled=settings.sync_enabled,
-                notifications_enabled=settings.notifications_enabled,
-                updated_at=settings.updated_at,
-            )
-
-        except Exception as e:
-            logger.error(f"Error getting user settings: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to retrieve user settings",
-            )
+        # TODO: Implement UserSettings functionality
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="User settings functionality not yet implemented",
+        )
 
     async def update_settings(
         self, user: User, settings_data: UserSettings
     ) -> UserSettingsResponse:
         """Update user settings."""
-        try:
-            existing_settings = await self.settings_repo.get_by_user_id(user.id)
-
-            update_data = {
-                "theme": settings_data.theme,
-                "timezone": settings_data.timezone,
-                "language": settings_data.language,
-                "terminal_preferences": settings_data.terminal_preferences,
-                "ai_preferences": settings_data.ai_preferences,
-                "sync_enabled": settings_data.sync_enabled,
-                "notifications_enabled": settings_data.notifications_enabled,
-                "updated_at": datetime.now(timezone.utc),
-            }
-
-            if existing_settings:
-                updated_settings = await self.settings_repo.update(
-                    existing_settings.id, update_data
-                )
-            else:
-                # Create new settings
-                new_settings = UserSettingsModel(user_id=user.id, **update_data)
-                updated_settings = await self.settings_repo.create(new_settings)
-
-            await self.session.commit()
-
-            return UserSettingsResponse(
-                user_id=str(updated_settings.user_id),
-                theme=updated_settings.theme,
-                timezone=updated_settings.timezone,
-                language=updated_settings.language,
-                terminal_preferences=updated_settings.terminal_preferences or {},
-                ai_preferences=updated_settings.ai_preferences or {},
-                sync_enabled=updated_settings.sync_enabled,
-                notifications_enabled=updated_settings.notifications_enabled,
-                updated_at=updated_settings.updated_at,
-            )
-
-        except Exception as e:
-            logger.error(f"Error updating user settings: {e}")
-            await self.session.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Failed to update user settings",
-            )
+        # TODO: Implement UserSettings functionality
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail="User settings functionality not yet implemented",
+        )
 
     async def delete_account(self, user: User) -> bool:
         """Delete user account and all associated data."""
