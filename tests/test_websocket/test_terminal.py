@@ -50,103 +50,115 @@ class TestTerminalWebSocket:
         return TerminalWebSocket(
             websocket=mock_websocket,
             session_id="test-session-123",
-            user_id="test-user-456"
+            user_id="test-user-456",
         )
 
     @pytest.mark.asyncio
-    async def test_websocket_connection_success(self, terminal_websocket, mock_websocket):
+    async def test_websocket_connection_success(
+        self, terminal_websocket, mock_websocket
+    ):
         """Test successful WebSocket connection."""
         # Arrange
         mock_websocket.accept = AsyncMock()
-        
+
         # Act
         await terminal_websocket.connect()
-        
+
         # Assert
         mock_websocket.accept.assert_called_once()
         assert terminal_websocket.is_connected
 
     @pytest.mark.asyncio
-    async def test_websocket_disconnect(self, terminal_websocket, mock_websocket):
+    async def test_websocket_disconnect(
+        self, terminal_websocket, mock_websocket
+    ):
         """Test WebSocket disconnection."""
         # Arrange
         terminal_websocket.is_connected = True
         mock_websocket.close = AsyncMock()
-        
+
         # Act
         await terminal_websocket.disconnect()
-        
+
         # Assert
         mock_websocket.close.assert_called_once()
         assert not terminal_websocket.is_connected
 
     @pytest.mark.asyncio
-    async def test_send_terminal_output(self, terminal_websocket, mock_websocket):
+    async def test_send_terminal_output(
+        self, terminal_websocket, mock_websocket
+    ):
         """Test sending terminal output to WebSocket."""
         # Arrange
         terminal_websocket.is_connected = True
         output_data = "Hello from terminal\n"
-        
+
         # Act
         await terminal_websocket.send_output(output_data)
-        
+
         # Assert
-        mock_websocket.send_text.assert_called_once_with(json.dumps({
-            "type": "output",
-            "data": output_data
-        }))
+        mock_websocket.send_text.assert_called_once_with(
+            json.dumps({"type": "output", "data": output_data})
+        )
 
     @pytest.mark.asyncio
-    async def test_send_terminal_error(self, terminal_websocket, mock_websocket):
+    async def test_send_terminal_error(
+        self, terminal_websocket, mock_websocket
+    ):
         """Test sending terminal error to WebSocket."""
         # Arrange
         terminal_websocket.is_connected = True
         error_data = "Command not found\n"
-        
+
         # Act
         await terminal_websocket.send_error(error_data)
-        
+
         # Assert
-        mock_websocket.send_text.assert_called_once_with(json.dumps({
-            "type": "error",
-            "data": error_data
-        }))
+        mock_websocket.send_text.assert_called_once_with(
+            json.dumps({"type": "error", "data": error_data})
+        )
 
     @pytest.mark.asyncio
-    async def test_handle_terminal_input(self, terminal_websocket, mock_pty_handler):
+    async def test_handle_terminal_input(
+        self, terminal_websocket, mock_pty_handler
+    ):
         """Test handling terminal input from WebSocket."""
         # Arrange
         terminal_websocket.pty_handler = mock_pty_handler
         input_data = "ls -la\n"
         message = {"type": "input", "data": input_data}
-        
+
         # Act
         await terminal_websocket.handle_message(json.dumps(message))
-        
+
         # Assert
         mock_pty_handler.write.assert_called_once_with(input_data)
 
     @pytest.mark.asyncio
-    async def test_handle_terminal_resize(self, terminal_websocket, mock_pty_handler):
+    async def test_handle_terminal_resize(
+        self, terminal_websocket, mock_pty_handler
+    ):
         """Test handling terminal resize from WebSocket."""
         # Arrange
         terminal_websocket.pty_handler = mock_pty_handler
         resize_data = {"cols": 120, "rows": 30}
         message = {"type": "resize", "data": resize_data}
-        
+
         # Act
         await terminal_websocket.handle_message(json.dumps(message))
-        
+
         # Assert
         mock_pty_handler.resize.assert_called_once_with(120, 30)
 
     @pytest.mark.asyncio
-    async def test_websocket_disconnect_exception(self, terminal_websocket, mock_websocket):
+    async def test_websocket_disconnect_exception(
+        self, terminal_websocket, mock_websocket
+    ):
         """Test handling WebSocket disconnect exception."""
         # Arrange
         mock_websocket.send_text = AsyncMock(side_effect=WebSocketDisconnect)
         terminal_websocket.is_connected = True
-        
+
         # Act & Assert - should not raise exception
         await terminal_websocket.send_output("test output")
         assert not terminal_websocket.is_connected
@@ -160,13 +172,16 @@ class TestConnectionManager:
         # Arrange
         connection_id = "test-connection-123"
         mock_websocket = AsyncMock()
-        
+
         # Act
         connection_manager.add_connection(connection_id, mock_websocket)
-        
+
         # Assert
         assert connection_id in connection_manager.active_connections
-        assert connection_manager.active_connections[connection_id] == mock_websocket
+        assert (
+            connection_manager.active_connections[connection_id]
+            == mock_websocket
+        )
 
     def test_remove_connection(self):
         """Test removing WebSocket connection."""
@@ -174,10 +189,10 @@ class TestConnectionManager:
         connection_id = "test-connection-123"
         mock_websocket = AsyncMock()
         connection_manager.add_connection(connection_id, mock_websocket)
-        
+
         # Act
         connection_manager.remove_connection(connection_id)
-        
+
         # Assert
         assert connection_id not in connection_manager.active_connections
 
@@ -188,16 +203,16 @@ class TestConnectionManager:
         user_id = "user-123"
         connection1 = AsyncMock()
         connection2 = AsyncMock()
-        
+
         connection_manager.add_connection(f"{user_id}-1", connection1)
         connection_manager.add_connection(f"{user_id}-2", connection2)
         connection_manager.add_connection("other-user-1", AsyncMock())
-        
+
         message = {"type": "notification", "data": "Test message"}
-        
+
         # Act
         await connection_manager.broadcast_to_user(user_id, message)
-        
+
         # Assert
         connection1.send_text.assert_called_once()
         connection2.send_text.assert_called_once()
@@ -208,14 +223,14 @@ class TestConnectionManager:
         user_id = "user-123"
         connection1 = AsyncMock()
         connection2 = AsyncMock()
-        
+
         connection_manager.add_connection(f"{user_id}-1", connection1)
         connection_manager.add_connection(f"{user_id}-2", connection2)
         connection_manager.add_connection("other-user-1", AsyncMock())
-        
+
         # Act
         user_connections = connection_manager.get_user_connections(user_id)
-        
+
         # Assert
         assert len(user_connections) == 2
         assert connection1 in user_connections.values()
@@ -232,23 +247,22 @@ class TestPTYHandler:
             command="/bin/bash",
             cols=80,
             rows=24,
-            env={"TERM": "xterm-256color"}
+            env={"TERM": "xterm-256color"},
         )
 
     @pytest.mark.asyncio
     async def test_pty_start(self, pty_handler):
         """Test starting PTY process."""
         # Arrange
-        with patch('pty.openpty') as mock_openpty, \
-             patch('os.fork') as mock_fork, \
-             patch('os.execve') as mock_execve:
-            
+        with patch("pty.openpty") as mock_openpty, patch(
+            "os.fork"
+        ) as mock_fork, patch("os.execve") as mock_execve:
             mock_openpty.return_value = (3, 4)  # master_fd, slave_fd
             mock_fork.return_value = 1234  # child pid
-            
+
             # Act
             await pty_handler.start()
-            
+
             # Assert
             mock_openpty.assert_called_once()
             mock_fork.assert_called_once()
@@ -260,11 +274,11 @@ class TestPTYHandler:
         # Arrange
         pty_handler.master_fd = 3
         pty_handler.is_alive = True
-        
-        with patch('os.write') as mock_write:
+
+        with patch("os.write") as mock_write:
             # Act
             await pty_handler.write("test command\n")
-            
+
             # Assert
             mock_write.assert_called_once_with(3, b"test command\n")
 
@@ -275,11 +289,11 @@ class TestPTYHandler:
         pty_handler.master_fd = 3
         pty_handler.child_pid = 1234
         pty_handler.is_alive = True
-        
-        with patch('fcntl.ioctl') as mock_ioctl:
+
+        with patch("fcntl.ioctl") as mock_ioctl:
             # Act
             await pty_handler.resize(120, 30)
-            
+
             # Assert
             mock_ioctl.assert_called_once()
             assert pty_handler.cols == 120
@@ -292,14 +306,13 @@ class TestPTYHandler:
         pty_handler.master_fd = 3
         pty_handler.child_pid = 1234
         pty_handler.is_alive = True
-        
-        with patch('os.close') as mock_close, \
-             patch('os.kill') as mock_kill, \
-             patch('os.waitpid') as mock_waitpid:
-            
+
+        with patch("os.close") as mock_close, patch(
+            "os.kill"
+        ) as mock_kill, patch("os.waitpid") as mock_waitpid:
             # Act
             await pty_handler.close()
-            
+
             # Assert
             mock_close.assert_called_once_with(3)
             mock_kill.assert_called_once()
@@ -319,16 +332,16 @@ class TestTerminalService:
         """Test successful command execution."""
         # Arrange
         command = "echo 'Hello World'"
-        
-        with patch('asyncio.create_subprocess_shell') as mock_subprocess:
+
+        with patch("asyncio.create_subprocess_shell") as mock_subprocess:
             mock_process = AsyncMock()
             mock_process.communicate.return_value = (b"Hello World\n", b"")
             mock_process.returncode = 0
             mock_subprocess.return_value = mock_process
-            
+
             # Act
             result = await terminal_service.execute_command(command)
-            
+
             # Assert
             assert result["exit_code"] == 0
             assert result["output"] == "Hello World\n"
@@ -339,16 +352,19 @@ class TestTerminalService:
         """Test command execution with error."""
         # Arrange
         command = "invalid_command"
-        
-        with patch('asyncio.create_subprocess_shell') as mock_subprocess:
+
+        with patch("asyncio.create_subprocess_shell") as mock_subprocess:
             mock_process = AsyncMock()
-            mock_process.communicate.return_value = (b"", b"command not found\n")
+            mock_process.communicate.return_value = (
+                b"",
+                b"command not found\n",
+            )
             mock_process.returncode = 127
             mock_subprocess.return_value = mock_process
-            
+
             # Act
             result = await terminal_service.execute_command(command)
-            
+
             # Assert
             assert result["exit_code"] == 127
             assert result["output"] == ""
@@ -359,15 +375,15 @@ class TestTerminalService:
         """Test command execution timeout."""
         # Arrange
         command = "sleep 10"
-        
-        with patch('asyncio.create_subprocess_shell') as mock_subprocess:
+
+        with patch("asyncio.create_subprocess_shell") as mock_subprocess:
             mock_process = AsyncMock()
             mock_process.communicate.side_effect = asyncio.TimeoutError
             mock_subprocess.return_value = mock_process
-            
+
             # Act
             result = await terminal_service.execute_command(command, timeout=1)
-            
+
             # Assert
             assert result["exit_code"] == -1
             assert "timeout" in result["error"].lower()
@@ -380,9 +396,9 @@ class TestTerminalService:
             "ls -la",
             "grep pattern file.txt",
             "cat /etc/passwd",
-            "ps aux"
+            "ps aux",
         ]
-        
+
         # Act & Assert
         for command in safe_commands:
             is_safe = terminal_service.validate_command(command)
@@ -397,9 +413,9 @@ class TestTerminalService:
             "sudo rm -rf /var",
             ":(){ :|:& };:",  # Fork bomb
             "dd if=/dev/zero of=/dev/sda",
-            "mkfs.ext4 /dev/sda1"
+            "mkfs.ext4 /dev/sda1",
         ]
-        
+
         # Act & Assert
         for command in dangerous_commands:
             is_safe = terminal_service.validate_command(command)
@@ -414,7 +430,7 @@ class TestWebSocketEndpoints:
         """Test WebSocket terminal endpoint."""
         # This would require a more complex setup with actual WebSocket testing
         # For now, we'll test the endpoint exists and basic structure
-        
+
         # Note: FastAPI TestClient doesn't support WebSocket testing well
         # Would need to use httpx.AsyncClient or websockets library for full testing
         pass

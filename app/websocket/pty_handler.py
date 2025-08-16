@@ -99,7 +99,9 @@ class PTYHandler:
 
                 # Start output reading task
                 self._running = True
-                self._output_task = asyncio.create_task(self._read_output_loop())
+                self._output_task = asyncio.create_task(
+                    self._read_output_loop()
+                )
 
                 logger.info(
                     f"PTY session started: pid={self.shell_pid}, size={self.cols}x{self.rows}"
@@ -243,7 +245,9 @@ class PTYHandler:
             return True
 
         except ProcessLookupError:
-            logger.warning(f"Process {self.shell_pid} not found for signal {sig}")
+            logger.warning(
+                f"Process {self.shell_pid} not found for signal {sig}"
+            )
             return False
         except Exception as e:
             logger.error(f"Failed to send signal {sig}: {e}")
@@ -339,7 +343,9 @@ class PTYHandler:
 
                 try:
                     # Read data from PTY (non-blocking)
-                    data = await loop.run_in_executor(None, self._read_master_fd)
+                    data = await loop.run_in_executor(
+                        None, self._read_master_fd
+                    )
 
                     if data:
                         # Process and send output

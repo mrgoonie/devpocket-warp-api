@@ -24,7 +24,7 @@ from app.api.sync.schemas import (
     SyncDataRequest,
     SyncDataResponse,
     SyncConflictResponse,
-    DeviceRegistration
+    DeviceRegistration,
 )
 from app.models.sync import SyncData
 from app.repositories.sync import SyncRepository
@@ -59,11 +59,11 @@ class TestSyncService:
             "data": {
                 "command": "ls -la",
                 "output": "file1.txt\nfile2.txt",
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             },
             "version": 1,
             "source_device_id": "device-456",
-            "source_device_type": "mobile"
+            "source_device_type": "mobile",
         }
 
     @pytest.mark.asyncio
@@ -71,33 +71,41 @@ class TestSyncService:
         """Test creating new sync data."""
         # Arrange
         user_id = "user-123"
-        
-        with patch.object(sync_service, 'sync_repository') as mock_repo:
-            mock_repo.create.return_value = SyncData(**sample_sync_data, user_id=user_id)
-            
+
+        with patch.object(sync_service, "sync_repository") as mock_repo:
+            mock_repo.create.return_value = SyncData(
+                **sample_sync_data, user_id=user_id
+            )
+
             # Act
-            result = await sync_service.create_sync_data(user_id, sample_sync_data)
-            
+            result = await sync_service.create_sync_data(
+                user_id, sample_sync_data
+            )
+
             # Assert
             assert result.sync_type == "command_history"
             assert result.user_id == user_id
             mock_repo.create.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_sync_data_conflict_detection(self, sync_service, sample_sync_data):
+    async def test_sync_data_conflict_detection(
+        self, sync_service, sample_sync_data
+    ):
         """Test detecting sync conflicts."""
         # Arrange
         user_id = "user-123"
         existing_data = sample_sync_data.copy()
         existing_data["version"] = 2
         existing_data["source_device_id"] = "device-789"
-        
-        with patch.object(sync_service, 'sync_repository') as mock_repo:
-            mock_repo.get_by_sync_key.return_value = SyncData(**existing_data, user_id=user_id)
-            
+
+        with patch.object(sync_service, "sync_repository") as mock_repo:
+            mock_repo.get_by_sync_key.return_value = SyncData(
+                **existing_data, user_id=user_id
+            )
+
             # Act
             result = await sync_service.sync_data(user_id, sample_sync_data)
-            
+
             # Assert
             assert isinstance(result, SyncConflictResponse)
             assert result.conflict_type == "version_mismatch"
@@ -112,36 +120,45 @@ class TestSyncService:
             "data": {
                 "theme": "dark",
                 "font_size": 14,
-                "modified_at": "2025-08-16T10:00:00Z"
-            }
+                "modified_at": "2025-08-16T10:00:00Z",
+            },
         }
         remote_data = {
-            "sync_type": "user_settings", 
+            "sync_type": "user_settings",
             "data": {
                 "theme": "light",
                 "font_size": 16,
-                "modified_at": "2025-08-16T11:00:00Z"
-            }
+                "modified_at": "2025-08-16T11:00:00Z",
+            },
         }
-        
+
         # Act - Last-write-wins strategy
-        merged = await sync_service.merge_data(local_data, remote_data, strategy="last_write_wins")
-        
+        merged = await sync_service.merge_data(
+            local_data, remote_data, strategy="last_write_wins"
+        )
+
         # Assert
-        assert merged["data"]["theme"] == "light"  # Remote wins (later timestamp)
+        assert (
+            merged["data"]["theme"] == "light"
+        )  # Remote wins (later timestamp)
         assert merged["data"]["font_size"] == 16
 
     @pytest.mark.asyncio
-    async def test_real_time_sync_notification(self, sync_service, mock_redis_client):
+    async def test_real_time_sync_notification(
+        self, sync_service, mock_redis_client
+    ):
         """Test real-time sync notifications via Redis pub/sub."""
         # Arrange
         user_id = "user-123"
-        sync_data = {"sync_type": "command_history", "data": {"command": "pwd"}}
-        
-        with patch.object(sync_service, 'redis_client', mock_redis_client):
+        sync_data = {
+            "sync_type": "command_history",
+            "data": {"command": "pwd"},
+        }
+
+        with patch.object(sync_service, "redis_client", mock_redis_client):
             # Act
             await sync_service.notify_sync_update(user_id, sync_data)
-            
+
             # Assert
             mock_redis_client.publish.assert_called_once()
             call_args = mock_redis_client.publish.call_args
@@ -156,12 +173,12 @@ class TestSyncService:
             device_id="device-456",
             device_type="mobile",
             device_name="iPhone 12",
-            app_version="1.0.0"
+            app_version="1.0.0",
         )
-        
+
         # Act
         result = await sync_service.register_device(user_id, device_data)
-        
+
         # Assert
         assert result.device_id == "device-456"
         assert result.sync_enabled is True
@@ -172,16 +189,18 @@ class TestSyncService:
         # Arrange
         user_id = "user-123"
         device_id = "device-456"
-        
-        with patch.object(sync_service, 'sync_repository') as mock_repo:
+
+        with patch.object(sync_service, "sync_repository") as mock_repo:
             mock_repo.get_pending_sync.return_value = [
                 SyncData(sync_type="command_history", data={"command": "ls"}),
-                SyncData(sync_type="ssh_profile", data={"name": "server1"})
+                SyncData(sync_type="ssh_profile", data={"name": "server1"}),
             ]
-            
+
             # Act
-            pending_sync = await sync_service.get_pending_sync(user_id, device_id)
-            
+            pending_sync = await sync_service.get_pending_sync(
+                user_id, device_id
+            )
+
             # Assert
             assert len(pending_sync) == 2
             assert pending_sync[0].sync_type == "command_history"
@@ -194,6 +213,7 @@ class TestCommandHistorySync:
     def command_sync_service(self):
         """Create command sync service."""
         from app.api.sync.services.command_sync import CommandSyncService
+
         return CommandSyncService()
 
     @pytest.mark.asyncio
@@ -202,13 +222,21 @@ class TestCommandHistorySync:
         # Arrange
         user_id = "user-123"
         commands = [
-            {"command": "ls -la", "output": "files...", "timestamp": "2025-08-16T10:00:00Z"},
-            {"command": "pwd", "output": "/home/user", "timestamp": "2025-08-16T10:01:00Z"}
+            {
+                "command": "ls -la",
+                "output": "files...",
+                "timestamp": "2025-08-16T10:00:00Z",
+            },
+            {
+                "command": "pwd",
+                "output": "/home/user",
+                "timestamp": "2025-08-16T10:01:00Z",
+            },
         ]
-        
+
         # Act
         result = await command_sync_service.sync_commands(user_id, commands)
-        
+
         # Assert
         assert result.synced_count == 2
         assert result.conflicts == []
@@ -220,10 +248,12 @@ class TestCommandHistorySync:
         user_id = "user-123"
         device_id = "device-456"
         last_sync = datetime.now(timezone.utc) - timedelta(hours=1)
-        
+
         # Act
-        result = await command_sync_service.get_commands_since(user_id, device_id, last_sync)
-        
+        result = await command_sync_service.get_commands_since(
+            user_id, device_id, last_sync
+        )
+
         # Assert
         assert isinstance(result, list)
         # Should return commands created after last_sync
@@ -235,12 +265,17 @@ class TestCommandHistorySync:
         user_id = "user-123"
         duplicate_commands = [
             {"command": "ls -la", "timestamp": "2025-08-16T10:00:00Z"},
-            {"command": "ls -la", "timestamp": "2025-08-16T10:00:00Z"}  # Duplicate
+            {
+                "command": "ls -la",
+                "timestamp": "2025-08-16T10:00:00Z",
+            },  # Duplicate
         ]
-        
+
         # Act
-        result = await command_sync_service.sync_commands(user_id, duplicate_commands)
-        
+        result = await command_sync_service.sync_commands(
+            user_id, duplicate_commands
+        )
+
         # Assert
         assert result.synced_count == 1  # Should deduplicate
         assert result.duplicates_removed == 1
@@ -253,6 +288,7 @@ class TestSSHProfileSync:
     def ssh_sync_service(self):
         """Create SSH profile sync service."""
         from app.api.sync.services.ssh_sync import SSHProfileSyncService
+
         return SSHProfileSyncService()
 
     @pytest.mark.asyncio
@@ -265,13 +301,13 @@ class TestSSHProfileSync:
                 "name": "production-server",
                 "host": "prod.example.com",
                 "port": 22,
-                "username": "deploy"
+                "username": "deploy",
             }
         ]
-        
+
         # Act
         result = await ssh_sync_service.sync_profiles(user_id, profiles)
-        
+
         # Assert
         assert result.synced_count == 1
 
@@ -283,28 +319,30 @@ class TestSSHProfileSync:
         local_profile = {
             "name": "server1",
             "host": "old.example.com",
-            "modified_at": "2025-08-16T10:00:00Z"
+            "modified_at": "2025-08-16T10:00:00Z",
         }
         remote_profile = {
-            "name": "server1", 
+            "name": "server1",
             "host": "new.example.com",
-            "modified_at": "2025-08-16T11:00:00Z"
+            "modified_at": "2025-08-16T11:00:00Z",
         }
-        
+
         # Act
         result = await ssh_sync_service.resolve_profile_conflict(
             local_profile, remote_profile
         )
-        
+
         # Assert
-        assert result["host"] == "new.example.com"  # Remote wins (later timestamp)
+        assert (
+            result["host"] == "new.example.com"
+        )  # Remote wins (later timestamp)
 
     @pytest.mark.asyncio
     async def test_ssh_key_sync_security(self, ssh_sync_service):
         """Test SSH key synchronization security."""
         # SSH keys should be handled carefully during sync
         # Private keys should not be synced, only public keys and metadata
-        
+
         # Arrange
         user_id = "user-123"
         ssh_key_data = {
@@ -313,13 +351,15 @@ class TestSSHProfileSync:
             "fingerprint": "SHA256:abc123...",
             # private_key should NOT be included in sync
         }
-        
+
         # Act
         result = await ssh_sync_service.sync_ssh_keys(user_id, [ssh_key_data])
-        
+
         # Assert
         assert "private_key" not in result.synced_data[0]
-        assert result.synced_data[0]["public_key"] == ssh_key_data["public_key"]
+        assert (
+            result.synced_data[0]["public_key"] == ssh_key_data["public_key"]
+        )
 
 
 class TestUserSettingsSync:
@@ -329,6 +369,7 @@ class TestUserSettingsSync:
     def settings_sync_service(self):
         """Create user settings sync service."""
         from app.api.sync.services.settings_sync import SettingsSyncService
+
         return SettingsSyncService()
 
     @pytest.mark.asyncio
@@ -339,38 +380,44 @@ class TestUserSettingsSync:
         settings_update = {
             "terminal_theme": "dark",
             "terminal_font_size": 16,
-            "ai_suggestions_enabled": True
+            "ai_suggestions_enabled": True,
         }
-        
+
         # Act
-        result = await settings_sync_service.sync_settings(user_id, settings_update)
-        
+        result = await settings_sync_service.sync_settings(
+            user_id, settings_update
+        )
+
         # Assert
-        assert result.updated_settings == ["terminal_theme", "terminal_font_size", "ai_suggestions_enabled"]
+        assert result.updated_settings == [
+            "terminal_theme",
+            "terminal_font_size",
+            "ai_suggestions_enabled",
+        ]
 
     @pytest.mark.asyncio
     async def test_settings_partial_sync(self, settings_sync_service):
         """Test partial settings synchronization."""
         # Only sync changed settings, not entire settings object
-        
+
         # Arrange
         user_id = "user-123"
         current_settings = {
             "terminal_theme": "light",
             "terminal_font_size": 14,
-            "ai_suggestions_enabled": True
+            "ai_suggestions_enabled": True,
         }
         new_settings = {
             "terminal_theme": "dark",  # Changed
             "terminal_font_size": 14,  # Unchanged
-            "ai_suggestions_enabled": True  # Unchanged
+            "ai_suggestions_enabled": True,  # Unchanged
         }
-        
+
         # Act
         diff = await settings_sync_service.calculate_settings_diff(
             current_settings, new_settings
         )
-        
+
         # Assert
         assert diff == {"terminal_theme": "dark"}
 
@@ -382,6 +429,7 @@ class TestSyncConflictResolution:
     def conflict_resolver(self):
         """Create conflict resolver."""
         from app.api.sync.services.conflict_resolver import ConflictResolver
+
         return ConflictResolver()
 
     @pytest.mark.asyncio
@@ -390,12 +438,12 @@ class TestSyncConflictResolution:
         # Arrange
         local_data = {"value": "A", "timestamp": "2025-08-16T10:00:00Z"}
         remote_data = {"value": "B", "timestamp": "2025-08-16T11:00:00Z"}
-        
+
         # Act
         result = await conflict_resolver.resolve(
             local_data, remote_data, strategy="last_write_wins"
         )
-        
+
         # Assert
         assert result["value"] == "B"  # Remote is newer
 
@@ -404,16 +452,19 @@ class TestSyncConflictResolution:
         """Test user choice conflict resolution."""
         # Arrange
         local_data = {"ssh_profiles": [{"name": "server1", "host": "old.com"}]}
-        remote_data = {"ssh_profiles": [{"name": "server1", "host": "new.com"}]}
+        remote_data = {
+            "ssh_profiles": [{"name": "server1", "host": "new.com"}]
+        }
         user_choice = "local"
-        
+
         # Act
         result = await conflict_resolver.resolve(
-            local_data, remote_data, 
-            strategy="user_choice", 
-            user_preference=user_choice
+            local_data,
+            remote_data,
+            strategy="user_choice",
+            user_preference=user_choice,
         )
-        
+
         # Assert
         assert result["ssh_profiles"][0]["host"] == "old.com"
 
@@ -423,12 +474,12 @@ class TestSyncConflictResolution:
         # Arrange
         local_data = {"commands": ["ls", "pwd"]}
         remote_data = {"commands": ["cd", "grep"]}
-        
+
         # Act
         result = await conflict_resolver.resolve(
             local_data, remote_data, strategy="merge"
         )
-        
+
         # Assert
         assert set(result["commands"]) == {"ls", "pwd", "cd", "grep"}
 
@@ -506,6 +557,7 @@ class TestRedisPubSub:
     def redis_pubsub_manager(self):
         """Create Redis pub/sub manager."""
         from app.api.sync.services.pubsub_manager import PubSubManager
+
         return PubSubManager()
 
     @pytest.mark.asyncio
@@ -513,10 +565,10 @@ class TestRedisPubSub:
         """Test subscribing to user sync notifications."""
         # Arrange
         user_id = "user-123"
-        
+
         # Act
         await redis_pubsub_manager.subscribe_user_sync(user_id)
-        
+
         # Assert
         # Should be subscribed to user's sync channel
 
@@ -526,10 +578,10 @@ class TestRedisPubSub:
         # Arrange
         user_id = "user-123"
         sync_data = {"sync_type": "command_history", "data": {"command": "ls"}}
-        
+
         # Act
         await redis_pubsub_manager.publish_sync_update(user_id, sync_data)
-        
+
         # Assert
         # Should publish to user's sync channel
 

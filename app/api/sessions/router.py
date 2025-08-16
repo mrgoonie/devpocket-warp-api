@@ -81,9 +81,13 @@ async def create_session(
 async def list_sessions(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-    active_only: bool = Query(default=False, description="Show only active sessions"),
+    active_only: bool = Query(
+        default=False, description="Show only active sessions"
+    ),
     offset: int = Query(default=0, ge=0, description="Pagination offset"),
-    limit: int = Query(default=50, ge=1, le=100, description="Pagination limit"),
+    limit: int = Query(
+        default=50, ge=1, le=100, description="Pagination limit"
+    ),
 ) -> SessionListResponse:
     """Get user's terminal sessions with pagination."""
     service = SessionService(db)
@@ -166,7 +170,8 @@ async def terminate_session(
     await service.terminate_session(current_user, session_id, force=force)
 
     return MessageResponse(
-        message="Terminal session terminated successfully", session_id=session_id
+        message="Terminal session terminated successfully",
+        session_id=session_id,
     )
 
 
@@ -200,7 +205,9 @@ async def get_session_history(
     session_id: str,
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-    limit: int = Query(default=100, ge=1, le=1000, description="History entries limit"),
+    limit: int = Query(
+        default=100, ge=1, le=1000, description="History entries limit"
+    ),
     offset: int = Query(default=0, ge=0, description="History offset"),
 ) -> SessionHistoryResponse:
     """Get session command history and activity log."""
@@ -242,7 +249,9 @@ async def search_sessions(
 ) -> SessionListResponse:
     """Search terminal sessions with advanced filters."""
     service = SessionService(db)
-    sessions, total = await service.search_sessions(current_user, search_request)
+    sessions, total = await service.search_sessions(
+        current_user, search_request
+    )
 
     return SessionListResponse(
         sessions=sessions,
@@ -315,7 +324,9 @@ async def batch_session_operations(
                 success_count += 1
 
             else:
-                raise ValueError(f"Unsupported operation: {operation.operation}")
+                raise ValueError(
+                    f"Unsupported operation: {operation.operation}"
+                )
 
         except HTTPException as e:
             results.append(
@@ -417,7 +428,9 @@ async def cleanup_inactive_sessions(
                 session.status in ["active", "connecting"]
                 and last_activity < cutoff_time
             ):
-                await service.terminate_session(current_user, session.id, force=True)
+                await service.terminate_session(
+                    current_user, session.id, force=True
+                )
                 cleanup_count += 1
 
         except Exception as e:
@@ -510,7 +523,9 @@ async def get_session_metrics(
                 "session_duration_minutes": round(
                     stats.average_session_duration_minutes, 2
                 ),
-                "commands_per_session": round(stats.average_commands_per_session, 2),
+                "commands_per_session": round(
+                    stats.average_commands_per_session, 2
+                ),
             },
             "timestamp": logger.get_current_time(),
         }

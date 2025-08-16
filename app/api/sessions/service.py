@@ -61,10 +61,15 @@ class SessionService:
                     )
 
             # Check if session name already exists for user
-            existing_session = await self.session_repo.get_user_session_by_name(
-                user.id, session_data.name
+            existing_session = (
+                await self.session_repo.get_user_session_by_name(
+                    user.id, session_data.name
+                )
             )
-            if existing_session and existing_session.status in ["active", "connecting"]:
+            if existing_session and existing_session.status in [
+                "active",
+                "connecting",
+            ]:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Active session with name '{session_data.name}' already exists",
@@ -135,7 +140,11 @@ class SessionService:
             )
 
     async def get_user_sessions(
-        self, user: User, active_only: bool = False, offset: int = 0, limit: int = 50
+        self,
+        user: User,
+        active_only: bool = False,
+        offset: int = 0,
+        limit: int = 50,
     ) -> Tuple[List[SessionResponse], int]:
         """Get terminal sessions for a user with pagination."""
         try:
@@ -161,7 +170,9 @@ class SessionService:
                         "last_activity", session_obj.last_activity
                     )
 
-                session_responses.append(SessionResponse.model_validate(session_obj))
+                session_responses.append(
+                    SessionResponse.model_validate(session_obj)
+                )
 
             return session_responses, total
 
@@ -172,7 +183,9 @@ class SessionService:
                 detail="Failed to fetch terminal sessions",
             )
 
-    async def get_session(self, user: User, session_id: str) -> SessionResponse:
+    async def get_session(
+        self, user: User, session_id: str
+    ) -> SessionResponse:
         """Get a specific terminal session."""
         session_obj = await self.session_repo.get_by_id(session_id)
 
@@ -185,7 +198,9 @@ class SessionService:
         # Update with real-time status if available
         if session_id in self._active_sessions:
             memory_session = self._active_sessions[session_id]
-            session_obj.status = memory_session.get("status", session_obj.status)
+            session_obj.status = memory_session.get(
+                "status", session_obj.status
+            )
             session_obj.last_activity = memory_session.get(
                 "last_activity", session_obj.last_activity
             )
@@ -363,7 +378,9 @@ class SessionService:
                 )
 
             # Execute command
-            command_result = await self._execute_session_command(session_id, command)
+            command_result = await self._execute_session_command(
+                session_id, command
+            )
 
             # Update session statistics
             await self._update_session_activity(session_id)
@@ -414,7 +431,9 @@ class SessionService:
                     )
                 )
 
-            total_entries = await self.session_repo.count_session_commands(session_id)
+            total_entries = await self.session_repo.count_session_commands(
+                session_id
+            )
 
             return SessionHistoryResponse(
                 session_id=session_id,
@@ -462,7 +481,9 @@ class SessionService:
             )
 
             # Get total count
-            total = await self.session_repo.count_sessions_with_criteria(criteria)
+            total = await self.session_repo.count_sessions_with_criteria(
+                criteria
+            )
 
             session_responses = [
                 SessionResponse.model_validate(session) for session in sessions
@@ -481,13 +502,17 @@ class SessionService:
         """Get terminal session statistics for user."""
         try:
             # Get basic counts
-            stats_data = await self.session_repo.get_user_session_stats(user.id)
+            stats_data = await self.session_repo.get_user_session_stats(
+                user.id
+            )
 
             # Calculate additional metrics
             total_duration = sum(
                 (s.duration_seconds or 0) for s in stats_data["sessions"]
             )
-            total_commands = sum((s.command_count or 0) for s in stats_data["sessions"])
+            total_commands = sum(
+                (s.command_count or 0) for s in stats_data["sessions"]
+            )
 
             avg_duration = (
                 total_duration / len(stats_data["sessions"])
@@ -506,11 +531,19 @@ class SessionService:
             week_ago = today - timedelta(days=7)
 
             sessions_today = len(
-                [s for s in stats_data["sessions"] if s.created_at.date() == today]
+                [
+                    s
+                    for s in stats_data["sessions"]
+                    if s.created_at.date() == today
+                ]
             )
 
             sessions_this_week = len(
-                [s for s in stats_data["sessions"] if s.created_at.date() >= week_ago]
+                [
+                    s
+                    for s in stats_data["sessions"]
+                    if s.created_at.date() >= week_ago
+                ]
             )
 
             return SessionStats(
@@ -553,7 +586,9 @@ class SessionService:
             uptime = 0
             if session_obj.start_time:
                 uptime = int(
-                    (datetime.now(timezone.utc) - session_obj.start_time).total_seconds()
+                    (
+                        datetime.now(timezone.utc) - session_obj.start_time
+                    ).total_seconds()
                 )
 
             return SessionHealthCheck(
@@ -688,7 +723,9 @@ class SessionService:
     async def _update_session_activity(self, session_id: str) -> None:
         """Update session activity timestamp."""
         if session_id in self._active_sessions:
-            self._active_sessions[session_id]["last_activity"] = datetime.now(timezone.utc)
+            self._active_sessions[session_id]["last_activity"] = datetime.now(
+                timezone.utc
+            )
             self._active_sessions[session_id]["command_count"] += 1
 
     async def _check_session_health(self, session_id: str) -> bool:
@@ -702,6 +739,8 @@ class SessionService:
         last_activity = memory_session.get("last_activity")
         if last_activity:
             time_since_activity = datetime.now(timezone.utc) - last_activity
-            return time_since_activity.total_seconds() < 3600  # 1 hour threshold
+            return (
+                time_since_activity.total_seconds() < 3600
+            )  # 1 hour threshold
 
         return memory_session.get("status") == "active"

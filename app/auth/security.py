@@ -10,7 +10,11 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any, Union
 import redis.asyncio as aioredis
 from jose import JWTError, jwt
-from jose.exceptions import ExpiredSignatureError, JWTClaimsError, JWSSignatureError
+from jose.exceptions import (
+    ExpiredSignatureError,
+    JWTClaimsError,
+    JWSSignatureError,
+)
 from passlib.context import CryptContext
 
 from app.core.config import settings
@@ -19,7 +23,9 @@ from app.core.logging import logger
 
 # Password hashing context
 pwd_context = CryptContext(
-    schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=settings.bcrypt_rounds
+    schemes=["bcrypt"],
+    deprecated="auto",
+    bcrypt__rounds=settings.bcrypt_rounds,
 )
 
 # Redis client for token blacklisting (will be set during app startup)
@@ -103,7 +109,9 @@ def create_access_token(
 
     try:
         encoded_jwt = jwt.encode(
-            to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
+            to_encode,
+            settings.jwt_secret_key,
+            algorithm=settings.jwt_algorithm,
         )
 
         logger.debug(f"Access token created for user: {data.get('sub')}")
@@ -148,7 +156,9 @@ def create_refresh_token(
 
     try:
         encoded_jwt = jwt.encode(
-            to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
+            to_encode,
+            settings.jwt_secret_key,
+            algorithm=settings.jwt_algorithm,
         )
 
         logger.debug(f"Refresh token created for user: {data.get('sub')}")
@@ -254,7 +264,9 @@ def is_token_blacklisted_sync(token: str) -> bool:
     return False
 
 
-async def blacklist_token(token: str, expires_at: Optional[datetime] = None) -> None:
+async def blacklist_token(
+    token: str, expires_at: Optional[datetime] = None
+) -> None:
     """
     Add a token to the blacklist.
 
@@ -273,7 +285,9 @@ async def blacklist_token(token: str, expires_at: Optional[datetime] = None) -> 
                 payload = decode_token(token)
                 exp_timestamp = payload.get("exp")
                 if exp_timestamp:
-                    expires_at = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
+                    expires_at = datetime.fromtimestamp(
+                        exp_timestamp, tz=timezone.utc
+                    )
             except JWTError:
                 # If we can't decode the token, use a default expiration
                 expires_at = datetime.now(timezone.utc) + timedelta(days=1)
@@ -315,13 +329,13 @@ def generate_password_reset_token(email: str) -> str:
 
     # Create the token data
     to_encode = data.copy()
-    to_encode.update(
-        {"exp": expire, "iat": datetime.now(timezone.utc)}
-    )
+    to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc)})
 
     try:
         encoded_jwt = jwt.encode(
-            to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
+            to_encode,
+            settings.jwt_secret_key,
+            algorithm=settings.jwt_algorithm,
         )
 
         logger.debug(f"Password reset token created for user: {email}")

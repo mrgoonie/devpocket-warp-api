@@ -7,7 +7,14 @@ login, token management, and password operations.
 
 from datetime import datetime, timedelta
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Request
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    status,
+    BackgroundTasks,
+    Request,
+)
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
@@ -154,7 +161,8 @@ async def register_user(
         existing_user = await user_repo.get_by_username(user_data.username)
         if existing_user:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, detail="Username already taken"
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Username already taken",
             )
 
         # Hash password
@@ -238,7 +246,9 @@ async def login_user(
             user = await user_repo.get_by_email(form_data.username)
 
         # Check if user exists and password is correct
-        if not user or not verify_password(form_data.password, user.password_hash):
+        if not user or not verify_password(
+            form_data.password, user.password_hash
+        ):
             # Increment failed login attempts if user exists
             if user:
                 user.increment_failed_login()

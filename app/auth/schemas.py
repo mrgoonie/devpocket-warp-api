@@ -61,7 +61,10 @@ class UserCreate(UserBase):
     """Schema for user registration."""
 
     password: str = Field(
-        ..., min_length=8, max_length=128, description="Password (minimum 8 characters)"
+        ...,
+        min_length=8,
+        max_length=128,
+        description="Password (minimum 8 characters)",
     )
     device_id: Optional[str] = Field(
         None, description="Device identifier for session tracking"
@@ -78,7 +81,9 @@ class UserCreate(UserBase):
         """Validate password meets strength requirements."""
         is_strong, errors = is_password_strong(v)
         if not is_strong:
-            raise ValueError(f"Password requirements not met: {'; '.join(errors)}")
+            raise ValueError(
+                f"Password requirements not met: {'; '.join(errors)}"
+            )
         return v
 
 
@@ -103,12 +108,18 @@ class UserResponse(UserBase):
     id: str = Field(..., description="User unique identifier")
     subscription_tier: str = Field(..., description="User's subscription tier")
     is_active: bool = Field(..., description="Whether user account is active")
-    is_verified: bool = Field(..., description="Whether user email is verified")
+    is_verified: bool = Field(
+        ..., description="Whether user email is verified"
+    )
     has_api_key: bool = Field(
         ..., description="Whether user has validated their OpenRouter API key"
     )
-    created_at: datetime = Field(..., description="User account creation timestamp")
-    last_login_at: Optional[datetime] = Field(None, description="Last login timestamp")
+    created_at: datetime = Field(
+        ..., description="User account creation timestamp"
+    )
+    last_login_at: Optional[datetime] = Field(
+        None, description="Last login timestamp"
+    )
 
     class Config:
         from_attributes = True
@@ -123,8 +134,12 @@ class Token(BaseModel):
     token_type: str = Field(
         default="bearer", description="Token type (always 'bearer')"
     )
-    expires_in: int = Field(..., description="Token expiration time in seconds")
-    user: UserResponse = Field(..., description="Authenticated user information")
+    expires_in: int = Field(
+        ..., description="Token expiration time in seconds"
+    )
+    user: UserResponse = Field(
+        ..., description="Authenticated user information"
+    )
 
 
 class TokenRefresh(BaseModel):
@@ -140,7 +155,9 @@ class TokenRefreshResponse(BaseModel):
     token_type: str = Field(
         default="bearer", description="Token type (always 'bearer')"
     )
-    expires_in: int = Field(..., description="Token expiration time in seconds")
+    expires_in: int = Field(
+        ..., description="Token expiration time in seconds"
+    )
 
 
 class TokenBlacklist(BaseModel):
@@ -164,7 +181,9 @@ class PasswordChange(BaseModel):
         """Validate new password meets strength requirements."""
         is_strong, errors = is_password_strong(v)
         if not is_strong:
-            raise ValueError(f"Password requirements not met: {'; '.join(errors)}")
+            raise ValueError(
+                f"Password requirements not met: {'; '.join(errors)}"
+            )
         return v
 
 
@@ -183,12 +202,14 @@ class ResetPassword(BaseModel):
     )
 
     @field_validator("new_password")
-    @classmethod  
+    @classmethod
     def validate_password_strength(cls, v):
         """Validate new password meets strength requirements."""
         is_strong, errors = is_password_strong(v)
         if not is_strong:
-            raise ValueError(f"Password requirements not met: {'; '.join(errors)}")
+            raise ValueError(
+                f"Password requirements not met: {'; '.join(errors)}"
+            )
         return v
 
 
@@ -221,11 +242,15 @@ class ErrorResponse(BaseModel):
 class AccountLockInfo(BaseModel):
     """Schema for account lock information."""
 
-    is_locked: bool = Field(..., description="Whether the account is currently locked")
+    is_locked: bool = Field(
+        ..., description="Whether the account is currently locked"
+    )
     locked_until: Optional[datetime] = Field(
         None, description="When the account lock expires"
     )
-    failed_attempts: int = Field(..., description="Number of failed login attempts")
+    failed_attempts: int = Field(
+        ..., description="Number of failed login attempts"
+    )
 
 
 class UserSettings(BaseModel):
@@ -241,7 +266,8 @@ class UserSettings(BaseModel):
         default="Fira Code", description="Terminal font family"
     )
     preferred_ai_model: str = Field(
-        default="claude-3-haiku", description="Preferred AI model for suggestions"
+        default="claude-3-haiku",
+        description="Preferred AI model for suggestions",
     )
     ai_suggestions_enabled: bool = Field(
         default=True, description="Whether AI suggestions are enabled"
@@ -285,8 +311,12 @@ class APIKeyValidationResponse(BaseModel):
     """Schema for API key validation response."""
 
     is_valid: bool = Field(..., description="Whether the API key is valid")
-    key_name: Optional[str] = Field(None, description="Name/description of the API key")
+    key_name: Optional[str] = Field(
+        None, description="Name/description of the API key"
+    )
     remaining_credits: Optional[float] = Field(
         None, description="Remaining credits (if available)"
     )
-    rate_limit: Optional[dict] = Field(None, description="Rate limit information")
+    rate_limit: Optional[dict] = Field(
+        None, description="Rate limit information"
+    )

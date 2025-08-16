@@ -37,7 +37,9 @@ class User(BaseModel):
 
     hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
 
-    full_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    full_name: Mapped[Optional[str]] = mapped_column(
+        String(255), nullable=True
+    )
 
     role: Mapped[UserRole] = mapped_column(
         ENUM(UserRole, name="user_role", create_type=False),
@@ -59,9 +61,13 @@ class User(BaseModel):
         String(255), nullable=True
     )
 
-    reset_token: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    reset_token: Mapped[Optional[str]] = mapped_column(
+        String(255), nullable=True
+    )
 
-    reset_token_expires: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    reset_token_expires: Mapped[Optional[datetime]] = mapped_column(
+        nullable=True
+    )
 
     openrouter_api_key: Mapped[Optional[str]] = mapped_column(
         String(255), nullable=True
@@ -72,7 +78,9 @@ class User(BaseModel):
         String(50), nullable=False, default="free", server_default="'free'"
     )
 
-    subscription_expires_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    subscription_expires_at: Mapped[Optional[datetime]] = mapped_column(
+        nullable=True
+    )
 
     # Security fields
     failed_login_attempts: Mapped[int] = mapped_column(
@@ -131,7 +139,9 @@ class User(BaseModel):
         if self.failed_login_attempts >= 5:
             from datetime import timedelta
 
-            self.locked_until = datetime.now(timezone.utc) + timedelta(minutes=15)
+            self.locked_until = datetime.now(timezone.utc) + timedelta(
+                minutes=15
+            )
 
     def reset_failed_login(self) -> None:
         """Reset failed login attempts."""
@@ -166,7 +176,10 @@ class UserSettings(BaseModel):
     )
 
     terminal_font_family: Mapped[str] = mapped_column(
-        String(50), nullable=False, default="'Fira Code'", server_default="'Fira Code'"
+        String(50),
+        nullable=False,
+        default="'Fira Code'",
+        server_default="'Fira Code'",
     )
 
     # AI preferences
@@ -199,7 +212,9 @@ class UserSettings(BaseModel):
     )
 
     # Custom settings (JSON field for flexibility)
-    custom_settings: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    custom_settings: Mapped[Optional[dict]] = mapped_column(
+        JSON, nullable=True
+    )
 
     # Relationship back to user
     user: Mapped["User"] = relationship("User", back_populates="settings")

@@ -42,7 +42,9 @@ async def get_sync_data(
     return await service.sync_data(current_user, request)
 
 
-@router.post("/data", response_model=MessageResponse, summary="Upload Sync Data")
+@router.post(
+    "/data", response_model=MessageResponse, summary="Upload Sync Data"
+)
 async def upload_sync_data(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],

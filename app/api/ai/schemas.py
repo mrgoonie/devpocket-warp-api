@@ -56,7 +56,9 @@ class APIKeyValidationResponse(BaseModel):
     recommended_models: Optional[List[str]] = Field(
         None, description="Recommended models for DevPocket"
     )
-    error: Optional[str] = Field(None, description="Error message if validation failed")
+    error: Optional[str] = Field(
+        None, description="Error message if validation failed"
+    )
     timestamp: datetime = Field(..., description="Validation timestamp")
 
 
@@ -69,7 +71,9 @@ class AIUsageStats(BaseModel):
     requests_today: int = Field(default=0, description="Requests made today")
     tokens_used: int = Field(default=0, description="Total tokens used")
     cost_estimate: Optional[float] = Field(None, description="Estimated cost")
-    rate_limit: Dict[str, Any] = Field(..., description="Rate limit information")
+    rate_limit: Dict[str, Any] = Field(
+        ..., description="Rate limit information"
+    )
     timestamp: datetime = Field(..., description="Stats timestamp")
 
 
@@ -77,9 +81,14 @@ class AIUsageStats(BaseModel):
 class CommandSuggestionRequest(BaseModel):
     """Schema for command suggestion request."""
 
-    api_key: str = Field(..., min_length=10, description="User's OpenRouter API key")
+    api_key: str = Field(
+        ..., min_length=10, description="User's OpenRouter API key"
+    )
     description: str = Field(
-        ..., min_length=5, max_length=1000, description="Natural language description"
+        ...,
+        min_length=5,
+        max_length=1000,
+        description="Natural language description",
     )
 
     # Context information
@@ -89,7 +98,9 @@ class CommandSuggestionRequest(BaseModel):
     previous_commands: Optional[List[str]] = Field(
         None, max_items=10, description="Recent commands"
     )
-    operating_system: Optional[str] = Field(None, description="Operating system")
+    operating_system: Optional[str] = Field(
+        None, description="Operating system"
+    )
     shell_type: Optional[str] = Field(
         default="bash", description="Shell type (bash, zsh, fish, etc.)"
     )
@@ -111,26 +122,33 @@ class CommandSuggestion(BaseModel):
     """Schema for a single command suggestion."""
 
     command: str = Field(..., description="Suggested command")
-    description: str = Field(..., description="Description of what the command does")
+    description: str = Field(
+        ..., description="Description of what the command does"
+    )
     confidence: ConfidenceLevel = Field(..., description="Confidence level")
     safety_level: str = Field(
         ..., description="Safety level (safe, caution, dangerous)"
     )
 
     # Additional details
-    examples: Optional[List[str]] = Field(default=[], description="Usage examples")
+    examples: Optional[List[str]] = Field(
+        default=[], description="Usage examples"
+    )
     alternatives: Optional[List[str]] = Field(
         default=[], description="Alternative commands"
     )
     prerequisites: Optional[List[str]] = Field(
         default=[], description="Prerequisites or dependencies"
     )
-    warnings: Optional[List[str]] = Field(default=[], description="Safety warnings")
+    warnings: Optional[List[str]] = Field(
+        default=[], description="Safety warnings"
+    )
 
     # Metadata
     category: str = Field(default="general", description="Command category")
     complexity: str = Field(
-        default="medium", description="Complexity level (simple, medium, complex)"
+        default="medium",
+        description="Complexity level (simple, medium, complex)",
     )
 
 
@@ -142,13 +160,21 @@ class CommandSuggestionResponse(BaseModel):
     )
 
     # Request context
-    query_description: str = Field(..., description="Original query description")
-    context_used: Dict[str, Any] = Field(..., description="Context information used")
+    query_description: str = Field(
+        ..., description="Original query description"
+    )
+    context_used: Dict[str, Any] = Field(
+        ..., description="Context information used"
+    )
 
     # AI metadata
     model_used: str = Field(..., description="AI model used")
-    response_time_ms: int = Field(..., description="Response time in milliseconds")
-    tokens_used: Dict[str, int] = Field(..., description="Token usage breakdown")
+    response_time_ms: int = Field(
+        ..., description="Response time in milliseconds"
+    )
+    tokens_used: Dict[str, int] = Field(
+        ..., description="Token usage breakdown"
+    )
 
     # Quality indicators
     confidence_score: float = Field(
@@ -165,7 +191,9 @@ class CommandSuggestionResponse(BaseModel):
 class CommandExplanationRequest(BaseModel):
     """Schema for command explanation request."""
 
-    api_key: str = Field(..., min_length=10, description="User's OpenRouter API key")
+    api_key: str = Field(
+        ..., min_length=10, description="User's OpenRouter API key"
+    )
     command: str = Field(
         ..., min_length=1, max_length=2000, description="Command to explain"
     )
@@ -177,7 +205,9 @@ class CommandExplanationRequest(BaseModel):
     user_level: Optional[str] = Field(
         default="intermediate", description="User experience level"
     )
-    include_examples: bool = Field(default=True, description="Include usage examples")
+    include_examples: bool = Field(
+        default=True, description="Include usage examples"
+    )
     include_alternatives: bool = Field(
         default=True, description="Include alternative commands"
     )
@@ -193,7 +223,9 @@ class CommandExplanation(BaseModel):
     """Schema for command explanation."""
 
     command: str = Field(..., description="Original command")
-    summary: str = Field(..., description="Brief summary of what the command does")
+    summary: str = Field(
+        ..., description="Brief summary of what the command does"
+    )
     detailed_explanation: str = Field(..., description="Detailed explanation")
 
     # Command breakdown
@@ -211,10 +243,14 @@ class CommandExplanation(BaseModel):
     alternatives: List[Dict[str, str]] = Field(
         default=[], description="Alternative commands"
     )
-    related_commands: List[str] = Field(default=[], description="Related commands")
+    related_commands: List[str] = Field(
+        default=[], description="Related commands"
+    )
 
     # Safety and best practices
-    safety_notes: List[str] = Field(default=[], description="Safety considerations")
+    safety_notes: List[str] = Field(
+        default=[], description="Safety considerations"
+    )
     best_practices: List[str] = Field(
         default=[], description="Best practice recommendations"
     )
@@ -226,12 +262,18 @@ class CommandExplanation(BaseModel):
 class CommandExplanationResponse(BaseModel):
     """Schema for command explanation response."""
 
-    explanation: CommandExplanation = Field(..., description="Command explanation")
+    explanation: CommandExplanation = Field(
+        ..., description="Command explanation"
+    )
 
     # AI metadata
     model_used: str = Field(..., description="AI model used")
-    response_time_ms: int = Field(..., description="Response time in milliseconds")
-    tokens_used: Dict[str, int] = Field(..., description="Token usage breakdown")
+    response_time_ms: int = Field(
+        ..., description="Response time in milliseconds"
+    )
+    tokens_used: Dict[str, int] = Field(
+        ..., description="Token usage breakdown"
+    )
     confidence_score: float = Field(
         ..., ge=0, le=1, description="Explanation confidence score"
     )
@@ -243,7 +285,9 @@ class CommandExplanationResponse(BaseModel):
 class ErrorAnalysisRequest(BaseModel):
     """Schema for error analysis request."""
 
-    api_key: str = Field(..., min_length=10, description="User's OpenRouter API key")
+    api_key: str = Field(
+        ..., min_length=10, description="User's OpenRouter API key"
+    )
     command: str = Field(
         ..., min_length=1, max_length=2000, description="Failed command"
     )
@@ -251,7 +295,9 @@ class ErrorAnalysisRequest(BaseModel):
 
     # Context
     exit_code: Optional[int] = Field(None, description="Command exit code")
-    working_directory: Optional[str] = Field(None, description="Working directory")
+    working_directory: Optional[str] = Field(
+        None, description="Working directory"
+    )
     environment_info: Optional[Dict[str, str]] = Field(
         None, description="Environment variables"
     )
@@ -277,7 +323,9 @@ class ErrorAnalysis(BaseModel):
     error_category: str = Field(
         ..., description="Error category (permission, not_found, syntax, etc.)"
     )
-    root_cause: str = Field(..., description="Identified root cause of the error")
+    root_cause: str = Field(
+        ..., description="Identified root cause of the error"
+    )
     explanation: str = Field(
         ..., description="Detailed explanation of why the error occurred"
     )
@@ -302,7 +350,9 @@ class ErrorAnalysis(BaseModel):
     )
 
     # Additional context
-    related_errors: List[str] = Field(default=[], description="Related error patterns")
+    related_errors: List[str] = Field(
+        default=[], description="Related error patterns"
+    )
     resources: List[Dict[str, str]] = Field(
         default=[], description="Additional resources or documentation"
     )
@@ -325,8 +375,12 @@ class ErrorAnalysisResponse(BaseModel):
 
     # AI metadata
     model_used: str = Field(..., description="AI model used")
-    response_time_ms: int = Field(..., description="Response time in milliseconds")
-    tokens_used: Dict[str, int] = Field(..., description="Token usage breakdown")
+    response_time_ms: int = Field(
+        ..., description="Response time in milliseconds"
+    )
+    tokens_used: Dict[str, int] = Field(
+        ..., description="Token usage breakdown"
+    )
     confidence_score: float = Field(
         ..., ge=0, le=1, description="Analysis confidence score"
     )
@@ -338,7 +392,9 @@ class ErrorAnalysisResponse(BaseModel):
 class CommandOptimizationRequest(BaseModel):
     """Schema for command optimization request."""
 
-    api_key: str = Field(..., min_length=10, description="User's OpenRouter API key")
+    api_key: str = Field(
+        ..., min_length=10, description="User's OpenRouter API key"
+    )
     command: str = Field(
         ..., min_length=1, max_length=2000, description="Command to optimize"
     )
@@ -407,12 +463,18 @@ class CommandOptimization(BaseModel):
 class CommandOptimizationResponse(BaseModel):
     """Schema for command optimization response."""
 
-    optimization: CommandOptimization = Field(..., description="Command optimization")
+    optimization: CommandOptimization = Field(
+        ..., description="Command optimization"
+    )
 
     # AI metadata
     model_used: str = Field(..., description="AI model used")
-    response_time_ms: int = Field(..., description="Response time in milliseconds")
-    tokens_used: Dict[str, int] = Field(..., description="Token usage breakdown")
+    response_time_ms: int = Field(
+        ..., description="Response time in milliseconds"
+    )
+    tokens_used: Dict[str, int] = Field(
+        ..., description="Token usage breakdown"
+    )
     confidence_score: float = Field(
         ..., ge=0, le=1, description="Optimization confidence score"
     )
@@ -433,15 +495,23 @@ class AISettings(BaseModel):
     max_suggestions: int = Field(
         default=5, ge=1, le=10, description="Maximum suggestions"
     )
-    detail_level: str = Field(default="medium", description="Default detail level")
+    detail_level: str = Field(
+        default="medium", description="Default detail level"
+    )
     include_examples: bool = Field(
         default=True, description="Include examples by default"
     )
-    include_warnings: bool = Field(default=True, description="Include safety warnings")
+    include_warnings: bool = Field(
+        default=True, description="Include safety warnings"
+    )
 
     # Usage preferences
-    auto_validate_key: bool = Field(default=True, description="Auto-validate API key")
-    cache_responses: bool = Field(default=True, description="Cache AI responses")
+    auto_validate_key: bool = Field(
+        default=True, description="Auto-validate API key"
+    )
+    cache_responses: bool = Field(
+        default=True, description="Cache AI responses"
+    )
     timeout_seconds: int = Field(
         default=30, ge=5, le=120, description="Request timeout"
     )
@@ -469,7 +539,9 @@ class AIModelInfo(BaseModel):
     supports_function_calling: bool = Field(
         default=False, description="Supports function calling"
     )
-    supports_vision: bool = Field(default=False, description="Supports image analysis")
+    supports_vision: bool = Field(
+        default=False, description="Supports image analysis"
+    )
 
     # Pricing
     pricing: Dict[str, str] = Field(..., description="Pricing information")
@@ -481,7 +553,9 @@ class AIModelInfo(BaseModel):
     )
 
     # Usage recommendations
-    recommended_for: List[str] = Field(default=[], description="Recommended use cases")
+    recommended_for: List[str] = Field(
+        default=[], description="Recommended use cases"
+    )
     performance_tier: str = Field(
         ..., description="Performance tier (fast, balanced, powerful)"
     )
@@ -526,20 +600,28 @@ class AIErrorResponse(BaseModel):
 class BatchAIRequest(BaseModel):
     """Schema for batch AI processing request."""
 
-    api_key: str = Field(..., min_length=10, description="User's OpenRouter API key")
+    api_key: str = Field(
+        ..., min_length=10, description="User's OpenRouter API key"
+    )
     requests: List[Dict[str, Any]] = Field(
         ..., min_items=1, max_items=10, description="Batch requests"
     )
     service_type: AIServiceType = Field(..., description="Type of AI service")
-    model: Optional[AIModel] = Field(None, description="Model to use for all requests")
+    model: Optional[AIModel] = Field(
+        None, description="Model to use for all requests"
+    )
 
 
 class BatchAIResponse(BaseModel):
     """Schema for batch AI processing response."""
 
     results: List[Dict[str, Any]] = Field(..., description="Batch results")
-    success_count: int = Field(..., description="Number of successful requests")
+    success_count: int = Field(
+        ..., description="Number of successful requests"
+    )
     error_count: int = Field(..., description="Number of failed requests")
     total_tokens_used: int = Field(..., description="Total tokens used")
-    total_response_time_ms: int = Field(..., description="Total processing time")
+    total_response_time_ms: int = Field(
+        ..., description="Total processing time"
+    )
     timestamp: datetime = Field(..., description="Response timestamp")

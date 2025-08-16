@@ -80,7 +80,9 @@ class OpenRouterService:
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 # Test with a simple models list request
-                response = await client.get(f"{self.base_url}/models", headers=headers)
+                response = await client.get(
+                    f"{self.base_url}/models", headers=headers
+                )
 
                 if response.status_code == 200:
                     models_data = response.json()
@@ -98,11 +100,15 @@ class OpenRouterService:
                                 "label": account_data.get("data", {}).get(
                                     "label", "Unknown"
                                 ),
-                                "usage": account_data.get("data", {}).get("usage", 0),
-                                "limit": account_data.get("data", {}).get("limit"),
-                                "is_free_tier": account_data.get("data", {}).get(
-                                    "is_free_tier", True
+                                "usage": account_data.get("data", {}).get(
+                                    "usage", 0
                                 ),
+                                "limit": account_data.get("data", {}).get(
+                                    "limit"
+                                ),
+                                "is_free_tier": account_data.get(
+                                    "data", {}
+                                ).get("is_free_tier", True),
                             }
                     except Exception:
                         account_info = {"label": "Unknown", "usage": 0}
@@ -300,7 +306,9 @@ class OpenRouterService:
 
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.get(f"{self.base_url}/models", headers=headers)
+                response = await client.get(
+                    f"{self.base_url}/models", headers=headers
+                )
 
                 if response.status_code == 200:
                     models_data = response.json()
@@ -321,7 +329,9 @@ class OpenRouterService:
                                         "completion", "0"
                                     ),
                                 },
-                                "context_length": model.get("context_length", 0),
+                                "context_length": model.get(
+                                    "context_length", 0
+                                ),
                                 "architecture": model.get("architecture", {}),
                                 "top_provider": model.get("top_provider", {}),
                             }
@@ -329,7 +339,9 @@ class OpenRouterService:
 
                     return available_models
                 else:
-                    raise Exception(f"Failed to fetch models: {response.status_code}")
+                    raise Exception(
+                        f"Failed to fetch models: {response.status_code}"
+                    )
 
         except Exception as e:
             logger.error(f"Error fetching available models: {e}")
@@ -414,11 +426,14 @@ class OpenRouterService:
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
                 response = await client.post(
-                    f"{self.base_url}/chat/completions", headers=headers, json=payload
+                    f"{self.base_url}/chat/completions",
+                    headers=headers,
+                    json=payload,
                 )
 
                 response_time_ms = int(
-                    (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
+                    (datetime.now(timezone.utc) - start_time).total_seconds()
+                    * 1000
                 )
 
                 if response.status_code == 200:
@@ -527,11 +542,11 @@ Guidelines:
 
         if context:
             if context.get("working_directory"):
-                prompt += f"Current directory: {context['working_directory']}\n"
-            if context.get("previous_commands"):
                 prompt += (
-                    f"Recent commands: {', '.join(context['previous_commands'][-3:])}\n"
+                    f"Current directory: {context['working_directory']}\n"
                 )
+            if context.get("previous_commands"):
+                prompt += f"Recent commands: {', '.join(context['previous_commands'][-3:])}\n"
             if context.get("operating_system"):
                 prompt += f"Operating system: {context['operating_system']}\n"
 
@@ -546,7 +561,9 @@ Guidelines:
 
         if context:
             if context.get("working_directory"):
-                prompt += f"Context: Running in {context['working_directory']}\n"
+                prompt += (
+                    f"Context: Running in {context['working_directory']}\n"
+                )
             if context.get("user_level"):
                 prompt += f"User experience level: {context['user_level']}\n"
 
@@ -569,7 +586,9 @@ Guidelines:
 
         if context:
             if context.get("working_directory"):
-                prompt += f"Working directory: {context['working_directory']}\n"
+                prompt += (
+                    f"Working directory: {context['working_directory']}\n"
+                )
             if context.get("environment"):
                 prompt += f"Environment: {context.get('environment', {}).get('SHELL', 'Unknown shell')}\n"
 
@@ -584,9 +603,13 @@ Guidelines:
 
         if context:
             if context.get("performance_issues"):
-                prompt += f"Performance concerns: {context['performance_issues']}\n"
+                prompt += (
+                    f"Performance concerns: {context['performance_issues']}\n"
+                )
             if context.get("frequency"):
                 prompt += f"Usage frequency: {context['frequency']}\n"
 
-        prompt += "Please suggest optimizations and improvements for this command."
+        prompt += (
+            "Please suggest optimizations and improvements for this command."
+        )
         return prompt

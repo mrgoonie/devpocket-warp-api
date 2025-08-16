@@ -33,13 +33,17 @@ class SyncDataType(str, Enum):
 class SyncDataRequest(BaseModel):
     """Schema for synchronization data request."""
 
-    data_types: List[SyncDataType] = Field(..., description="Types of data to sync")
+    data_types: List[SyncDataType] = Field(
+        ..., description="Types of data to sync"
+    )
     device_id: str = Field(..., description="Unique device identifier")
     device_name: str = Field(..., description="Human-readable device name")
     last_sync_timestamp: Optional[datetime] = Field(
         None, description="Last synchronization time"
     )
-    include_deleted: bool = Field(default=False, description="Include deleted items")
+    include_deleted: bool = Field(
+        default=False, description="Include deleted items"
+    )
 
 
 class SyncDataResponse(BaseModel):
@@ -53,7 +57,9 @@ class SyncDataResponse(BaseModel):
     conflicts: List[Dict[str, Any]] = Field(
         default=[], description="Synchronization conflicts"
     )
-    device_count: int = Field(..., description="Number of devices for this user")
+    device_count: int = Field(
+        ..., description="Number of devices for this user"
+    )
 
 
 class SyncConflictResolution(BaseModel):
@@ -74,10 +80,16 @@ class DeviceInfo(BaseModel):
 
     device_id: str = Field(..., description="Device ID")
     device_name: str = Field(..., description="Device name")
-    device_type: str = Field(..., description="Device type (mobile, desktop, tablet)")
-    os_info: Optional[str] = Field(None, description="Operating system information")
+    device_type: str = Field(
+        ..., description="Device type (mobile, desktop, tablet)"
+    )
+    os_info: Optional[str] = Field(
+        None, description="Operating system information"
+    )
     app_version: Optional[str] = Field(None, description="App version")
-    last_sync: Optional[datetime] = Field(None, description="Last sync timestamp")
+    last_sync: Optional[datetime] = Field(
+        None, description="Last sync timestamp"
+    )
     is_active: bool = Field(default=True, description="Device active status")
 
 
@@ -98,7 +110,9 @@ class SyncStats(BaseModel):
     failed_syncs: int = Field(..., description="Failed syncs")
     last_sync: Optional[datetime] = Field(None, description="Last sync time")
     active_devices: int = Field(..., description="Number of active devices")
-    total_conflicts: int = Field(..., description="Total conflicts encountered")
+    total_conflicts: int = Field(
+        ..., description="Total conflicts encountered"
+    )
     resolved_conflicts: int = Field(..., description="Resolved conflicts")
 
 

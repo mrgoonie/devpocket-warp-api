@@ -9,7 +9,14 @@ import io
 import socket
 from typing import Optional, Dict, Any
 import paramiko
-from paramiko import SSHClient, AutoAddPolicy, RSAKey, ECDSAKey, Ed25519Key, DSSKey
+from paramiko import (
+    SSHClient,
+    AutoAddPolicy,
+    RSAKey,
+    ECDSAKey,
+    Ed25519Key,
+    DSSKey,
+)
 
 from app.core.logging import logger
 from app.models.ssh_profile import SSHKey
@@ -53,7 +60,12 @@ class SSHClientService:
         client = SSHClient()
         client.set_missing_host_key_policy(AutoAddPolicy())
 
-        result = {"success": False, "message": "", "details": {}, "server_info": {}}
+        result = {
+            "success": False,
+            "message": "",
+            "details": {},
+            "server_info": {},
+        }
 
         try:
             # Prepare authentication parameters
@@ -92,14 +104,18 @@ class SSHClientService:
 
             # Run connection test in executor to avoid blocking
             loop = asyncio.get_event_loop()
-            await loop.run_in_executor(None, lambda: client.connect(**connect_params))
+            await loop.run_in_executor(
+                None, lambda: client.connect(**connect_params)
+            )
 
             # Get server information
             transport = client.get_transport()
             if transport:
                 server_version = transport.remote_version
                 server_cipher = (
-                    transport.get_cipher()[0] if transport.get_cipher() else "unknown"
+                    transport.get_cipher()[0]
+                    if transport.get_cipher()
+                    else "unknown"
                 )
 
                 result["server_info"] = {
@@ -130,12 +146,16 @@ class SSHClientService:
                 # Connection successful but command failed
                 logger.warning(f"SSH command test failed: {cmd_error}")
                 result["success"] = True  # Connection itself is successful
-                result["message"] = "Connection successful (command test failed)"
+                result[
+                    "message"
+                ] = "Connection successful (command test failed)"
                 result["details"]["command_test"] = "failed"
                 result["details"]["command_error"] = str(cmd_error)
 
         except paramiko.AuthenticationException as e:
-            logger.warning(f"SSH authentication failed for {username}@{host}: {e}")
+            logger.warning(
+                f"SSH authentication failed for {username}@{host}: {e}"
+            )
             result["message"] = f"Authentication failed: {str(e)}"
             result["details"]["error_type"] = "authentication"
 
@@ -204,13 +224,17 @@ class SSHClientService:
             key_file = io.StringIO(private_key_data)
 
             # Load the key with optional passphrase
-            private_key = key_class.from_private_key(key_file, password=passphrase)
+            private_key = key_class.from_private_key(
+                key_file, password=passphrase
+            )
 
             return private_key
 
         except Exception as e:
             logger.error(f"Failed to load {key_type} key: {e}")
-            raise Exception(f"Invalid {key_type} key format or incorrect passphrase")
+            raise Exception(
+                f"Invalid {key_type} key format or incorrect passphrase"
+            )
 
     async def get_host_key(
         self, host: str, port: int = 22, timeout: int = 10
@@ -246,7 +270,10 @@ class SSHClientService:
             return None
 
     def generate_key_pair(
-        self, key_type: str = "rsa", key_size: int = 2048, comment: Optional[str] = None
+        self,
+        key_type: str = "rsa",
+        key_size: int = 2048,
+        comment: Optional[str] = None,
     ) -> Dict[str, str]:
         """
         Generate a new SSH key pair.

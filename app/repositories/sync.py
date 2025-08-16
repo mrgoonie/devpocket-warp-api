@@ -35,7 +35,9 @@ class SyncDataRepository(BaseRepository[SyncData]):
             query = query.where(SyncData.is_deleted == False)
 
         query = (
-            query.order_by(desc(SyncData.last_modified_at)).offset(offset).limit(limit)
+            query.order_by(desc(SyncData.last_modified_at))
+            .offset(offset)
+            .limit(limit)
         )
 
         result = await self.session.execute(query)
@@ -71,7 +73,8 @@ class SyncDataRepository(BaseRepository[SyncData]):
         if existing_item:
             # Check for conflicts
             if (
-                existing_item.last_modified_at > datetime.now() - timedelta(seconds=1)
+                existing_item.last_modified_at
+                > datetime.now() - timedelta(seconds=1)
                 and existing_item.source_device_id != device_id
                 and existing_item.data != data
             ):
@@ -159,7 +162,9 @@ class SyncDataRepository(BaseRepository[SyncData]):
     ) -> List[SyncData]:
         """Get sync changes since a specific timestamp."""
         query = select(SyncData).where(
-            and_(SyncData.user_id == user_id, SyncData.last_modified_at > since)
+            and_(
+                SyncData.user_id == user_id, SyncData.last_modified_at > since
+            )
         )
 
         if sync_type:
@@ -175,7 +180,11 @@ class SyncDataRepository(BaseRepository[SyncData]):
         return result.scalars().all()
 
     async def get_device_sync_data(
-        self, user_id: str, device_id: str, sync_type: str = None, limit_hours: int = 24
+        self,
+        user_id: str,
+        device_id: str,
+        sync_type: str = None,
+        limit_hours: int = 24,
     ) -> List[SyncData]:
         """Get sync data from a specific device."""
         since_time = datetime.now() - timedelta(hours=limit_hours)
@@ -197,7 +206,11 @@ class SyncDataRepository(BaseRepository[SyncData]):
         return result.scalars().all()
 
     async def bulk_sync_create(
-        self, user_id: str, sync_items: List[dict], device_id: str, device_type: str
+        self,
+        user_id: str,
+        sync_items: List[dict],
+        device_id: str,
+        device_type: str,
     ) -> List[SyncData]:
         """Bulk create/update sync items."""
         created_items = []
@@ -279,7 +292,9 @@ class SyncDataRepository(BaseRepository[SyncData]):
         if sync_type:
             conditions.append(SyncData.sync_type == sync_type)
 
-        result = await self.session.execute(select(SyncData).where(and_(*conditions)))
+        result = await self.session.execute(
+            select(SyncData).where(and_(*conditions))
+        )
 
         old_items = result.scalars().all()
 
@@ -298,7 +313,8 @@ class SyncDataRepository(BaseRepository[SyncData]):
             select(SyncData)
             .where(
                 and_(
-                    SyncData.user_id == user_id, SyncData.last_modified_at >= since_time
+                    SyncData.user_id == user_id,
+                    SyncData.last_modified_at >= since_time,
                 )
             )
             .order_by(desc(SyncData.last_modified_at))
@@ -307,7 +323,9 @@ class SyncDataRepository(BaseRepository[SyncData]):
 
         return result.scalars().all()
 
-    async def export_user_sync_data(self, user_id: str, sync_type: str = None) -> dict:
+    async def export_user_sync_data(
+        self, user_id: str, sync_type: str = None
+    ) -> dict:
         """Export all sync data for a user."""
         query = select(SyncData).where(
             and_(SyncData.user_id == user_id, SyncData.is_deleted == False)

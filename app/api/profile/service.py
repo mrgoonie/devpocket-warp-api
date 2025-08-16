@@ -59,7 +59,9 @@ class ProfileService:
         try:
             # Check if email is being changed and if it's already taken
             if profile_data.email and profile_data.email != user.email:
-                existing_user = await self.user_repo.get_by_email(profile_data.email)
+                existing_user = await self.user_repo.get_by_email(
+                    profile_data.email
+                )
                 if existing_user and existing_user.id != user.id:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
@@ -74,7 +76,9 @@ class ProfileService:
                 update_data["email"] = profile_data.email
 
             if update_data:
-                updated_user = await self.user_repo.update(user.id, update_data)
+                updated_user = await self.user_repo.update(
+                    user.id, update_data
+                )
                 await self.session.commit()
             else:
                 updated_user = user
@@ -145,7 +149,9 @@ class ProfileService:
     ) -> UserSettingsResponse:
         """Update user settings."""
         try:
-            existing_settings = await self.settings_repo.get_by_user_id(user.id)
+            existing_settings = await self.settings_repo.get_by_user_id(
+                user.id
+            )
 
             update_data = {
                 "theme": settings_data.theme,
@@ -164,8 +170,12 @@ class ProfileService:
                 )
             else:
                 # Create new settings
-                new_settings = UserSettingsModel(user_id=user.id, **update_data)
-                updated_settings = await self.settings_repo.create(new_settings)
+                new_settings = UserSettingsModel(
+                    user_id=user.id, **update_data
+                )
+                updated_settings = await self.settings_repo.create(
+                    new_settings
+                )
 
             await self.session.commit()
 
@@ -174,7 +184,8 @@ class ProfileService:
                 theme=updated_settings.theme,
                 timezone=updated_settings.timezone,
                 language=updated_settings.language,
-                terminal_preferences=updated_settings.terminal_preferences or {},
+                terminal_preferences=updated_settings.terminal_preferences
+                or {},
                 ai_preferences=updated_settings.ai_preferences or {},
                 sync_enabled=updated_settings.sync_enabled,
                 notifications_enabled=updated_settings.notifications_enabled,
@@ -213,8 +224,12 @@ class ProfileService:
             stats = await self.user_repo.get_user_stats(user.id)
 
             return {
-                "profile_completeness": self._calculate_profile_completeness(user),
-                "account_age_days": (datetime.now(timezone.utc) - user.created_at).days,
+                "profile_completeness": self._calculate_profile_completeness(
+                    user
+                ),
+                "account_age_days": (
+                    datetime.now(timezone.utc) - user.created_at
+                ).days,
                 "total_sessions": stats.get("total_sessions", 0),
                 "total_commands": stats.get("total_commands", 0),
                 "ssh_profiles": stats.get("ssh_profiles", 0),

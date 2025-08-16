@@ -42,7 +42,14 @@ class CORSSettings(BaseModel):
 
     origins: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
     allow_credentials: bool = True
-    allow_methods: List[str] = ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"]
+    allow_methods: List[str] = [
+        "GET",
+        "POST",
+        "PUT",
+        "DELETE",
+        "OPTIONS",
+        "PATCH",
+    ]
     allow_headers: List[str] = ["*"]
 
 
@@ -113,7 +120,9 @@ class Settings(BaseSettings):
         str, List[str]
     ] = "http://localhost:3000,http://127.0.0.1:3000,https://devpocket.app"
     cors_allow_credentials: bool = True
-    cors_allow_methods: Union[str, List[str]] = "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+    cors_allow_methods: Union[
+        str, List[str]
+    ] = "GET,POST,PUT,DELETE,OPTIONS,PATCH"
     cors_allow_headers: Union[str, List[str]] = "*"
 
     # OpenRouter settings
@@ -157,7 +166,9 @@ class Settings(BaseSettings):
     def validate_jwt_secret(cls, v):
         """Validate JWT secret key."""
         if len(v) < 32:
-            raise ValueError("JWT secret key must be at least 32 characters long")
+            raise ValueError(
+                "JWT secret key must be at least 32 characters long"
+            )
         return v
 
     @field_validator("cors_origins", mode="before")

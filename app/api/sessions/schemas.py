@@ -40,7 +40,9 @@ class SessionMode(str, Enum):
 class SessionBase(BaseModel):
     """Base schema for terminal session."""
 
-    name: str = Field(..., min_length=1, max_length=100, description="Session name")
+    name: str = Field(
+        ..., min_length=1, max_length=100, description="Session name"
+    )
     session_type: SessionType = Field(..., description="Session type")
     description: Optional[str] = Field(
         None, max_length=500, description="Session description"
@@ -72,7 +74,9 @@ class SessionBase(BaseModel):
     )
 
     # Feature flags
-    enable_logging: bool = Field(default=True, description="Enable session logging")
+    enable_logging: bool = Field(
+        default=True, description="Enable session logging"
+    )
     enable_recording: bool = Field(
         default=False, description="Enable session recording"
     )
@@ -129,7 +133,9 @@ class SessionUpdate(BaseModel):
     )
 
     # Feature flags
-    enable_logging: Optional[bool] = Field(None, description="Enable session logging")
+    enable_logging: Optional[bool] = Field(
+        None, description="Enable session logging"
+    )
     enable_recording: Optional[bool] = Field(
         None, description="Enable session recording"
     )
@@ -146,24 +152,36 @@ class SessionResponse(SessionBase):
     status: SessionStatus = Field(..., description="Current session status")
 
     # Connection details
-    ssh_profile_id: Optional[str] = Field(None, description="Associated SSH profile ID")
+    ssh_profile_id: Optional[str] = Field(
+        None, description="Associated SSH profile ID"
+    )
     connection_info: Optional[Dict[str, Any]] = Field(
         None, description="Connection information"
     )
 
     # Session metrics
-    start_time: Optional[datetime] = Field(None, description="Session start time")
+    start_time: Optional[datetime] = Field(
+        None, description="Session start time"
+    )
     end_time: Optional[datetime] = Field(None, description="Session end time")
     last_activity: Optional[datetime] = Field(
         None, description="Last activity timestamp"
     )
-    duration_seconds: int = Field(default=0, description="Total session duration")
-    command_count: int = Field(default=0, description="Number of commands executed")
+    duration_seconds: int = Field(
+        default=0, description="Total session duration"
+    )
+    command_count: int = Field(
+        default=0, description="Number of commands executed"
+    )
 
     # Status information
-    error_message: Optional[str] = Field(None, description="Last error message")
+    error_message: Optional[str] = Field(
+        None, description="Last error message"
+    )
     exit_code: Optional[int] = Field(None, description="Session exit code")
-    pid: Optional[int] = Field(None, description="Process ID for local sessions")
+    pid: Optional[int] = Field(
+        None, description="Process ID for local sessions"
+    )
 
     # Metadata
     created_at: datetime = Field(..., description="Creation timestamp")
@@ -189,11 +207,15 @@ class SessionCommand(BaseModel):
     command: str = Field(
         ..., min_length=1, max_length=10000, description="Command to execute"
     )
-    input_data: Optional[str] = Field(None, description="Input data for command")
+    input_data: Optional[str] = Field(
+        None, description="Input data for command"
+    )
     timeout: int = Field(
         default=30, ge=1, le=300, description="Command timeout in seconds"
     )
-    capture_output: bool = Field(default=True, description="Capture command output")
+    capture_output: bool = Field(
+        default=True, description="Capture command output"
+    )
     working_directory: Optional[str] = Field(
         None, description="Command working directory"
     )
@@ -214,11 +236,15 @@ class SessionCommandResponse(BaseModel):
     # Timing
     start_time: datetime = Field(..., description="Command start time")
     end_time: datetime = Field(..., description="Command end time")
-    duration_ms: int = Field(..., description="Execution duration in milliseconds")
+    duration_ms: int = Field(
+        ..., description="Execution duration in milliseconds"
+    )
 
     # Session context
     session_id: str = Field(..., description="Associated session ID")
-    working_directory: str = Field(..., description="Command working directory")
+    working_directory: str = Field(
+        ..., description="Command working directory"
+    )
 
 
 # Session History Schemas
@@ -231,16 +257,22 @@ class SessionHistoryEntry(BaseModel):
         ..., description="Entry type: command, output, error, event"
     )
     content: str = Field(..., description="Entry content")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
+    metadata: Optional[Dict[str, Any]] = Field(
+        None, description="Additional metadata"
+    )
 
 
 class SessionHistoryResponse(BaseModel):
     """Schema for session history response."""
 
     session_id: str = Field(..., description="Session ID")
-    entries: List[SessionHistoryEntry] = Field(..., description="History entries")
+    entries: List[SessionHistoryEntry] = Field(
+        ..., description="History entries"
+    )
     total_entries: int = Field(..., description="Total number of entries")
-    start_time: Optional[datetime] = Field(None, description="History start time")
+    start_time: Optional[datetime] = Field(
+        None, description="History start time"
+    )
     end_time: Optional[datetime] = Field(None, description="History end time")
 
 
@@ -254,23 +286,39 @@ class SessionSearchRequest(BaseModel):
     session_type: Optional[SessionType] = Field(
         None, description="Filter by session type"
     )
-    status: Optional[SessionStatus] = Field(None, description="Filter by status")
-    ssh_profile_id: Optional[str] = Field(None, description="Filter by SSH profile")
+    status: Optional[SessionStatus] = Field(
+        None, description="Filter by status"
+    )
+    ssh_profile_id: Optional[str] = Field(
+        None, description="Filter by SSH profile"
+    )
 
     # Date range filters
-    created_after: Optional[datetime] = Field(None, description="Created after date")
-    created_before: Optional[datetime] = Field(None, description="Created before date")
-    active_after: Optional[datetime] = Field(None, description="Active after date")
+    created_after: Optional[datetime] = Field(
+        None, description="Created after date"
+    )
+    created_before: Optional[datetime] = Field(
+        None, description="Created before date"
+    )
+    active_after: Optional[datetime] = Field(
+        None, description="Active after date"
+    )
 
     # Sorting and pagination
     sort_by: str = Field(
         default="created_at",
         description="Sort field: created_at, last_activity, name, duration",
     )
-    sort_order: str = Field(default="desc", description="Sort order: asc, desc")
-    active_only: bool = Field(default=False, description="Show only active sessions")
+    sort_order: str = Field(
+        default="desc", description="Sort order: asc, desc"
+    )
+    active_only: bool = Field(
+        default=False, description="Show only active sessions"
+    )
     offset: int = Field(default=0, ge=0, description="Pagination offset")
-    limit: int = Field(default=50, ge=1, le=100, description="Pagination limit")
+    limit: int = Field(
+        default=50, ge=1, le=100, description="Pagination limit"
+    )
 
 
 # Session Statistics Schemas
@@ -279,7 +327,9 @@ class SessionStats(BaseModel):
 
     total_sessions: int = Field(..., description="Total number of sessions")
     active_sessions: int = Field(..., description="Number of active sessions")
-    sessions_by_type: Dict[str, int] = Field(..., description="Session count by type")
+    sessions_by_type: Dict[str, int] = Field(
+        ..., description="Session count by type"
+    )
     sessions_by_status: Dict[str, int] = Field(
         ..., description="Session count by status"
     )
@@ -298,7 +348,9 @@ class SessionStats(BaseModel):
 
     # Recent activity
     sessions_today: int = Field(..., description="Sessions started today")
-    sessions_this_week: int = Field(..., description="Sessions started this week")
+    sessions_this_week: int = Field(
+        ..., description="Sessions started this week"
+    )
     most_used_profiles: List[Dict[str, Any]] = Field(
         ..., description="Most used SSH profiles"
     )
@@ -313,7 +365,9 @@ class WSMessage(BaseModel):
     timestamp: datetime = Field(
         default_factory=datetime.utcnow, description="Message timestamp"
     )
-    session_id: Optional[str] = Field(None, description="Associated session ID")
+    session_id: Optional[str] = Field(
+        None, description="Associated session ID"
+    )
 
 
 class WSTerminalInput(BaseModel):
@@ -330,7 +384,9 @@ class WSTerminalOutput(BaseModel):
     type: str = Field(default="output", description="Message type")
     data: str = Field(..., description="Output data")
     session_id: str = Field(..., description="Session ID")
-    stream: str = Field(default="stdout", description="Output stream: stdout, stderr")
+    stream: str = Field(
+        default="stdout", description="Output stream: stdout, stderr"
+    )
 
 
 class WSTerminalResize(BaseModel):
@@ -367,7 +423,9 @@ class SessionRecording(BaseModel):
     # Metadata
     created_at: datetime = Field(..., description="Recording creation time")
     updated_at: datetime = Field(..., description="Last update time")
-    is_available: bool = Field(..., description="Recording availability status")
+    is_available: bool = Field(
+        ..., description="Recording availability status"
+    )
 
 
 # Batch Operation Schemas
@@ -377,14 +435,18 @@ class BatchSessionOperation(BaseModel):
     session_ids: List[str] = Field(
         ..., min_items=1, max_items=50, description="Session IDs"
     )
-    operation: str = Field(..., description="Operation: terminate, delete, archive")
+    operation: str = Field(
+        ..., description="Operation: terminate, delete, archive"
+    )
     force: bool = Field(default=False, description="Force operation")
 
 
 class BatchSessionResponse(BaseModel):
     """Schema for batch session operation response."""
 
-    success_count: int = Field(..., description="Number of successful operations")
+    success_count: int = Field(
+        ..., description="Number of successful operations"
+    )
     error_count: int = Field(..., description="Number of failed operations")
     results: List[Dict[str, Any]] = Field(
         ..., description="Operation results per session"
@@ -396,7 +458,9 @@ class BatchSessionResponse(BaseModel):
 class SessionTemplate(BaseModel):
     """Schema for session template."""
 
-    name: str = Field(..., min_length=1, max_length=100, description="Template name")
+    name: str = Field(
+        ..., min_length=1, max_length=100, description="Template name"
+    )
     description: Optional[str] = Field(
         None, max_length=500, description="Template description"
     )
@@ -406,7 +470,9 @@ class SessionTemplate(BaseModel):
     default_config: Dict[str, Any] = Field(
         ..., description="Default session configuration"
     )
-    ssh_profile_id: Optional[str] = Field(None, description="Default SSH profile ID")
+    ssh_profile_id: Optional[str] = Field(
+        None, description="Default SSH profile ID"
+    )
     environment: Optional[Dict[str, str]] = Field(
         None, description="Default environment variables"
     )
@@ -435,7 +501,9 @@ class SessionError(BaseModel):
     error_type: str = Field(..., description="Error type")
     error_code: str = Field(..., description="Error code")
     message: str = Field(..., description="Error message")
-    details: Optional[Dict[str, Any]] = Field(None, description="Error details")
+    details: Optional[Dict[str, Any]] = Field(
+        None, description="Error details"
+    )
     timestamp: datetime = Field(..., description="Error timestamp")
     session_id: str = Field(..., description="Associated session ID")
 
@@ -446,7 +514,9 @@ class SessionHealthCheck(BaseModel):
     session_id: str = Field(..., description="Session ID")
     is_healthy: bool = Field(..., description="Health status")
     status: SessionStatus = Field(..., description="Current status")
-    last_activity: Optional[datetime] = Field(None, description="Last activity")
+    last_activity: Optional[datetime] = Field(
+        None, description="Last activity"
+    )
     uptime_seconds: int = Field(..., description="Session uptime")
     connection_stable: bool = Field(..., description="Connection stability")
     response_time_ms: Optional[int] = Field(
@@ -459,7 +529,9 @@ class MessageResponse(BaseModel):
     """Schema for simple message responses."""
 
     message: str = Field(..., description="Response message")
-    session_id: Optional[str] = Field(None, description="Associated session ID")
+    session_id: Optional[str] = Field(
+        None, description="Associated session ID"
+    )
     timestamp: datetime = Field(
         default_factory=datetime.utcnow, description="Response timestamp"
     )

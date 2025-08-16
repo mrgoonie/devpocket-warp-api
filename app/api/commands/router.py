@@ -66,9 +66,13 @@ router = APIRouter(
 async def get_command_history(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-    session_id: Optional[str] = Query(None, description="Filter by session ID"),
+    session_id: Optional[str] = Query(
+        None, description="Filter by session ID"
+    ),
     offset: int = Query(default=0, ge=0, description="Pagination offset"),
-    limit: int = Query(default=100, ge=1, le=500, description="Pagination limit"),
+    limit: int = Query(
+        default=100, ge=1, le=500, description="Pagination limit"
+    ),
 ) -> CommandHistoryResponse:
     """Get user's command history with filtering and pagination."""
     service = CommandService(db)
@@ -127,7 +131,9 @@ async def search_commands(
 ) -> CommandListResponse:
     """Search commands with advanced filtering and full-text search."""
     service = CommandService(db)
-    commands, total = await service.search_commands(current_user, search_request)
+    commands, total = await service.search_commands(
+        current_user, search_request
+    )
 
     return CommandListResponse(
         commands=commands,
@@ -165,11 +171,15 @@ async def get_usage_stats(
 async def get_session_stats(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-    session_id: Optional[str] = Query(None, description="Filter by specific session"),
+    session_id: Optional[str] = Query(
+        None, description="Filter by specific session"
+    ),
 ) -> List[SessionCommandStats]:
     """Get command statistics grouped by session."""
     service = CommandService(db)
-    return await service.get_session_command_stats(current_user, session_id=session_id)
+    return await service.get_session_command_stats(
+        current_user, session_id=session_id
+    )
 
 
 @router.get(
@@ -181,8 +191,12 @@ async def get_session_stats(
 async def get_frequent_commands(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-    days: int = Query(default=30, ge=1, le=365, description="Analysis period in days"),
-    min_usage: int = Query(default=3, ge=1, le=100, description="Minimum usage count"),
+    days: int = Query(
+        default=30, ge=1, le=365, description="Analysis period in days"
+    ),
+    min_usage: int = Query(
+        default=3, ge=1, le=100, description="Minimum usage count"
+    ),
 ) -> FrequentCommandsResponse:
     """Get frequently used commands with usage patterns and analytics."""
     service = CommandService(db)
@@ -222,7 +236,9 @@ async def get_command_suggestions(
 ) -> List[CommandSuggestion]:
     """Get intelligent command suggestions based on context and user history."""
     service = CommandService(db)
-    return await service.get_command_suggestions(current_user, suggestion_request)
+    return await service.get_command_suggestions(
+        current_user, suggestion_request
+    )
 
 
 # Batch Operations Endpoints
@@ -272,7 +288,9 @@ async def bulk_command_operations(
                 success_count += 1
 
             else:
-                raise ValueError(f"Unsupported operation: {operation.operation}")
+                raise ValueError(
+                    f"Unsupported operation: {operation.operation}"
+                )
 
         except HTTPException as e:
             results.append(
@@ -341,7 +359,9 @@ async def export_commands(
         )
 
         service = CommandService(db)
-        commands, total = await service.search_commands(current_user, search_request)
+        commands, total = await service.search_commands(
+            current_user, search_request
+        )
 
         # In production, this would generate the actual export file
         # and store it in a file storage service
@@ -351,7 +371,9 @@ async def export_commands(
             status="completed",
             total_commands=len(commands),
             file_url=f"/api/commands/exports/{export_id}/download",
-            expires_at=datetime.now(timezone.utc).replace(hour=23, minute=59, second=59),
+            expires_at=datetime.now(timezone.utc).replace(
+                hour=23, minute=59, second=59
+            ),
             created_at=datetime.now(timezone.utc),
         )
 
@@ -375,7 +397,9 @@ async def export_commands(
 async def get_command_patterns(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-    days: int = Query(default=30, ge=1, le=365, description="Analysis period in days"),
+    days: int = Query(
+        default=30, ge=1, le=365, description="Analysis period in days"
+    ),
 ) -> dict:
     """Analyze command usage patterns and identify trends."""
     try:
@@ -383,7 +407,9 @@ async def get_command_patterns(
 
         # Get usage stats for pattern analysis
         stats = await service.get_usage_stats(current_user)
-        frequent_commands = await service.get_frequent_commands(current_user, days=days)
+        frequent_commands = await service.get_frequent_commands(
+            current_user, days=days
+        )
 
         # Identify patterns
         patterns = {
@@ -396,9 +422,14 @@ async def get_command_patterns(
             },
             "efficiency_metrics": {
                 "success_rate": round(
-                    stats.successful_commands / max(stats.total_commands, 1) * 100, 2
+                    stats.successful_commands
+                    / max(stats.total_commands, 1)
+                    * 100,
+                    2,
                 ),
-                "average_duration_seconds": round(stats.average_duration_ms / 1000, 2),
+                "average_duration_seconds": round(
+                    stats.average_duration_ms / 1000, 2
+                ),
             },
             "temporal_patterns": {
                 "commands_today": stats.commands_today,
@@ -460,10 +491,14 @@ async def get_performance_insights(
             },
             "error_analysis": {
                 "success_rate": round(
-                    stats.successful_commands / max(stats.total_commands, 1) * 100, 2
+                    stats.successful_commands
+                    / max(stats.total_commands, 1)
+                    * 100,
+                    2,
                 ),
                 "failure_rate": round(
-                    stats.failed_commands / max(stats.total_commands, 1) * 100, 2
+                    stats.failed_commands / max(stats.total_commands, 1) * 100,
+                    2,
                 ),
                 "error_distribution": metrics.top_error_types,
             },
@@ -535,7 +570,9 @@ async def command_service_health(
         service = CommandService(db)
 
         # Test basic functionality
-        history = await service.get_command_history(current_user, offset=0, limit=1)
+        history = await service.get_command_history(
+            current_user, offset=0, limit=1
+        )
 
         return {
             "status": "healthy",
@@ -587,7 +624,10 @@ async def get_command_summary(
                 "total_commands": stats.total_commands,
                 "commands_today": stats.commands_today,
                 "success_rate": round(
-                    stats.successful_commands / max(stats.total_commands, 1) * 100, 2
+                    stats.successful_commands
+                    / max(stats.total_commands, 1)
+                    * 100,
+                    2,
                 ),
                 "most_used_type": max(
                     stats.commands_by_type.items(), key=lambda x: x[1]

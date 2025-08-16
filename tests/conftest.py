@@ -36,11 +36,16 @@ from app.auth.security import set_redis_client
 from app.websocket.manager import connection_manager
 
 
-# Test database configuration  
+# Test database configuration
 # Use environment DATABASE_URL if available, otherwise fall back to localhost
-TEST_DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5433/devpocket_test")
+TEST_DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+asyncpg://test:test@localhost:5433/devpocket_test",
+)
 if not TEST_DATABASE_URL.startswith("postgresql+asyncpg://"):
-    TEST_DATABASE_URL = TEST_DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+    TEST_DATABASE_URL = TEST_DATABASE_URL.replace(
+        "postgresql://", "postgresql+asyncpg://"
+    )
 TEST_REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6380")
 
 
@@ -48,22 +53,30 @@ async def _cleanup_test_data(engine):
     """Clear all test data while preserving database schema."""
     async with engine.begin() as conn:
         # Get all table names from the current schema
-        result = await conn.execute(text("""
+        result = await conn.execute(
+            text(
+                """
             SELECT tablename FROM pg_tables 
             WHERE schemaname = 'public' 
             AND tablename != 'alembic_version'
             ORDER BY tablename
-        """))
+        """
+            )
+        )
         tables = [row[0] for row in result.fetchall()]
-        
+
         if tables:
             # Disable foreign key checks temporarily
-            await conn.execute(text("SET session_replication_role = 'replica'"))
-            
+            await conn.execute(
+                text("SET session_replication_role = 'replica'")
+            )
+
             # Truncate all tables
             for table in tables:
-                await conn.execute(text(f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE"))
-            
+                await conn.execute(
+                    text(f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE")
+                )
+
             # Re-enable foreign key checks
             await conn.execute(text("SET session_replication_role = 'origin'"))
 
@@ -86,21 +99,23 @@ async def test_db_engine():
         poolclass=StaticPool,
         connect_args={"server_settings": {"jit": "off"}},
     )
-    
+
     # Tables already exist from migrations - no need to create them
     # Just verify the engine can connect
     async with engine.begin() as conn:
         # Test connection by checking if users table exists (created by migration)
-        result = await conn.execute(text(
-            "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users')"
-        ))
+        result = await conn.execute(
+            text(
+                "SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users')"
+            )
+        )
         table_exists = result.scalar()
         if not table_exists:
             # Fallback: create tables if migration hasn't run
             await conn.run_sync(Base.metadata.create_all)
-    
+
     yield engine
-    
+
     # Clean up: Clear data but preserve schema for next test run
     await _cleanup_test_data(engine)
     await engine.dispose()
@@ -112,11 +127,11 @@ async def test_session(test_db_engine) -> AsyncGenerator[AsyncSession, None]:
     async_session_factory = sessionmaker(
         test_db_engine, class_=AsyncSession, expire_on_commit=False
     )
-    
+
     async with async_session_factory() as session:
         # Start a transaction that will be rolled back after the test
         transaction = await session.begin()
-        
+
         try:
             yield session
         finally:
@@ -133,12 +148,12 @@ async def test_redis() -> AsyncGenerator[aioredis.Redis, None]:
         decode_responses=True,
         max_connections=10,
     )
-    
+
     # Clear any existing data
     await redis_client.flushall()
-    
+
     yield redis_client
-    
+
     # Clean up
     await redis_client.flushall()
     await redis_client.close()
@@ -148,7 +163,7 @@ async def test_redis() -> AsyncGenerator[aioredis.Redis, None]:
 def mock_redis() -> MagicMock:
     """Create a mocked Redis client for unit tests."""
     mock_redis = MagicMock()
-    
+
     # Mock common Redis operations
     mock_redis.get = AsyncMock(return_value=None)
     mock_redis.set = AsyncMock(return_value=True)
@@ -157,7 +172,7 @@ def mock_redis() -> MagicMock:
     mock_redis.ping = AsyncMock(return_value=True)
     mock_redis.flushall = AsyncMock(return_value=True)
     mock_redis.close = AsyncMock()
-    
+
     return mock_redis
 
 
@@ -165,15 +180,15 @@ def mock_redis() -> MagicMock:
 async def app(test_db_engine, mock_redis) -> FastAPI:
     """Create FastAPI application instance for testing."""
     app = create_application()
-    
+
     # Create a test session factory
     from sqlalchemy.ext.asyncio import AsyncSession
     from sqlalchemy.orm import sessionmaker
-    
+
     test_session_factory = sessionmaker(
         test_db_engine, class_=AsyncSession, expire_on_commit=False
     )
-    
+
     # Override dependencies
     async def override_get_db():
         async with test_session_factory() as session:
@@ -187,16 +202,16 @@ async def app(test_db_engine, mock_redis) -> FastAPI:
                 raise
             finally:
                 await session.close()
-                
+
     app.dependency_overrides[get_db] = override_get_db
     app.state.redis = mock_redis
-    
+
     # Set Redis client for auth module
     set_redis_client(mock_redis)
-    
+
     # Set Redis client for WebSocket manager
     connection_manager.redis = mock_redis
-    
+
     return app
 
 
@@ -227,7 +242,7 @@ def user_data() -> dict:
         "email": "test@example.com",
         "username": "testuser",
         "password": "SecurePassword123!",
-        "full_name": "Test User"
+        "full_name": "Test User",
     }
 
 
@@ -235,12 +250,11 @@ def user_data() -> dict:
 async def test_user(user_repository, user_data) -> User:
     """Create a test user in the database."""
     from app.auth.security import hash_password
-    
+
     hashed_password = hash_password(user_data["password"])
     create_data = {k: v for k, v in user_data.items() if k != "password"}
     user = await user_repository.create(
-        **create_data,
-        hashed_password=hashed_password
+        **create_data, hashed_password=hashed_password
     )
     return user
 
@@ -249,14 +263,14 @@ async def test_user(user_repository, user_data) -> User:
 async def verified_user(user_repository, user_data) -> User:
     """Create a verified test user."""
     from app.auth.security import hash_password
-    
+
     hashed_password = hash_password(user_data["password"])
     create_data = {k: v for k, v in user_data.items() if k != "password"}
     user = await user_repository.create(
         **create_data,
         hashed_password=hashed_password,
         is_verified=True,
-        verified_at=datetime.now(timezone.utc)
+        verified_at=datetime.now(timezone.utc),
     )
     return user
 
@@ -265,7 +279,7 @@ async def verified_user(user_repository, user_data) -> User:
 async def premium_user(user_repository, user_data) -> User:
     """Create a premium test user."""
     from app.auth.security import hash_password
-    
+
     hashed_password = hash_password(user_data["password"])
     create_data = {k: v for k, v in user_data.items() if k != "password"}
     user = await user_repository.create(
@@ -274,7 +288,8 @@ async def premium_user(user_repository, user_data) -> User:
         is_verified=True,
         verified_at=datetime.now(timezone.utc),
         subscription_tier="premium",
-        subscription_expires_at=datetime.now(timezone.utc) + timedelta(days=30)
+        subscription_expires_at=datetime.now(timezone.utc)
+        + timedelta(days=30),
     )
     return user
 
@@ -301,8 +316,7 @@ def expired_auth_headers() -> dict:
     """Create expired authentication headers."""
     # Create token that expires immediately
     access_token = create_access_token(
-        {"sub": "test@example.com"},
-        expires_delta=timedelta(seconds=-1)
+        {"sub": "test@example.com"}, expires_delta=timedelta(seconds=-1)
     )
     return {"Authorization": f"Bearer {access_token}"}
 
@@ -315,12 +329,12 @@ def mock_openrouter_service():
     mock_service.generate_command.return_value = {
         "command": "ls -la",
         "explanation": "List all files in the current directory",
-        "confidence": 0.95
+        "confidence": 0.95,
     }
     mock_service.analyze_command.return_value = {
         "safe": True,
         "risk_level": "low",
-        "explanation": "Safe command"
+        "explanation": "Safe command",
     }
     return mock_service
 
@@ -333,7 +347,7 @@ def mock_ssh_client():
     mock_client.execute_command.return_value = {
         "stdout": "Command output",
         "stderr": "",
-        "exit_code": 0
+        "exit_code": 0,
     }
     mock_client.disconnect.return_value = None
     return mock_client
@@ -398,4 +412,6 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "security: Security tests")
     config.addinivalue_line("markers", "performance: Performance tests")
     config.addinivalue_line("markers", "slow: Slow running tests")
-    config.addinivalue_line("markers", "external: Tests requiring external services")
+    config.addinivalue_line(
+        "markers", "external: Tests requiring external services"
+    )

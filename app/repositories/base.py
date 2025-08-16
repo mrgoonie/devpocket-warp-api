@@ -47,11 +47,16 @@ class BaseRepository(Generic[ModelType]):
             order_column = order_column.desc()
 
         result = await self.session.execute(
-            select(self.model).order_by(order_column).offset(offset).limit(limit)
+            select(self.model)
+            .order_by(order_column)
+            .offset(offset)
+            .limit(limit)
         )
         return result.scalars().all()
 
-    async def get_by_field(self, field: str, value: Any) -> Optional[ModelType]:
+    async def get_by_field(
+        self, field: str, value: Any
+    ) -> Optional[ModelType]:
         """Get model instance by a specific field."""
         if not hasattr(self.model, field):
             raise ValueError(
@@ -126,13 +131,16 @@ class BaseRepository(Generic[ModelType]):
         """Count model instances with optional criteria."""
         if kwargs:
             conditions = [
-                getattr(self.model, key) == value for key, value in kwargs.items()
+                getattr(self.model, key) == value
+                for key, value in kwargs.items()
             ]
             result = await self.session.execute(
                 select(func.count(self.model.id)).where(and_(*conditions))
             )
         else:
-            result = await self.session.execute(select(func.count(self.model.id)))
+            result = await self.session.execute(
+                select(func.count(self.model.id))
+            )
         return result.scalar()
 
     async def search(
@@ -153,7 +161,10 @@ class BaseRepository(Generic[ModelType]):
             return []
 
         result = await self.session.execute(
-            select(self.model).where(or_(*conditions)).offset(offset).limit(limit)
+            select(self.model)
+            .where(or_(*conditions))
+            .offset(offset)
+            .limit(limit)
         )
         return result.scalars().all()
 
@@ -209,7 +220,9 @@ class BaseRepository(Generic[ModelType]):
 
         for relationship in relationships:
             if hasattr(self.model, relationship):
-                stmt = stmt.options(selectinload(getattr(self.model, relationship)))
+                stmt = stmt.options(
+                    selectinload(getattr(self.model, relationship))
+                )
 
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()

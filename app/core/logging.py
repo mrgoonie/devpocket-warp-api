@@ -44,7 +44,11 @@ def setup_logging() -> logging.Logger:
 
 
 def log_request(
-    method: str, url: str, status_code: int, duration: float, user_id: str = None
+    method: str,
+    url: str,
+    status_code: int,
+    duration: float,
+    user_id: str = None,
 ) -> None:
     """
     Log HTTP request information.

@@ -87,7 +87,8 @@ class SignalMessage(TerminalMessage):
     type: MessageType = MessageType.SIGNAL
     session_id: str
     data: Dict[str, str] = Field(
-        description="Signal information", example={"signal": "SIGINT", "key": "ctrl+c"}
+        description="Signal information",
+        example={"signal": "SIGINT", "key": "ctrl+c"},
     )
 
     @property
@@ -235,7 +236,9 @@ def parse_message(data: Dict[str, Any]) -> TerminalMessage:
     try:
         return message_class(**data)
     except Exception as e:
-        raise ValueError(f"Invalid message format for {message_type}: {str(e)}")
+        raise ValueError(
+            f"Invalid message format for {message_type}: {str(e)}"
+        )
 
 
 def create_output_message(session_id: str, data: str) -> OutputMessage:
@@ -252,7 +255,11 @@ def create_status_message(
     """Create a status message."""
     return StatusMessage(
         session_id=session_id,
-        data={"status": status, "message": message, "server_info": server_info or {}},
+        data={
+            "status": status,
+            "message": message,
+            "server_info": server_info or {},
+        },
     )
 
 

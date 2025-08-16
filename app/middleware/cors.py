@@ -136,7 +136,15 @@ class CORSConfig:
     ]
 
     # Methods commonly used by mobile apps
-    MOBILE_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"]
+    MOBILE_METHODS = [
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "OPTIONS",
+        "HEAD",
+    ]
 
     # Headers to expose to mobile clients
     EXPOSED_HEADERS = [
@@ -159,7 +167,9 @@ class CORSConfig:
             Dictionary with CORS configuration
         """
         return {
-            "allow_origins": get_cors_origins_for_environment(settings.app_debug),
+            "allow_origins": get_cors_origins_for_environment(
+                settings.app_debug
+            ),
             "allow_credentials": True,
             "allow_methods": cls.MOBILE_METHODS,
             "allow_headers": cls.MOBILE_HEADERS,
@@ -211,7 +221,9 @@ class CORSConfig:
         }
 
 
-def setup_cors_for_environment(app: FastAPI, environment: str = "development") -> None:
+def setup_cors_for_environment(
+    app: FastAPI, environment: str = "development"
+) -> None:
     """
     Setup CORS based on environment.
 

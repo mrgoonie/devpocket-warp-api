@@ -42,7 +42,11 @@ class SyncData(BaseModel):
     )
 
     is_deleted: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False, server_default="false", index=True
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="false",
+        index=True,
     )
 
     # Device information
@@ -80,7 +84,9 @@ class SyncData(BaseModel):
         self.last_modified_at = datetime.now()
         self.version += 1
 
-    def update_data(self, new_data: dict, device_id: str, device_type: str) -> None:
+    def update_data(
+        self, new_data: dict, device_id: str, device_type: str
+    ) -> None:
         """Update sync data with new content."""
         self.data = new_data
         self.source_device_id = device_id

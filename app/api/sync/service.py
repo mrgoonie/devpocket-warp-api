@@ -21,7 +21,9 @@ class SyncService:
         self.session = session
         self.sync_repo = SyncDataRepository(session)
 
-    async def sync_data(self, user: User, request: SyncDataRequest) -> SyncDataResponse:
+    async def sync_data(
+        self, user: User, request: SyncDataRequest
+    ) -> SyncDataResponse:
         """Synchronize data across devices."""
         try:
             # Get data based on last sync timestamp

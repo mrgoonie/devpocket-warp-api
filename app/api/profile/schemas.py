@@ -42,7 +42,9 @@ class UserSettings(BaseModel):
     ai_preferences: Dict[str, Any] = Field(
         default={}, description="AI service preferences"
     )
-    sync_enabled: bool = Field(default=True, description="Multi-device sync enabled")
+    sync_enabled: bool = Field(
+        default=True, description="Multi-device sync enabled"
+    )
     notifications_enabled: bool = Field(
         default=True, description="Notifications enabled"
     )

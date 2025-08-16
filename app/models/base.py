@@ -23,7 +23,10 @@ class TimestampMixin:
     """Mixin for created_at and updated_at timestamps."""
 
     created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.now(), index=True
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        index=True,
     )
 
     updated_at: Mapped[datetime] = mapped_column(
@@ -51,7 +54,8 @@ class BaseModel(Base, UUIDMixin, TimestampMixin):
     def to_dict(self) -> Dict[str, Any]:
         """Convert model instance to dictionary."""
         return {
-            column.name: getattr(self, column.name) for column in self.__table__.columns
+            column.name: getattr(self, column.name)
+            for column in self.__table__.columns
         }
 
     def update_from_dict(self, data: Dict[str, Any]) -> None:

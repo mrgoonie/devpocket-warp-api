@@ -162,15 +162,21 @@ async def get_current_active_user(
         InactiveUserError: If user account is inactive
     """
     if not current_user.is_active:
-        logger.warning(f"Inactive user attempted access: {current_user.username}")
+        logger.warning(
+            f"Inactive user attempted access: {current_user.username}"
+        )
         raise InactiveUserError("Account has been deactivated")
 
     if not current_user.is_verified:
-        logger.warning(f"Unverified user attempted access: {current_user.username}")
+        logger.warning(
+            f"Unverified user attempted access: {current_user.username}"
+        )
         raise InactiveUserError("Email verification required")
 
     if current_user.is_locked():
-        logger.warning(f"Locked user attempted access: {current_user.username}")
+        logger.warning(
+            f"Locked user attempted access: {current_user.username}"
+        )
         raise InactiveUserError("Account is temporarily locked")
 
     return current_user
@@ -202,7 +208,8 @@ async def get_optional_current_user(
 
 
 async def require_subscription_tier(
-    min_tier: str, current_user: Annotated[User, Depends(get_current_active_user)]
+    min_tier: str,
+    current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> User:
     """
     Require a minimum subscription tier for access.

@@ -4,7 +4,11 @@ Database connection and session management for DevPocket API.
 
 from typing import AsyncGenerator
 import asyncpg
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.orm import DeclarativeBase
 from app.core.config import settings
 from app.core.logging import logger
@@ -75,7 +79,10 @@ class DatabaseManager:
 
         # Set JSON serialization
         await connection.set_type_codec(
-            "json", encoder=lambda x: x, decoder=lambda x: x, schema="pg_catalog"
+            "json",
+            encoder=lambda x: x,
+            decoder=lambda x: x,
+            schema="pg_catalog",
         )
 
     async def execute_query(self, query: str, *args) -> list:

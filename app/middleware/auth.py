@@ -48,7 +48,9 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
             "/api/auth/reset-password",
         ]
 
-    async def dispatch(self, request: Request, call_next: Callable) -> Response:
+    async def dispatch(
+        self, request: Request, call_next: Callable
+    ) -> Response:
         """
         Process request through authentication middleware.
 
@@ -75,7 +77,9 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                     # Add user context to request state
                     request.state.user_id = payload.get("sub")
                     request.state.user_email = payload.get("email")
-                    request.state.subscription_tier = payload.get("subscription_tier")
+                    request.state.subscription_tier = payload.get(
+                        "subscription_tier"
+                    )
                     request.state.token_payload = payload
                     request.state.is_authenticated = True
 
@@ -116,7 +120,9 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                         "path": str(request.url.path),
                         "method": request.method,
                         "client_ip": self._get_client_ip(request),
-                        "user_agent": request.headers.get("user-agent", "unknown"),
+                        "user_agent": request.headers.get(
+                            "user-agent", "unknown"
+                        ),
                     },
                 )
             raise
@@ -253,7 +259,9 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
                 "user_agent": request.headers.get("user-agent", "unknown")[
                     :200
                 ],  # Truncate long user agents
-                "is_authenticated": getattr(request.state, "is_authenticated", False),
+                "is_authenticated": getattr(
+                    request.state, "is_authenticated", False
+                ),
             }
 
             if getattr(request.state, "user_id", None):

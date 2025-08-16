@@ -57,7 +57,9 @@ class Command(BaseModel):
     )  # Execution time in seconds
 
     # Command metadata
-    working_directory: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    working_directory: Mapped[Optional[str]] = mapped_column(
+        String(500), nullable=True
+    )
 
     environment_vars: Mapped[Optional[str]] = mapped_column(
         Text, nullable=True
@@ -81,7 +83,9 @@ class Command(BaseModel):
     )  # Commands containing passwords, keys, etc.
 
     # Relationships
-    session: Mapped["Session"] = relationship("Session", back_populates="commands")
+    session: Mapped["Session"] = relationship(
+        "Session", back_populates="commands"
+    )
 
     # Computed properties
     @property
@@ -174,7 +178,15 @@ class Command(BaseModel):
         # Network commands
         elif any(
             command_lower.startswith(cmd)
-            for cmd in ["ping", "curl", "wget", "ssh", "scp", "rsync", "netstat"]
+            for cmd in [
+                "ping",
+                "curl",
+                "wget",
+                "ssh",
+                "scp",
+                "rsync",
+                "netstat",
+            ]
         ):
             return "network"
 
