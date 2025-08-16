@@ -104,7 +104,11 @@ def create_access_token(
         )
 
     to_encode.update(
-        {"exp": expire, "iat": datetime.now(timezone.utc), "type": "access"}
+        {
+            "exp": int(expire.timestamp()),
+            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "type": "access",
+        }
     )
 
     try:
@@ -151,7 +155,11 @@ def create_refresh_token(
         )
 
     to_encode.update(
-        {"exp": expire, "iat": datetime.now(timezone.utc), "type": "refresh"}
+        {
+            "exp": int(expire.timestamp()),
+            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "type": "refresh",
+        }
     )
 
     try:
@@ -289,6 +297,8 @@ async def blacklist_token(token: str, expires_at: Optional[datetime] = None) -> 
                 expires_at = datetime.now(timezone.utc) + timedelta(days=1)
 
         # Calculate TTL in seconds
+        # expires_at is guaranteed to be non-None at this point due to the logic above
+        assert expires_at is not None
         ttl = int((expires_at - datetime.now(timezone.utc)).total_seconds())
 
         if ttl > 0:
@@ -313,7 +323,7 @@ def generate_password_reset_token(email: str) -> str:
     if not email:
         raise ValueError("Token data must include 'sub' (subject) field")
 
-    data = {
+    data: Dict[str, Any] = {
         "sub": email,
         "type": "password_reset",
         "reset_id": secrets.token_urlsafe(16),  # Additional security
@@ -325,7 +335,12 @@ def generate_password_reset_token(email: str) -> str:
 
     # Create the token data
     to_encode = data.copy()
-    to_encode.update({"exp": expire, "iat": datetime.now(timezone.utc)})
+    to_encode.update(
+        {
+            "exp": int(expire.timestamp()),
+            "iat": int(datetime.now(timezone.utc).timestamp()),
+        }
+    )
 
     try:
         encoded_jwt = jwt.encode(

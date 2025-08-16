@@ -22,7 +22,7 @@ class CommandRepository(BaseRepository[Command]):
         session_id: str,
         offset: int = 0,
         limit: int = 100,
-        status_filter: str = None,
+        status_filter: Optional[str] = None,
     ) -> List[Command]:
         """Get commands for a specific session."""
         query = select(Command).where(Command.session_id == session_id)
@@ -33,14 +33,14 @@ class CommandRepository(BaseRepository[Command]):
         query = query.order_by(desc(Command.created_at)).offset(offset).limit(limit)
 
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_user_command_history(
         self,
         user_id: str,
         offset: int = 0,
         limit: int = 100,
-        search_term: str = None,
+        search_term: Optional[str] = None,
     ) -> List[Command]:
         """Get command history for a user across all sessions."""
         # This requires a join with Session table
@@ -58,12 +58,12 @@ class CommandRepository(BaseRepository[Command]):
         query = query.order_by(desc(Command.created_at)).offset(offset).limit(limit)
 
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_commands_by_status(
         self,
         status: str,
-        user_id: str = None,
+        user_id: Optional[str] = None,
         offset: int = 0,
         limit: int = 100,
     ) -> List[Command]:
@@ -80,10 +80,10 @@ class CommandRepository(BaseRepository[Command]):
         query = query.order_by(desc(Command.created_at)).offset(offset).limit(limit)
 
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_running_commands(
-        self, user_id: str = None, session_id: str = None
+        self, user_id: Optional[str] = None, session_id: Optional[str] = None
     ) -> List[Command]:
         """Get currently running commands."""
         query = select(Command).where(Command.status == "running")
@@ -98,7 +98,7 @@ class CommandRepository(BaseRepository[Command]):
             )
 
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def create_command(self, session_id: str, command: str, **kwargs) -> Command:
         """Create a new command."""
@@ -127,8 +127,8 @@ class CommandRepository(BaseRepository[Command]):
         self,
         command_id: str,
         exit_code: int,
-        output: str = None,
-        error_output: str = None,
+        output: Optional[str] = None,
+        error_output: Optional[str] = None,
     ) -> Optional[Command]:
         """Complete command execution with results."""
         command = await self.get_by_id(command_id)
@@ -159,8 +159,8 @@ class CommandRepository(BaseRepository[Command]):
     async def search_commands(
         self,
         search_term: str,
-        user_id: str = None,
-        session_id: str = None,
+        user_id: Optional[str] = None,
+        session_id: Optional[str] = None,
         offset: int = 0,
         limit: int = 100,
     ) -> List[Command]:
@@ -179,12 +179,12 @@ class CommandRepository(BaseRepository[Command]):
         query = query.order_by(desc(Command.created_at)).offset(offset).limit(limit)
 
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_commands_by_type(
         self,
         command_type: str,
-        user_id: str = None,
+        user_id: Optional[str] = None,
         offset: int = 0,
         limit: int = 100,
     ) -> List[Command]:
@@ -201,10 +201,10 @@ class CommandRepository(BaseRepository[Command]):
         query = query.order_by(desc(Command.created_at)).offset(offset).limit(limit)
 
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_ai_suggested_commands(
-        self, user_id: str = None, offset: int = 0, limit: int = 100
+        self, user_id: Optional[str] = None, offset: int = 0, limit: int = 100
     ) -> List[Command]:
         """Get commands that were AI-suggested."""
         query = select(Command).where(Command.was_ai_suggested is True)
@@ -219,12 +219,12 @@ class CommandRepository(BaseRepository[Command]):
         query = query.order_by(desc(Command.created_at)).offset(offset).limit(limit)
 
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_failed_commands(
         self,
-        user_id: str = None,
-        session_id: str = None,
+        user_id: Optional[str] = None,
+        session_id: Optional[str] = None,
         offset: int = 0,
         limit: int = 100,
     ) -> List[Command]:
@@ -245,9 +245,9 @@ class CommandRepository(BaseRepository[Command]):
         query = query.order_by(desc(Command.created_at)).offset(offset).limit(limit)
 
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
-    async def get_command_stats(self, user_id: str = None) -> dict:
+    async def get_command_stats(self, user_id: Optional[str] = None) -> dict:
         """Get command execution statistics."""
         from app.models.session import Session
 
@@ -293,14 +293,14 @@ class CommandRepository(BaseRepository[Command]):
 
         return {
             "total_commands": total_commands.scalar(),
-            "status_breakdown": dict(status_stats.fetchall()),
-            "type_breakdown": dict(type_stats.fetchall()),
+            "status_breakdown": {row[0]: row[1] for row in status_stats.fetchall()},
+            "type_breakdown": {row[0]: row[1] for row in type_stats.fetchall()},
             "ai_suggested_count": ai_commands.scalar(),
             "average_execution_time": float(avg_execution_time.scalar() or 0),
         }
 
     async def get_top_commands(
-        self, user_id: str = None, limit: int = 10
+        self, user_id: Optional[str] = None, limit: int = 10
     ) -> List[dict]:
         """Get most frequently used commands."""
         from app.models.session import Session
@@ -333,7 +333,7 @@ class CommandRepository(BaseRepository[Command]):
 
         result = await self.session.execute(select(Command).where(and_(*conditions)))
 
-        old_commands = result.scalars().all()
+        old_commands = list(result.scalars().all())
 
         for command in old_commands:
             await self.session.delete(command)
@@ -361,4 +361,4 @@ class CommandRepository(BaseRepository[Command]):
             .limit(limit)
         )
 
-        return result.scalars().all()
+        return list(result.scalars().all())

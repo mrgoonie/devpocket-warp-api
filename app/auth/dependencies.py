@@ -5,7 +5,7 @@ Provides reusable dependency functions for protecting routes,
 extracting user information, and handling authentication.
 """
 
-from typing import Optional, Annotated
+from typing import Optional, Annotated, Callable
 from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import (
     OAuth2PasswordBearer,
@@ -232,7 +232,7 @@ async def require_subscription_tier(
     return current_user
 
 
-def require_pro_tier() -> callable:
+def require_pro_tier() -> Callable:
     """Dependency factory for Pro tier requirement."""
 
     async def _require_pro(
@@ -243,7 +243,7 @@ def require_pro_tier() -> callable:
     return _require_pro
 
 
-def require_team_tier() -> callable:
+def require_team_tier() -> Callable:
     """Dependency factory for Team tier requirement."""
 
     async def _require_team(
@@ -254,7 +254,7 @@ def require_team_tier() -> callable:
     return _require_team
 
 
-def require_enterprise_tier() -> callable:
+def require_enterprise_tier() -> Callable:
     """Dependency factory for Enterprise tier requirement."""
 
     async def _require_enterprise(

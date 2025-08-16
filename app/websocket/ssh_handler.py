@@ -101,9 +101,14 @@ class SSHHandler:
                         "message": f"Failed to load SSH key: {str(e)}",
                         "error": "key_load_failed",
                     }
-            elif self.ssh_profile.password:
-                connect_params["password"] = self.ssh_profile.password
-                auth_method = "password"
+            elif self.ssh_profile.auth_method == "password":
+                # Note: Password should be passed at runtime, not stored
+                # For now, we'll handle this as an error case
+                return {
+                    "success": False,
+                    "message": "Password authentication requires password to be provided at runtime",
+                    "error": "password_required",
+                }
             else:
                 return {
                     "success": False,

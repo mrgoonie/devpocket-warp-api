@@ -88,7 +88,7 @@ class Command(BaseModel):
 
     # Computed properties
     @property
-    def user_id(self) -> PyUUID:
+    def user_id(self) -> Optional[PyUUID]:
         """Get user ID through session relationship."""
         return self.session.user_id if self.session else None
 
@@ -115,7 +115,10 @@ class Command(BaseModel):
         self.started_at = datetime.now()
 
     def complete_execution(
-        self, exit_code: int, output: str = None, error_output: str = None
+        self,
+        exit_code: int,
+        output: Optional[str] = None,
+        error_output: Optional[str] = None,
     ) -> None:
         """Mark command as completed with results."""
         self.completed_at = datetime.now()

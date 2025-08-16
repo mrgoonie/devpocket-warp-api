@@ -130,21 +130,21 @@ class SSHClientService:
                 if test_output == "connection_test":
                     result["success"] = True
                     result["message"] = "Connection successful"
-                    result["details"]["command_test"] = "passed"
+                    result["details"]["command_test"] = "passed"  # type: ignore
                 else:
                     result[
                         "message"
-                    ] = "Connection established but command execution failed"
-                    result["details"]["command_test"] = "failed"
-                    result["details"]["command_output"] = test_output
+                    ] = "Connection established but command execution failed"  # type: ignore
+                    result["details"]["command_test"] = "failed"  # type: ignore
+                    result["details"]["command_output"] = test_output  # type: ignore
 
             except Exception as cmd_error:
                 # Connection successful but command failed
                 logger.warning(f"SSH command test failed: {cmd_error}")
                 result["success"] = True  # Connection itself is successful
                 result["message"] = "Connection successful (command test failed)"
-                result["details"]["command_test"] = "failed"
-                result["details"]["command_error"] = str(cmd_error)
+                result["details"]["command_test"] = "failed"  # type: ignore
+                result["details"]["command_error"] = str(cmd_error)  # type: ignore
 
         except paramiko.AuthenticationException as e:
             logger.warning(f"SSH authentication failed for {username}@{host}: {e}")

@@ -18,8 +18,8 @@ from app.api.ai.service import AIService
 from app.api.ai.schemas import (
     CommandSuggestionRequest,
     CommandSuggestionResponse,
-    ExplainCommandRequest,
-    ExplainCommandResponse,
+    CommandExplanationRequest,
+    CommandExplanationResponse,
 )
 
 
@@ -242,7 +242,7 @@ class TestAIService:
     async def test_explain_command_dangerous(self, ai_service):
         """Test explanation of potentially dangerous commands."""
         # Arrange
-        request = ExplainCommandRequest(command="rm -rf /", api_key="test-key")
+        request = CommandExplanationRequest(command="rm -rf /", api_key="test-key")
 
         with patch.object(ai_service, "openrouter_service") as mock_service:
             mock_service.explain_command.return_value = {

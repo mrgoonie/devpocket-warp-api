@@ -253,8 +253,8 @@ class TerminalSession:
 
             # Get SSH key if available
             ssh_key = None
-            if self.ssh_profile.ssh_keys:
-                ssh_key = self.ssh_profile.ssh_keys[0]  # Use first key
+            if self.ssh_profile.ssh_key:
+                ssh_key = self.ssh_profile.ssh_key
 
             # Create SSH handler
             self.ssh_handler = SSHHandler(

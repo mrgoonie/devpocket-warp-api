@@ -5,7 +5,7 @@ Contains request and response models for terminal sessions, session operations, 
 """
 
 from datetime import datetime
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any, Union, Annotated
 from pydantic import BaseModel, Field, ConfigDict, validator
 from enum import Enum
 
@@ -129,7 +129,9 @@ class SessionUpdate(BaseModel):
     )
 
     # Feature flags
-    enable_logging: Optional[bool] = Field(None, description="Enable session logging")
+    enable_logging: Optional[bool] = Field(
+        default=None, description="Enable session logging"
+    )
     enable_recording: Optional[bool] = Field(
         None, description="Enable session recording"
     )
@@ -146,14 +148,18 @@ class SessionResponse(SessionBase):
     status: SessionStatus = Field(..., description="Current session status")
 
     # Connection details
-    ssh_profile_id: Optional[str] = Field(None, description="Associated SSH profile ID")
+    ssh_profile_id: Optional[str] = Field(
+        default=None, description="Associated SSH profile ID"
+    )
     connection_info: Optional[Dict[str, Any]] = Field(
         None, description="Connection information"
     )
 
     # Session metrics
-    start_time: Optional[datetime] = Field(None, description="Session start time")
-    end_time: Optional[datetime] = Field(None, description="Session end time")
+    start_time: Optional[datetime] = Field(
+        default=None, description="Session start time"
+    )
+    end_time: Optional[datetime] = Field(default=None, description="Session end time")
     last_activity: Optional[datetime] = Field(
         None, description="Last activity timestamp"
     )
@@ -161,9 +167,11 @@ class SessionResponse(SessionBase):
     command_count: int = Field(default=0, description="Number of commands executed")
 
     # Status information
-    error_message: Optional[str] = Field(None, description="Last error message")
-    exit_code: Optional[int] = Field(None, description="Session exit code")
-    pid: Optional[int] = Field(None, description="Process ID for local sessions")
+    error_message: Optional[str] = Field(default=None, description="Last error message")
+    exit_code: Optional[int] = Field(default=None, description="Session exit code")
+    pid: Optional[int] = Field(
+        default=None, description="Process ID for local sessions"
+    )
 
     # Metadata
     created_at: datetime = Field(..., description="Creation timestamp")
@@ -189,7 +197,9 @@ class SessionCommand(BaseModel):
     command: str = Field(
         ..., min_length=1, max_length=10000, description="Command to execute"
     )
-    input_data: Optional[str] = Field(None, description="Input data for command")
+    input_data: Optional[str] = Field(
+        default=None, description="Input data for command"
+    )
     timeout: int = Field(
         default=30, ge=1, le=300, description="Command timeout in seconds"
     )
@@ -231,7 +241,9 @@ class SessionHistoryEntry(BaseModel):
         ..., description="Entry type: command, output, error, event"
     )
     content: str = Field(..., description="Entry content")
-    metadata: Optional[Dict[str, Any]] = Field(None, description="Additional metadata")
+    metadata: Optional[Dict[str, Any]] = Field(
+        default=None, description="Additional metadata"
+    )
 
 
 class SessionHistoryResponse(BaseModel):
@@ -240,8 +252,10 @@ class SessionHistoryResponse(BaseModel):
     session_id: str = Field(..., description="Session ID")
     entries: List[SessionHistoryEntry] = Field(..., description="History entries")
     total_entries: int = Field(..., description="Total number of entries")
-    start_time: Optional[datetime] = Field(None, description="History start time")
-    end_time: Optional[datetime] = Field(None, description="History end time")
+    start_time: Optional[datetime] = Field(
+        default=None, description="History start time"
+    )
+    end_time: Optional[datetime] = Field(default=None, description="History end time")
 
 
 # Session Search and Filter Schemas
@@ -254,13 +268,23 @@ class SessionSearchRequest(BaseModel):
     session_type: Optional[SessionType] = Field(
         None, description="Filter by session type"
     )
-    status: Optional[SessionStatus] = Field(None, description="Filter by status")
-    ssh_profile_id: Optional[str] = Field(None, description="Filter by SSH profile")
+    status: Optional[SessionStatus] = Field(
+        default=None, description="Filter by status"
+    )
+    ssh_profile_id: Optional[str] = Field(
+        default=None, description="Filter by SSH profile"
+    )
 
     # Date range filters
-    created_after: Optional[datetime] = Field(None, description="Created after date")
-    created_before: Optional[datetime] = Field(None, description="Created before date")
-    active_after: Optional[datetime] = Field(None, description="Active after date")
+    created_after: Optional[datetime] = Field(
+        default=None, description="Created after date"
+    )
+    created_before: Optional[datetime] = Field(
+        default=None, description="Created before date"
+    )
+    active_after: Optional[datetime] = Field(
+        default=None, description="Active after date"
+    )
 
     # Sorting and pagination
     sort_by: str = Field(
@@ -313,7 +337,7 @@ class WSMessage(BaseModel):
     timestamp: datetime = Field(
         default_factory=datetime.utcnow, description="Message timestamp"
     )
-    session_id: Optional[str] = Field(None, description="Associated session ID")
+    session_id: Optional[str] = Field(default=None, description="Associated session ID")
 
 
 class WSTerminalInput(BaseModel):
@@ -349,7 +373,7 @@ class WSSessionEvent(BaseModel):
     event: str = Field(
         ..., description="Event name: connected, disconnected, error, etc."
     )
-    data: Optional[Dict[str, Any]] = Field(None, description="Event data")
+    data: Optional[Dict[str, Any]] = Field(default=None, description="Event data")
     session_id: str = Field(..., description="Session ID")
 
 
@@ -374,9 +398,7 @@ class SessionRecording(BaseModel):
 class BatchSessionOperation(BaseModel):
     """Schema for batch session operations."""
 
-    session_ids: List[str] = Field(
-        ..., min_items=1, max_items=50, description="Session IDs"
-    )
+    session_ids: Annotated[List[str], Field(min_length=1, max_length=50, description="Session IDs")]
     operation: str = Field(..., description="Operation: terminate, delete, archive")
     force: bool = Field(default=False, description="Force operation")
 
@@ -406,7 +428,9 @@ class SessionTemplate(BaseModel):
     default_config: Dict[str, Any] = Field(
         ..., description="Default session configuration"
     )
-    ssh_profile_id: Optional[str] = Field(None, description="Default SSH profile ID")
+    ssh_profile_id: Optional[str] = Field(
+        default=None, description="Default SSH profile ID"
+    )
     environment: Optional[Dict[str, str]] = Field(
         None, description="Default environment variables"
     )
@@ -435,7 +459,7 @@ class SessionError(BaseModel):
     error_type: str = Field(..., description="Error type")
     error_code: str = Field(..., description="Error code")
     message: str = Field(..., description="Error message")
-    details: Optional[Dict[str, Any]] = Field(None, description="Error details")
+    details: Optional[Dict[str, Any]] = Field(default=None, description="Error details")
     timestamp: datetime = Field(..., description="Error timestamp")
     session_id: str = Field(..., description="Associated session ID")
 
@@ -446,7 +470,7 @@ class SessionHealthCheck(BaseModel):
     session_id: str = Field(..., description="Session ID")
     is_healthy: bool = Field(..., description="Health status")
     status: SessionStatus = Field(..., description="Current status")
-    last_activity: Optional[datetime] = Field(None, description="Last activity")
+    last_activity: Optional[datetime] = Field(default=None, description="Last activity")
     uptime_seconds: int = Field(..., description="Session uptime")
     connection_stable: bool = Field(..., description="Connection stability")
     response_time_ms: Optional[int] = Field(
@@ -459,7 +483,7 @@ class MessageResponse(BaseModel):
     """Schema for simple message responses."""
 
     message: str = Field(..., description="Response message")
-    session_id: Optional[str] = Field(None, description="Associated session ID")
+    session_id: Optional[str] = Field(default=None, description="Associated session ID")
     timestamp: datetime = Field(
         default_factory=datetime.utcnow, description="Response timestamp"
     )

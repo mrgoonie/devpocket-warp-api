@@ -25,12 +25,12 @@ class SyncService:
         """Synchronize data across devices."""
         try:
             # Get data based on last sync timestamp
-            sync_data = await self.sync_repo.get_sync_data_since(
+            sync_data = await self.sync_repo.get_sync_changes_since(
                 user.id, request.last_sync_timestamp
             )
 
             # Organize data by type
-            organized_data = {}
+            organized_data: Dict[str, Any] = {}
             for data_type in request.data_types:
                 organized_data[data_type.value] = []
 

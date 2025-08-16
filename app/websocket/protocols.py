@@ -67,7 +67,7 @@ class ResizeMessage(TerminalMessage):
     type: MessageType = MessageType.RESIZE
     session_id: str
     data: Dict[str, int] = Field(
-        description="Terminal dimensions", example={"rows": 24, "cols": 80}
+        description="Terminal dimensions", examples=[{"rows": 24, "cols": 80}]
     )
 
     @property
@@ -88,7 +88,7 @@ class SignalMessage(TerminalMessage):
     session_id: str
     data: Dict[str, str] = Field(
         description="Signal information",
-        example={"signal": "SIGINT", "key": "ctrl+c"},
+        examples=[{"signal": "SIGINT", "key": "ctrl+c"}],
     )
 
     @property
@@ -108,11 +108,11 @@ class ConnectMessage(TerminalMessage):
     type: MessageType = MessageType.CONNECT
     data: Dict[str, Any] = Field(
         description="Connection parameters",
-        example={
+        examples=[{
             "session_type": "ssh",
             "ssh_profile_id": "uuid",
             "terminal_size": {"rows": 24, "cols": 80},
-        },
+        }],
     )
 
     @property
@@ -138,11 +138,11 @@ class StatusMessage(TerminalMessage):
     session_id: str
     data: Dict[str, Any] = Field(
         description="Status information",
-        example={
+        examples=[{
             "status": "connected",
             "message": "SSH connection established",
             "server_info": {"version": "OpenSSH_8.0"},
-        },
+        }],
     )
 
     @property
@@ -167,11 +167,11 @@ class ErrorMessage(TerminalMessage):
     type: MessageType = MessageType.ERROR
     data: Dict[str, Any] = Field(
         description="Error information",
-        example={
+        examples=[{
             "error": "connection_failed",
             "message": "SSH connection failed",
             "details": {"host": "example.com", "port": 22},
-        },
+        }],
     )
 
     @property

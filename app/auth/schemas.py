@@ -111,7 +111,9 @@ class UserResponse(UserBase):
         ..., description="Whether user has validated their OpenRouter API key"
     )
     created_at: datetime = Field(..., description="User account creation timestamp")
-    last_login_at: Optional[datetime] = Field(None, description="Last login timestamp")
+    last_login_at: Optional[datetime] = Field(
+        default=None, description="Last login timestamp"
+    )
 
     class Config:
         from_attributes = True
@@ -268,7 +270,7 @@ class UserSettingsUpdate(BaseModel):
     """Schema for updating user settings."""
 
     terminal_theme: Optional[str] = None
-    terminal_font_size: Optional[int] = Field(None, ge=8, le=32)
+    terminal_font_size: Optional[int] = Field(default=None, ge=8, le=32)
     terminal_font_family: Optional[str] = None
     preferred_ai_model: Optional[str] = None
     ai_suggestions_enabled: Optional[bool] = None
@@ -289,8 +291,12 @@ class APIKeyValidationResponse(BaseModel):
     """Schema for API key validation response."""
 
     is_valid: bool = Field(..., description="Whether the API key is valid")
-    key_name: Optional[str] = Field(None, description="Name/description of the API key")
-    remaining_credits: Optional[float] = Field(
-        None, description="Remaining credits (if available)"
+    key_name: Optional[str] = Field(
+        default=None, description="Name/description of the API key"
     )
-    rate_limit: Optional[dict] = Field(None, description="Rate limit information")
+    remaining_credits: Optional[float] = Field(
+        default=None, description="Remaining credits (if available)"
+    )
+    rate_limit: Optional[dict] = Field(
+        default=None, description="Rate limit information"
+    )

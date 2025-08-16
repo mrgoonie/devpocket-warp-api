@@ -455,6 +455,86 @@ class AIService:
                 detail="Failed to process batch requests",
             )
 
+    # Private batch processing methods
+
+    async def _process_batch_suggestion(
+        self, api_key: str, req_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Process individual suggestion request in batch."""
+        # Create a CommandSuggestionRequest from the data
+        request = CommandSuggestionRequest(
+            api_key=api_key,
+            description=req_data.get("description", ""),
+            working_directory=req_data.get("working_directory"),
+            operating_system=req_data.get("operating_system"),
+            shell_type=req_data.get("shell_type"),
+            user_level=req_data.get("user_level"),
+            max_suggestions=req_data.get("max_suggestions", 3),
+            include_explanations=req_data.get("include_explanations", True),
+            model=req_data.get("model"),
+        )
+
+        # Create a dummy user for batch processing
+        from app.models.user import User
+
+        batch_user = User(id="batch", username="batch", email="batch@system")
+
+        # Use existing suggest_command method
+        response = await self.suggest_command(batch_user, request)
+        return response.model_dump()
+
+    async def _process_batch_explanation(
+        self, api_key: str, req_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Process individual explanation request in batch."""
+        # Create a CommandExplanationRequest from the data
+        request = CommandExplanationRequest(
+            api_key=api_key,
+            command=req_data.get("command", ""),
+            working_directory=req_data.get("working_directory"),
+            user_level=req_data.get("user_level"),
+            detail_level=req_data.get("detail_level"),
+            include_examples=req_data.get("include_examples", True),
+            include_alternatives=req_data.get("include_alternatives", True),
+            model=req_data.get("model"),
+        )
+
+        # Create a dummy user for batch processing
+        from app.models.user import User
+
+        batch_user = User(id="batch", username="batch", email="batch@system")
+
+        # Use existing explain_command method
+        response = await self.explain_command(batch_user, request)
+        return response.model_dump()
+
+    async def _process_batch_error_analysis(
+        self, api_key: str, req_data: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Process individual error analysis request in batch."""
+        # Create an ErrorAnalysisRequest from the data
+        request = ErrorAnalysisRequest(
+            api_key=api_key,
+            command=req_data.get("command", ""),
+            error_output=req_data.get("error_output", ""),
+            exit_code=req_data.get("exit_code"),
+            working_directory=req_data.get("working_directory"),
+            environment_info=req_data.get("environment_info"),
+            system_info=req_data.get("system_info"),
+            include_solutions=req_data.get("include_solutions", True),
+            include_prevention=req_data.get("include_prevention", True),
+            model=req_data.get("model"),
+        )
+
+        # Create a dummy user for batch processing
+        from app.models.user import User
+
+        batch_user = User(id="batch", username="batch", email="batch@system")
+
+        # Use existing analyze_error method
+        response = await self.analyze_error(batch_user, request)
+        return response.model_dump()
+
     # Private helper methods
 
     def _generate_cache_key(

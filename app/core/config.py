@@ -95,7 +95,7 @@ class Settings(BaseSettings):
     app_port: int = 8000
 
     # Database settings
-    database_url: str
+    database_url: str = "postgresql://devpocket_user:devpocket_password@localhost:5432/devpocket_warp_dev"
     database_host: str = "localhost"
     database_port: int = 5432
     database_name: str = "devpocket_warp_dev"
@@ -109,7 +109,7 @@ class Settings(BaseSettings):
     redis_db: Union[int, str] = 0
 
     # JWT settings
-    jwt_secret_key: str
+    jwt_secret_key: str = "development-secret-key-change-in-production"
     jwt_algorithm: str = "HS256"
     jwt_expiration_hours: int = 24
     jwt_refresh_expiration_days: int = 30
@@ -209,8 +209,8 @@ class Settings(BaseSettings):
         """Validate number of workers."""
         if isinstance(v, str):
             # Handle boolean-like strings
-            if v.lower() in ('true', 'false'):
-                return 1 if v.lower() == 'true' else 1  # Default to 1 worker
+            if v.lower() in ("true", "false"):
+                return 1 if v.lower() == "true" else 1  # Default to 1 worker
             elif v.isdigit():
                 return int(v)
             else:
@@ -237,7 +237,7 @@ class Settings(BaseSettings):
         db_value = self.redis_db
         if isinstance(db_value, str):
             db_value = 0 if not db_value.isdigit() else int(db_value)
-        
+
         return RedisSettings(
             url=self.redis_url,
             host=self.redis_host,
@@ -259,10 +259,10 @@ class Settings(BaseSettings):
     def cors(self) -> CORSSettings:
         """Get CORS settings."""
         return CORSSettings(
-            origins=self.cors_origins,
+            origins=self.cors_origins if isinstance(self.cors_origins, list) else [self.cors_origins],
             allow_credentials=self.cors_allow_credentials,
-            allow_methods=self.cors_allow_methods,
-            allow_headers=self.cors_allow_headers,
+            allow_methods=self.cors_allow_methods if isinstance(self.cors_allow_methods, list) else [self.cors_allow_methods],
+            allow_headers=self.cors_allow_headers if isinstance(self.cors_allow_headers, list) else [self.cors_allow_headers],
         )
 
     @property
@@ -304,7 +304,6 @@ class Settings(BaseSettings):
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
-        "env_parse_none_str": "None",
     }
 
 

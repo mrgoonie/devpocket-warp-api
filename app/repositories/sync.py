@@ -2,8 +2,9 @@
 Sync data repository for DevPocket API.
 """
 
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime, timedelta
+from uuid import UUID
 from sqlalchemy import select, and_, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,7 +21,7 @@ class SyncDataRepository(BaseRepository[SyncData]):
     async def get_user_sync_data(
         self,
         user_id: str,
-        sync_type: str = None,
+        sync_type: Optional[str] = None,
         include_deleted: bool = False,
         offset: int = 0,
         limit: int = 100,
@@ -39,7 +40,7 @@ class SyncDataRepository(BaseRepository[SyncData]):
         )
 
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_sync_item(
         self, user_id: str, sync_type: str, sync_key: str
@@ -87,7 +88,7 @@ class SyncDataRepository(BaseRepository[SyncData]):
         else:
             # Create new item
             new_item = SyncData.create_sync_item(
-                user_id, sync_type, sync_key, data, device_id, device_type
+                UUID(user_id), sync_type, sync_key, data, device_id, device_type
             )
             self.session.add(new_item)
             await self.session.flush()
@@ -118,7 +119,7 @@ class SyncDataRepository(BaseRepository[SyncData]):
         return True
 
     async def get_conflicted_items(
-        self, user_id: str, sync_type: str = None
+        self, user_id: str, sync_type: Optional[str] = None
     ) -> List[SyncData]:
         """Get sync items with unresolved conflicts."""
         query = select(SyncData).where(
@@ -135,7 +136,7 @@ class SyncDataRepository(BaseRepository[SyncData]):
         query = query.order_by(desc(SyncData.last_modified_at))
 
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def resolve_conflict(
         self, sync_id: str, chosen_data: dict, device_id: str, device_type: str
@@ -154,8 +155,8 @@ class SyncDataRepository(BaseRepository[SyncData]):
         self,
         user_id: str,
         since: datetime,
-        sync_type: str = None,
-        device_id: str = None,
+        sync_type: Optional[str] = None,
+        device_id: Optional[str] = None,
     ) -> List[SyncData]:
         """Get sync changes since a specific timestamp."""
         query = select(SyncData).where(
@@ -172,13 +173,13 @@ class SyncDataRepository(BaseRepository[SyncData]):
         query = query.order_by(SyncData.last_modified_at)
 
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_device_sync_data(
         self,
         user_id: str,
         device_id: str,
-        sync_type: str = None,
+        sync_type: Optional[str] = None,
         limit_hours: int = 24,
     ) -> List[SyncData]:
         """Get sync data from a specific device."""
@@ -198,7 +199,7 @@ class SyncDataRepository(BaseRepository[SyncData]):
         query = query.order_by(desc(SyncData.last_modified_at))
 
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def bulk_sync_create(
         self,
@@ -264,14 +265,17 @@ class SyncDataRepository(BaseRepository[SyncData]):
 
         return {
             "total_items": total_items.scalar(),
-            "type_breakdown": dict(type_breakdown.fetchall()),
+            "type_breakdown": {row[0]: row[1] for row in type_breakdown.fetchall()},
             "conflicted_items": conflicted_items.scalar(),
             "deleted_items": deleted_items.scalar(),
-            "device_breakdown": dict(device_breakdown.fetchall()),
+            "device_breakdown": {row[0]: row[1] for row in device_breakdown.fetchall()},
         }
 
     async def cleanup_old_sync_data(
-        self, user_id: str = None, days_old: int = 90, sync_type: str = None
+        self,
+        user_id: Optional[str] = None,
+        days_old: int = 90,
+        sync_type: Optional[str] = None,
     ) -> int:
         """Clean up old sync data."""
         cutoff_date = datetime.now() - timedelta(days=days_old)
@@ -289,7 +293,7 @@ class SyncDataRepository(BaseRepository[SyncData]):
 
         result = await self.session.execute(select(SyncData).where(and_(*conditions)))
 
-        old_items = result.scalars().all()
+        old_items = list(result.scalars().all())
 
         for item in old_items:
             await self.session.delete(item)
@@ -314,9 +318,11 @@ class SyncDataRepository(BaseRepository[SyncData]):
             .limit(limit)
         )
 
-        return result.scalars().all()
+        return list(result.scalars().all())
 
-    async def export_user_sync_data(self, user_id: str, sync_type: str = None) -> dict:
+    async def export_user_sync_data(
+        self, user_id: str, sync_type: Optional[str] = None
+    ) -> dict:
         """Export all sync data for a user."""
         query = select(SyncData).where(
             and_(SyncData.user_id == user_id, SyncData.is_deleted is False)
@@ -326,9 +332,9 @@ class SyncDataRepository(BaseRepository[SyncData]):
             query = query.where(SyncData.sync_type == sync_type)
 
         result = await self.session.execute(query)
-        items = result.scalars().all()
+        items = list(result.scalars().all())
 
-        export_data = {}
+        export_data: Dict[str, Dict[str, Any]] = {}
         for item in items:
             if item.sync_type not in export_data:
                 export_data[item.sync_type] = {}

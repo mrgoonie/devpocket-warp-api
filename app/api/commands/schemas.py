@@ -5,7 +5,7 @@ Contains request and response models for command history, analytics, and search 
 """
 
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Annotated
 from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
 
@@ -75,7 +75,9 @@ class CommandExecute(CommandBase):
     """Schema for executing command."""
 
     session_id: str = Field(..., description="Terminal session ID")
-    input_data: Optional[str] = Field(None, description="Input data for command")
+    input_data: Optional[str] = Field(
+        default=None, description="Input data for command"
+    )
     async_execution: bool = Field(default=False, description="Execute asynchronously")
 
 
@@ -88,7 +90,7 @@ class CommandResponse(CommandBase):
 
     # Execution details
     status: CommandStatus = Field(..., description="Command status")
-    exit_code: Optional[int] = Field(None, description="Exit code")
+    exit_code: Optional[int] = Field(default=None, description="Exit code")
 
     # Output
     stdout: str = Field(default="", description="Standard output")
@@ -98,8 +100,10 @@ class CommandResponse(CommandBase):
 
     # Timing
     executed_at: datetime = Field(..., description="Execution timestamp")
-    started_at: Optional[datetime] = Field(None, description="Start timestamp")
-    completed_at: Optional[datetime] = Field(None, description="Completion timestamp")
+    started_at: Optional[datetime] = Field(default=None, description="Start timestamp")
+    completed_at: Optional[datetime] = Field(
+        default=None, description="Completion timestamp"
+    )
     duration_ms: int = Field(
         default=0, description="Execution duration in milliseconds"
     )
@@ -113,7 +117,7 @@ class CommandResponse(CommandBase):
     )
 
     # Metadata
-    pid: Optional[int] = Field(None, description="Process ID")
+    pid: Optional[int] = Field(default=None, description="Process ID")
     signal: Optional[int] = Field(
         None, description="Signal that terminated the process"
     )
@@ -145,7 +149,7 @@ class CommandHistoryEntry(BaseModel):
     command: str = Field(..., description="Command text")
     working_directory: str = Field(..., description="Working directory")
     status: CommandStatus = Field(..., description="Status")
-    exit_code: Optional[int] = Field(None, description="Exit code")
+    exit_code: Optional[int] = Field(default=None, description="Exit code")
     executed_at: datetime = Field(..., description="Execution time")
     duration_ms: int = Field(..., description="Duration in milliseconds")
 
@@ -183,15 +187,19 @@ class CommandSearchRequest(BaseModel):
     )
 
     # Filters
-    session_id: Optional[str] = Field(None, description="Filter by session ID")
+    session_id: Optional[str] = Field(default=None, description="Filter by session ID")
     command_type: Optional[CommandType] = Field(
         None, description="Filter by command type"
     )
-    status: Optional[CommandStatus] = Field(None, description="Filter by status")
-    exit_code: Optional[int] = Field(None, description="Filter by exit code")
+    status: Optional[CommandStatus] = Field(
+        default=None, description="Filter by status"
+    )
+    exit_code: Optional[int] = Field(default=None, description="Filter by exit code")
 
     # Date range
-    executed_after: Optional[datetime] = Field(None, description="Executed after date")
+    executed_after: Optional[datetime] = Field(
+        default=None, description="Executed after date"
+    )
     executed_before: Optional[datetime] = Field(
         None, description="Executed before date"
     )
@@ -205,9 +213,11 @@ class CommandSearchRequest(BaseModel):
     )
 
     # Output filters
-    has_output: Optional[bool] = Field(None, description="Has stdout output")
-    has_error: Optional[bool] = Field(None, description="Has stderr output")
-    output_contains: Optional[str] = Field(None, description="Output contains text")
+    has_output: Optional[bool] = Field(default=None, description="Has stdout output")
+    has_error: Optional[bool] = Field(default=None, description="Has stderr output")
+    output_contains: Optional[str] = Field(
+        default=None, description="Output contains text"
+    )
 
     # Working directory filter
     working_directory: Optional[str] = Field(
@@ -271,7 +281,9 @@ class SessionCommandStats(BaseModel):
     last_command_at: Optional[datetime] = Field(
         None, description="Last command timestamp"
     )
-    most_used_command: Optional[str] = Field(None, description="Most used command")
+    most_used_command: Optional[str] = Field(
+        default=None, description="Most used command"
+    )
 
 
 class CommandTypeStats(BaseModel):
@@ -317,7 +329,9 @@ class CommandSuggestion(BaseModel):
     category: CommandType = Field(..., description="Command category")
 
     # Context
-    relevant_context: Optional[str] = Field(None, description="Relevant context")
+    relevant_context: Optional[str] = Field(
+        default=None, description="Relevant context"
+    )
     prerequisites: List[str] = Field(default=[], description="Prerequisites")
     examples: List[str] = Field(default=[], description="Usage examples")
 
@@ -335,12 +349,12 @@ class CommandSuggestionRequest(BaseModel):
         max_length=1000,
         description="Context or description",
     )
-    session_id: Optional[str] = Field(None, description="Session context")
+    session_id: Optional[str] = Field(default=None, description="Session context")
     working_directory: Optional[str] = Field(
         None, description="Current working directory"
     )
-    previous_commands: Optional[List[str]] = Field(
-        None, max_items=10, description="Recent commands"
+    previous_commands: Optional[Annotated[List[str], Field(max_length=10)]] = Field(
+        None, description="Recent commands"
     )
     preferred_tools: Optional[List[str]] = Field(
         None, description="Preferred tools/utilities"
@@ -389,8 +403,8 @@ class CommandExportRequest(BaseModel):
     session_ids: Optional[List[str]] = Field(
         None, description="Specific sessions to export"
     )
-    date_from: Optional[datetime] = Field(None, description="Export from date")
-    date_to: Optional[datetime] = Field(None, description="Export to date")
+    date_from: Optional[datetime] = Field(default=None, description="Export from date")
+    date_to: Optional[datetime] = Field(default=None, description="Export to date")
     include_output: bool = Field(default=False, description="Include command output")
     include_errors: bool = Field(default=True, description="Include error commands")
     format: OutputFormat = Field(default=OutputFormat.JSON, description="Export format")
@@ -405,8 +419,8 @@ class CommandExportResponse(BaseModel):
     export_id: str = Field(..., description="Export job ID")
     status: str = Field(..., description="Export status")
     total_commands: int = Field(..., description="Total commands to export")
-    file_url: Optional[str] = Field(None, description="Download URL when ready")
-    expires_at: Optional[datetime] = Field(None, description="URL expiration")
+    file_url: Optional[str] = Field(default=None, description="Download URL when ready")
+    expires_at: Optional[datetime] = Field(default=None, description="URL expiration")
     created_at: datetime = Field(..., description="Export creation time")
 
 
@@ -425,7 +439,9 @@ class CommandMetrics(BaseModel):
 
     # Resource usage
     total_cpu_time_ms: int = Field(..., description="Total CPU time used")
-    peak_memory_usage_mb: Optional[int] = Field(None, description="Peak memory usage")
+    peak_memory_usage_mb: Optional[int] = Field(
+        default=None, description="Peak memory usage"
+    )
 
     # Error analysis
     top_error_types: List[Dict[str, int]] = Field(..., description="Top error types")
@@ -443,7 +459,9 @@ class CommandAlert(BaseModel):
     message: str = Field(..., description="Alert message")
     details: Dict[str, Any] = Field(..., description="Alert details")
     triggered_at: datetime = Field(..., description="Alert trigger time")
-    resolved_at: Optional[datetime] = Field(None, description="Alert resolution time")
+    resolved_at: Optional[datetime] = Field(
+        default=None, description="Alert resolution time"
+    )
     is_resolved: bool = Field(default=False, description="Alert resolution status")
 
 
@@ -451,9 +469,7 @@ class CommandAlert(BaseModel):
 class BulkCommandOperation(BaseModel):
     """Schema for bulk command operations."""
 
-    command_ids: List[str] = Field(
-        ..., min_items=1, max_items=1000, description="Command IDs"
-    )
+    command_ids: Annotated[List[str], Field(min_length=1, max_length=1000, description="Command IDs")]
     operation: str = Field(..., description="Operation: delete, archive, export")
     parameters: Optional[Dict[str, Any]] = Field(
         None, description="Operation parameters"

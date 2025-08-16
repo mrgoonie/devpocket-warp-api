@@ -3,6 +3,7 @@ User and UserSettings factories for testing.
 """
 
 import factory
+import factory.fuzzy
 from faker import Faker
 
 from app.models.user import User, UserRole, UserSettings

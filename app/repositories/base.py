@@ -49,7 +49,7 @@ class BaseRepository(Generic[ModelType]):
         result = await self.session.execute(
             select(self.model).order_by(order_column).offset(offset).limit(limit)
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_by_field(self, field: str, value: Any) -> Optional[ModelType]:
         """Get model instance by a specific field."""
@@ -78,7 +78,7 @@ class BaseRepository(Generic[ModelType]):
             .offset(offset)
             .limit(limit)
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def update(self, id: str, **kwargs) -> Optional[ModelType]:
         """Update model instance by ID."""
@@ -120,7 +120,8 @@ class BaseRepository(Generic[ModelType]):
         result = await self.session.execute(
             select(func.count(self.model.id)).where(and_(*conditions))
         )
-        return result.scalar() > 0
+        count = result.scalar()
+        return (count or 0) > 0
 
     async def count(self, **kwargs) -> int:
         """Count model instances with optional criteria."""
@@ -133,7 +134,7 @@ class BaseRepository(Generic[ModelType]):
             )
         else:
             result = await self.session.execute(select(func.count(self.model.id)))
-        return result.scalar()
+        return result.scalar() or 0
 
     async def search(
         self,
@@ -155,7 +156,7 @@ class BaseRepository(Generic[ModelType]):
         result = await self.session.execute(
             select(self.model).where(or_(*conditions)).offset(offset).limit(limit)
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def bulk_create(
         self, instances_data: List[Dict[str, Any]]

@@ -75,9 +75,13 @@ class DeviceInfo(BaseModel):
     device_id: str = Field(..., description="Device ID")
     device_name: str = Field(..., description="Device name")
     device_type: str = Field(..., description="Device type (mobile, desktop, tablet)")
-    os_info: Optional[str] = Field(None, description="Operating system information")
-    app_version: Optional[str] = Field(None, description="App version")
-    last_sync: Optional[datetime] = Field(None, description="Last sync timestamp")
+    os_info: Optional[str] = Field(
+        default=None, description="Operating system information"
+    )
+    app_version: Optional[str] = Field(default=None, description="App version")
+    last_sync: Optional[datetime] = Field(
+        default=None, description="Last sync timestamp"
+    )
     is_active: bool = Field(default=True, description="Device active status")
 
 
@@ -86,8 +90,8 @@ class DeviceRegistration(BaseModel):
 
     device_name: str = Field(..., max_length=100, description="Device name")
     device_type: str = Field(..., description="Device type")
-    os_info: Optional[str] = Field(None, description="OS information")
-    app_version: Optional[str] = Field(None, description="App version")
+    os_info: Optional[str] = Field(default=None, description="OS information")
+    app_version: Optional[str] = Field(default=None, description="App version")
 
 
 class SyncStats(BaseModel):
@@ -96,7 +100,7 @@ class SyncStats(BaseModel):
     total_syncs: int = Field(..., description="Total sync operations")
     successful_syncs: int = Field(..., description="Successful syncs")
     failed_syncs: int = Field(..., description="Failed syncs")
-    last_sync: Optional[datetime] = Field(None, description="Last sync time")
+    last_sync: Optional[datetime] = Field(default=None, description="Last sync time")
     active_devices: int = Field(..., description="Number of active devices")
     total_conflicts: int = Field(..., description="Total conflicts encountered")
     resolved_conflicts: int = Field(..., description="Resolved conflicts")

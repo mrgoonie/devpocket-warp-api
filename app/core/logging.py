@@ -4,7 +4,8 @@ Logging configuration for DevPocket API.
 
 import logging
 import sys
-from typing import Dict, Any
+from datetime import datetime
+from typing import Dict, Any, Optional
 from app.core.config import settings
 
 
@@ -48,7 +49,7 @@ def log_request(
     url: str,
     status_code: int,
     duration: float,
-    user_id: str = None,
+    user_id: Optional[str] = None,
 ) -> None:
     """
     Log HTTP request information.
@@ -84,7 +85,7 @@ def log_request(
 
 
 def log_websocket_event(
-    event_type: str, session_id: str, user_id: str = None, **kwargs
+    event_type: str, session_id: str, user_id: Optional[str] = None, **kwargs
 ) -> None:
     """
     Log WebSocket event information.
@@ -114,7 +115,9 @@ def log_websocket_event(
 
 
 def log_error(
-    error: Exception, context: Dict[str, Any] = None, user_id: str = None
+    error: Exception,
+    context: Optional[Dict[str, Any]] = None,
+    user_id: Optional[str] = None,
 ) -> None:
     """
     Log error information with context.
@@ -147,7 +150,7 @@ def log_error(
 
 
 def log_ssh_event(
-    event_type: str, session_id: str, host: str, user_id: str = None, **kwargs
+    event_type: str, session_id: str, host: str, user_id: Optional[str] = None, **kwargs
 ) -> None:
     """
     Log SSH connection event.
@@ -186,8 +189,8 @@ def log_ai_event(
     event_type: str,
     model: str,
     prompt_length: int,
-    response_length: int = None,
-    user_id: str = None,
+    response_length: Optional[int] = None,
+    user_id: Optional[str] = None,
     **kwargs,
 ) -> None:
     """
@@ -227,5 +230,30 @@ def log_ai_event(
         )
 
 
+def get_current_time() -> datetime:
+    """
+    Get current timestamp for logging purposes.
+
+    Returns:
+        datetime: Current datetime
+    """
+    return datetime.now()
+
+
+# Custom logger class with additional methods
+class DevPocketLogger:
+    def __init__(self, base_logger):
+        self._logger = base_logger
+
+    def __getattr__(self, name):
+        # Delegate all unknown attributes to the base logger
+        return getattr(self._logger, name)
+
+    def get_current_time(self) -> datetime:
+        """Get current timestamp for logging purposes."""
+        return datetime.now()
+
+
 # Initialize logger
-logger = setup_logging()
+base_logger = setup_logging()
+logger = DevPocketLogger(base_logger)

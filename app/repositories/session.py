@@ -39,7 +39,7 @@ class SessionRepository(BaseRepository[Session]):
         query = query.order_by(desc(Session.created_at)).offset(offset).limit(limit)
 
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_user_active_sessions(self, user_id: str) -> List[Session]:
         """Get all active sessions for a user."""
@@ -58,7 +58,7 @@ class SessionRepository(BaseRepository[Session]):
         return result.scalar()
 
     async def get_active_sessions(
-        self, user_id: str = None, offset: int = 0, limit: int = 100
+        self, user_id: Optional[str] = None, offset: int = 0, limit: int = 100
     ) -> List[Session]:
         """Get all active sessions, optionally filtered by user."""
         query = select(Session).where(Session.is_active is True)
@@ -71,7 +71,7 @@ class SessionRepository(BaseRepository[Session]):
         )
 
         result = await self.session.execute(query)
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_session_with_commands(
         self, session_id: str, command_limit: int = 50
@@ -95,7 +95,7 @@ class SessionRepository(BaseRepository[Session]):
             .offset(offset)
             .limit(limit)
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_sessions_by_type(
         self,
@@ -117,12 +117,12 @@ class SessionRepository(BaseRepository[Session]):
             .offset(offset)
             .limit(limit)
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_ssh_sessions(
         self,
-        user_id: str = None,
-        host: str = None,
+        user_id: Optional[str] = None,
+        host: Optional[str] = None,
         offset: int = 0,
         limit: int = 100,
     ) -> List[Session]:
@@ -142,7 +142,7 @@ class SessionRepository(BaseRepository[Session]):
             .offset(offset)
             .limit(limit)
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def create_session(
         self, user_id: str, device_id: str, device_type: str, **kwargs
@@ -216,7 +216,7 @@ class SessionRepository(BaseRepository[Session]):
             )
         )
 
-        inactive_sessions = result.scalars().all()
+        inactive_sessions = list(result.scalars().all())
 
         for session in inactive_sessions:
             session.is_active = False
@@ -224,7 +224,7 @@ class SessionRepository(BaseRepository[Session]):
 
         return len(inactive_sessions)
 
-    async def get_session_stats(self, user_id: str = None) -> dict:
+    async def get_session_stats(self, user_id: Optional[str] = None) -> dict:
         """Get session statistics."""
         base_query = select(Session)
 
@@ -267,11 +267,11 @@ class SessionRepository(BaseRepository[Session]):
             "total_sessions": total_sessions.scalar(),
             "active_sessions": active_sessions.scalar(),
             "ssh_sessions": ssh_sessions.scalar(),
-            "device_breakdown": dict(device_breakdown.fetchall()),
+            "device_breakdown": {row[0]: row[1] for row in device_breakdown.fetchall()},
         }
 
     async def get_user_device_sessions(
-        self, user_id: str, device_type: str = None
+        self, user_id: str, device_type: Optional[str] = None
     ) -> dict:
         """Get user sessions grouped by device."""
         query = select(Session).where(Session.user_id == user_id)
@@ -280,7 +280,7 @@ class SessionRepository(BaseRepository[Session]):
             query = query.where(Session.device_type == device_type)
 
         result = await self.session.execute(query.order_by(desc(Session.created_at)))
-        sessions = result.scalars().all()
+        sessions = list(result.scalars().all())
 
         # Group by device_id
         devices = {}
@@ -326,7 +326,7 @@ class SessionRepository(BaseRepository[Session]):
 
         result = await self.session.execute(select(Session).where(and_(*conditions)))
 
-        old_sessions = result.scalars().all()
+        old_sessions = list(result.scalars().all())
 
         for session in old_sessions:
             await self.session.delete(session)

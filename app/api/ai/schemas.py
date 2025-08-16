@@ -5,7 +5,7 @@ Contains request and response models for AI-powered features using BYOK model.
 """
 
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Annotated
 from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
 
@@ -56,7 +56,9 @@ class APIKeyValidationResponse(BaseModel):
     recommended_models: Optional[List[str]] = Field(
         None, description="Recommended models for DevPocket"
     )
-    error: Optional[str] = Field(None, description="Error message if validation failed")
+    error: Optional[str] = Field(
+        default=None, description="Error message if validation failed"
+    )
     timestamp: datetime = Field(..., description="Validation timestamp")
 
 
@@ -64,11 +66,11 @@ class AIUsageStats(BaseModel):
     """Schema for AI usage statistics."""
 
     usage: float = Field(..., description="Current usage amount")
-    limit: Optional[float] = Field(None, description="Usage limit")
+    limit: Optional[float] = Field(default=None, description="Usage limit")
     is_free_tier: bool = Field(..., description="Whether using free tier")
     requests_today: int = Field(default=0, description="Requests made today")
     tokens_used: int = Field(default=0, description="Total tokens used")
-    cost_estimate: Optional[float] = Field(None, description="Estimated cost")
+    cost_estimate: Optional[float] = Field(default=None, description="Estimated cost")
     rate_limit: Dict[str, Any] = Field(..., description="Rate limit information")
     timestamp: datetime = Field(..., description="Stats timestamp")
 
@@ -89,10 +91,12 @@ class CommandSuggestionRequest(BaseModel):
     working_directory: Optional[str] = Field(
         None, description="Current working directory"
     )
-    previous_commands: Optional[List[str]] = Field(
-        None, max_items=10, description="Recent commands"
+    previous_commands: Optional[Annotated[List[str], Field(max_length=10)]] = Field(
+        None, description="Recent commands"
     )
-    operating_system: Optional[str] = Field(None, description="Operating system")
+    operating_system: Optional[str] = Field(
+        default=None, description="Operating system"
+    )
     shell_type: Optional[str] = Field(
         default="bash", description="Shell type (bash, zsh, fish, etc.)"
     )
@@ -101,7 +105,7 @@ class CommandSuggestionRequest(BaseModel):
     )
 
     # AI settings
-    model: Optional[AIModel] = Field(None, description="Specific model to use")
+    model: Optional[AIModel] = Field(default=None, description="Specific model to use")
     max_suggestions: int = Field(
         default=5, ge=1, le=10, description="Maximum number of suggestions"
     )
@@ -187,7 +191,7 @@ class CommandExplanationRequest(BaseModel):
     )
 
     # AI settings
-    model: Optional[AIModel] = Field(None, description="Specific model to use")
+    model: Optional[AIModel] = Field(default=None, description="Specific model to use")
     detail_level: str = Field(
         default="medium", description="Detail level (basic, medium, detailed)"
     )
@@ -254,8 +258,10 @@ class ErrorAnalysisRequest(BaseModel):
     error_output: str = Field(..., description="Error output from command")
 
     # Context
-    exit_code: Optional[int] = Field(None, description="Command exit code")
-    working_directory: Optional[str] = Field(None, description="Working directory")
+    exit_code: Optional[int] = Field(default=None, description="Command exit code")
+    working_directory: Optional[str] = Field(
+        default=None, description="Working directory"
+    )
     environment_info: Optional[Dict[str, str]] = Field(
         None, description="Environment variables"
     )
@@ -272,7 +278,7 @@ class ErrorAnalysisRequest(BaseModel):
     )
 
     # AI settings
-    model: Optional[AIModel] = Field(None, description="Specific model to use")
+    model: Optional[AIModel] = Field(default=None, description="Specific model to use")
 
 
 class ErrorAnalysis(BaseModel):
@@ -354,7 +360,7 @@ class CommandOptimizationRequest(BaseModel):
     performance_issues: Optional[str] = Field(
         None, description="Specific performance concerns"
     )
-    environment: Optional[str] = Field(None, description="Target environment")
+    environment: Optional[str] = Field(default=None, description="Target environment")
     constraints: Optional[List[str]] = Field(
         None, description="Any constraints or limitations"
     )
@@ -369,7 +375,7 @@ class CommandOptimizationRequest(BaseModel):
     )
 
     # AI settings
-    model: Optional[AIModel] = Field(None, description="Specific model to use")
+    model: Optional[AIModel] = Field(default=None, description="Specific model to use")
 
 
 class CommandOptimization(BaseModel):
@@ -431,7 +437,7 @@ class AISettings(BaseModel):
     preferred_models: Dict[str, str] = Field(
         default={}, description="Preferred models for different tasks"
     )
-    default_model: Optional[str] = Field(None, description="Default model")
+    default_model: Optional[str] = Field(default=None, description="Default model")
 
     # Response preferences
     max_suggestions: int = Field(
@@ -531,11 +537,11 @@ class BatchAIRequest(BaseModel):
     """Schema for batch AI processing request."""
 
     api_key: str = Field(..., min_length=10, description="User's OpenRouter API key")
-    requests: List[Dict[str, Any]] = Field(
-        ..., min_items=1, max_items=10, description="Batch requests"
-    )
+    requests: Annotated[List[Dict[str, Any]], Field(min_length=1, max_length=10, description="Batch requests")]
     service_type: AIServiceType = Field(..., description="Type of AI service")
-    model: Optional[AIModel] = Field(None, description="Model to use for all requests")
+    model: Optional[AIModel] = Field(
+        default=None, description="Model to use for all requests"
+    )
 
 
 class BatchAIResponse(BaseModel):

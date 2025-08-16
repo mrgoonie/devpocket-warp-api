@@ -13,7 +13,7 @@ class UserProfileResponse(BaseModel):
     id: str = Field(..., description="User ID")
     username: str = Field(..., description="Username")
     email: str = Field(..., description="Email address")
-    display_name: Optional[str] = Field(None, description="Display name")
+    display_name: Optional[str] = Field(default=None, description="Display name")
     subscription_tier: str = Field(..., description="Subscription tier")
     created_at: datetime = Field(..., description="Account creation date")
     updated_at: datetime = Field(..., description="Last update timestamp")
@@ -27,7 +27,7 @@ class UserProfileUpdate(BaseModel):
     display_name: Optional[str] = Field(
         None, max_length=100, description="Display name"
     )
-    email: Optional[str] = Field(None, description="Email address")
+    email: Optional[str] = Field(default=None, description="Email address")
 
 
 class UserSettings(BaseModel):

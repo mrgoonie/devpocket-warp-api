@@ -68,7 +68,7 @@ class UserRepository(BaseRepository[User]):
         user = User(
             email=email,
             username=username,
-            password_hash=password_hash,
+            hashed_password=password_hash,
             **kwargs,
         )
         self.session.add(user)
@@ -84,7 +84,9 @@ class UserRepository(BaseRepository[User]):
 
         return user
 
-    async def is_email_taken(self, email: str, exclude_user_id: str = None) -> bool:
+    async def is_email_taken(
+        self, email: str, exclude_user_id: Optional[str] = None
+    ) -> bool:
         """Check if email is already taken by another user."""
         query = select(func.count(User.id)).where(User.email == email)
 
@@ -95,7 +97,7 @@ class UserRepository(BaseRepository[User]):
         return result.scalar() > 0
 
     async def is_username_taken(
-        self, username: str, exclude_user_id: str = None
+        self, username: str, exclude_user_id: Optional[str] = None
     ) -> bool:
         """Check if username is already taken by another user."""
         query = select(func.count(User.id)).where(User.username == username)
@@ -115,7 +117,7 @@ class UserRepository(BaseRepository[User]):
             .offset(offset)
             .limit(limit)
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_users_by_subscription(
         self, subscription_tier: str, offset: int = 0, limit: int = 100
@@ -128,7 +130,7 @@ class UserRepository(BaseRepository[User]):
             .offset(offset)
             .limit(limit)
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_locked_users(self) -> List[User]:
         """Get all currently locked users."""
@@ -138,7 +140,7 @@ class UserRepository(BaseRepository[User]):
                 and_(User.locked_until.is_not(None), User.locked_until > now)
             )
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def unlock_expired_users(self) -> int:
         """Unlock users whose lock time has expired."""
@@ -148,7 +150,7 @@ class UserRepository(BaseRepository[User]):
                 and_(User.locked_until.is_not(None), User.locked_until <= now)
             )
         )
-        expired_users = result.scalars().all()
+        expired_users = list(result.scalars().all())
 
         for user in expired_users:
             user.locked_until = None
@@ -162,12 +164,12 @@ class UserRepository(BaseRepository[User]):
         """Get users who have validated API keys."""
         result = await self.session.execute(
             select(User)
-            .where(User.has_api_key is True)
-            .order_by(User.api_key_validated_at.desc())
+            .where(User.openrouter_api_key.is_not(None))
+            .order_by(User.created_at.desc())
             .offset(offset)
             .limit(limit)
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def search_users(
         self, search_term: str, offset: int = 0, limit: int = 100
@@ -180,14 +182,14 @@ class UserRepository(BaseRepository[User]):
                 or_(
                     User.username.ilike(search_pattern),
                     User.email.ilike(search_pattern),
-                    User.display_name.ilike(search_pattern),
+                    User.full_name.ilike(search_pattern),
                 )
             )
             .order_by(User.created_at.desc())
             .offset(offset)
             .limit(limit)
         )
-        return result.scalars().all()
+        return list(result.scalars().all())
 
     async def get_user_stats(self, user_id: str) -> dict:
         """Get comprehensive user statistics."""
@@ -204,8 +206,8 @@ class UserRepository(BaseRepository[User]):
             "active_sessions": len([s for s in user.sessions if s.is_active]),
             "ssh_profiles_count": len(user.ssh_profiles),
             "ssh_keys_count": len(user.ssh_keys),
-            "has_api_key": user.has_api_key,
-            "api_key_validated_at": user.api_key_validated_at,
+            "has_api_key": user.openrouter_api_key is not None,
+            "last_login_at": user.last_login_at,
         }
 
     async def update_last_login(self, user_id: str) -> None:
@@ -217,7 +219,7 @@ class UserRepository(BaseRepository[User]):
             locked_until=None,
         )
 
-    async def increment_failed_login(self, user_id: str) -> User:
+    async def increment_failed_login(self, user_id: str) -> Optional[User]:
         """Increment failed login attempts and potentially lock account."""
         user = await self.get_by_id(user_id)
         if not user:

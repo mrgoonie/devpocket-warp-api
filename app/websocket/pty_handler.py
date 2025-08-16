@@ -8,7 +8,7 @@ import asyncio
 import os
 import signal
 import subprocess
-from typing import Optional, Callable, Awaitable
+from typing import Optional, Callable, Awaitable, NoReturn
 import pty
 import termios
 import struct
@@ -249,7 +249,7 @@ class PTYHandler:
             logger.error(f"Failed to send signal {sig}: {e}")
             return False
 
-    def _setup_child_process(self, command: str) -> None:
+    def _setup_child_process(self, command: str) -> NoReturn:
         """Set up the child process environment."""
         try:
             # Close master FD in child
@@ -257,6 +257,7 @@ class PTYHandler:
                 os.close(self.master_fd)
 
             # Make slave FD the controlling terminal
+            assert self.slave_fd is not None, "slave_fd must be set"
             os.setsid()
             fcntl.ioctl(self.slave_fd, termios.TIOCSCTTY, 0)
 
@@ -366,6 +367,8 @@ class PTYHandler:
 
     def _read_master_fd(self) -> Optional[bytes]:
         """Read data from master FD (blocking operation for executor)."""
+        if self.master_fd is None:
+            return None
         try:
             return os.read(self.master_fd, 1024)
         except (OSError, IOError) as e:
