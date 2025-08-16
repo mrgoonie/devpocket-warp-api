@@ -40,7 +40,10 @@ class User(BaseModel):
     full_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     role: Mapped[UserRole] = mapped_column(
-        ENUM(UserRole, name="user_role", create_type=False), nullable=False, default=UserRole.USER
+        ENUM(UserRole, name="user_role", create_type=False),
+        nullable=False,
+        default=UserRole.USER,
+        server_default="user",
     )
 
     # Account status
@@ -121,7 +124,7 @@ class User(BaseModel):
         # Initialize to 0 if None (for new instances)
         if self.failed_login_attempts is None:
             self.failed_login_attempts = 0
-        
+
         self.failed_login_attempts += 1
 
         # Lock account after 5 failed attempts
