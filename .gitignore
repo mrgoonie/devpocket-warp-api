@@ -114,6 +114,32 @@ docker-compose.override.yml
 k8s/kube_config_ovh.yaml
 k8s/**/secrets.yaml
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.coverage
+coverage.xml
+htmlcov/
+.pytest_cache/
+.tox/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Test artifacts
+test-reports/
+backups/
+*_backup_*.sql
+create_database_*.py
+debug_*.py
+init_database_*.py
+test_direct_*.py
+test_remote_*.py
+validate_*.py
+*_TEST_*.md
+
 # Temporary files
 *.tmp
 *.temp
