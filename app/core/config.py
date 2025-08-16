@@ -106,7 +106,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     redis_host: str = "localhost"
     redis_port: int = 6379
-    redis_db: int = 0
+    redis_db: Union[int, str] = 0
 
     # JWT settings
     jwt_secret_key: str
@@ -148,7 +148,7 @@ class Settings(BaseSettings):
 
     # Development settings
     reload: bool = True
-    workers: int = 1
+    workers: Union[int, str] = 1
 
     # Additional secret key (for general encryption)
     secret_key: str = ""
@@ -190,6 +190,34 @@ class Settings(BaseSettings):
             return [x.strip() for x in v.split(",") if x.strip()]
         return v if isinstance(v, list) else [v]
 
+    @field_validator("redis_db", mode="before")
+    @classmethod
+    def validate_redis_db(cls, v):
+        """Validate Redis database number."""
+        if isinstance(v, str):
+            # Handle cases where redis_db might be set to a string like 'devpocket_dev'
+            if v.isdigit():
+                return int(v)
+            else:
+                # If it's not a valid integer, default to 0
+                return 0
+        return v if isinstance(v, int) else 0
+
+    @field_validator("workers", mode="before")
+    @classmethod
+    def validate_workers(cls, v):
+        """Validate number of workers."""
+        if isinstance(v, str):
+            # Handle boolean-like strings
+            if v.lower() in ('true', 'false'):
+                return 1 if v.lower() == 'true' else 1  # Default to 1 worker
+            elif v.isdigit():
+                return int(v)
+            else:
+                # If it's not a valid integer, default to 1
+                return 1
+        return v if isinstance(v, int) else 1
+
     @property
     def database(self) -> DatabaseSettings:
         """Get database settings."""
@@ -205,11 +233,16 @@ class Settings(BaseSettings):
     @property
     def redis(self) -> RedisSettings:
         """Get Redis settings."""
+        # Ensure redis_db is always an integer
+        db_value = self.redis_db
+        if isinstance(db_value, str):
+            db_value = 0 if not db_value.isdigit() else int(db_value)
+        
         return RedisSettings(
             url=self.redis_url,
             host=self.redis_host,
             port=self.redis_port,
-            db=self.redis_db,
+            db=db_value,
         )
 
     @property
