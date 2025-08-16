@@ -1,0 +1,3044 @@
+openapi: 3.0.0
+info:
+  title: DevPocket API
+  description: |
+    AI-Powered Mobile Terminal Backend API
+    
+    DevPocket is an AI-powered mobile terminal application that brings command-line functionality to mobile devices. 
+    The API provides comprehensive terminal management, SSH connections, AI-powered command assistance using a 
+    BYOK (Bring Your Own Key) model, and multi-device synchronization.
+    
+    ## Key Features
+    - **JWT Authentication**: Secure token-based authentication with refresh tokens
+    - **Terminal Sessions**: Create and manage terminal sessions with real-time WebSocket communication
+    - **SSH Management**: Secure SSH profiles, keys, and connections
+    - **AI Command Assistance**: BYOK model with OpenRouter integration for command suggestions and explanations
+    - **Multi-device Sync**: Synchronize data across multiple devices
+    - **Command History**: Track and search command execution history
+    - **Real-time Communication**: WebSocket-based terminal I/O with PTY support
+    
+    ## Business Model
+    DevPocket uses a freemium subscription model with the following tiers:
+    - **Free (7 days trial)**: Core terminal features + BYOK AI
+    - **Pro ($12/month)**: Multi-device sync, cloud history, AI caching
+    - **Team ($25/user/month)**: Team workspaces, shared workflows, SSO
+    - **Enterprise**: Custom pricing with dedicated support
+    
+    ## BYOK (Bring Your Own Key) Model
+    All AI features use the user's own OpenRouter API key, ensuring:
+    - No API costs for the service provider
+    - Higher gross margins (85-98%)
+    - User control over AI model selection and costs
+    - API keys are validated but never stored
+    
+    ## Authentication
+    The API uses JWT tokens for authentication. Include the access token in the Authorization header:
+    ```
+    Authorization: Bearer <access_token>
+    ```
+    
+    Tokens expire after a configurable period and can be refreshed using the refresh token.
+    
+    ## Rate Limiting
+    Rate limits are applied per endpoint and user tier:
+    - Free tier: 50 requests/minute
+    - Pro tier: 200 requests/minute  
+    - Team tier: 500 requests/minute
+    - Enterprise: Custom limits
+    
+    ## Error Handling
+    The API returns standard HTTP status codes with detailed error messages in JSON format:
+    ```json
+    {
+      "error": {
+        "code": 400,
+        "message": "Validation error",
+        "type": "validation_error",
+        "details": {}
+      }
+    }
+    ```
+  version: 1.0.0
+  contact:
+    name: DevPocket Support
+    email: support@devpocket.app
+    url: https://devpocket.app
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.devpocket.app
+    description: Production server
+  - url: https://staging-api.devpocket.app
+    description: Staging server  
+  - url: http://localhost:8000
+    description: Development server
+
+tags:
+  - name: Authentication
+    description: User authentication, registration, and token management
+  - name: AI Services
+    description: AI-powered command assistance using BYOK model with OpenRouter
+  - name: Terminal Sessions
+    description: Terminal session management and configuration
+  - name: SSH Management
+    description: SSH profiles, keys, and connection management
+  - name: Commands
+    description: Command execution history and management
+  - name: Synchronization
+    description: Multi-device data synchronization
+  - name: User Profile
+    description: User profile and account management
+  - name: WebSocket
+    description: Real-time terminal communication via WebSocket
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT access token obtained from login or registration endpoints.
+        Include in Authorization header as: `Bearer <token>`
+
+  schemas:
+    # Common schemas
+    Error:
+      type: object
+      required:
+        - code
+        - message
+        - type
+      properties:
+        code:
+          type: integer
+          description: HTTP status code
+          example: 400
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Validation error"
+        type:
+          type: string
+          description: Error type identifier
+          example: "validation_error"
+        details:
+          type: object
+          description: Additional error details
+          additionalProperties: true
+
+    MessageResponse:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          description: Success or status message
+          example: "Operation completed successfully"
+
+    # Authentication schemas
+    UserCreate:
+      type: object
+      required:
+        - email
+        - username
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "user@example.com"
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+          pattern: "^[a-zA-Z0-9_-]+$"
+          description: Username (alphanumeric, hyphens, underscores only)
+          example: "user123"
+        password:
+          type: string
+          minLength: 8
+          maxLength: 128
+          description: Password (minimum 8 characters with complexity requirements)
+          example: "SecurePass123!"
+        display_name:
+          type: string
+          maxLength: 100
+          description: User's display name
+          example: "John Doe"
+        device_id:
+          type: string
+          description: Device identifier for session tracking
+          example: "device-abc123"
+        device_type:
+          type: string
+          enum: [ios, android, web]
+          description: Device type
+          example: "ios"
+
+    UserResponse:
+      type: object
+      required:
+        - id
+        - email
+        - username
+        - subscription_tier
+        - is_active
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: User's unique identifier
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "user@example.com"
+        username:
+          type: string
+          description: User's username
+          example: "user123"
+        display_name:
+          type: string
+          nullable: true
+          description: User's display name
+          example: "John Doe"
+        subscription_tier:
+          type: string
+          enum: [free, pro, team, enterprise]
+          description: User's subscription tier
+          example: "pro"
+        is_active:
+          type: boolean
+          description: Whether the user account is active
+          example: true
+        is_verified:
+          type: boolean
+          description: Whether the user's email is verified
+          example: true
+        created_at:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+          example: "2023-01-01T12:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2023-01-01T12:00:00Z"
+
+    Token:
+      type: object
+      required:
+        - access_token
+        - refresh_token
+        - token_type
+        - expires_in
+        - user
+      properties:
+        access_token:
+          type: string
+          description: JWT access token
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refresh_token:
+          type: string
+          description: JWT refresh token for obtaining new access tokens
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        token_type:
+          type: string
+          description: Token type (always 'bearer')
+          example: "bearer"
+        expires_in:
+          type: integer
+          description: Access token expiration time in seconds
+          example: 3600
+        user:
+          $ref: '#/components/schemas/UserResponse'
+
+    TokenRefreshResponse:
+      type: object
+      required:
+        - access_token
+        - token_type
+        - expires_in
+      properties:
+        access_token:
+          type: string
+          description: New JWT access token
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        token_type:
+          type: string
+          description: Token type (always 'bearer')
+          example: "bearer"
+        expires_in:
+          type: integer
+          description: Access token expiration time in seconds
+          example: 3600
+
+    # AI Service schemas
+    APIKeyValidation:
+      type: object
+      required:
+        - api_key
+      properties:
+        api_key:
+          type: string
+          description: OpenRouter API key to validate
+          example: "sk-or-v1-abc123..."
+
+    APIKeyValidationResponse:
+      type: object
+      required:
+        - valid
+      properties:
+        valid:
+          type: boolean
+          description: Whether the API key is valid
+          example: true
+        models_available:
+          type: integer
+          description: Number of available models for this key
+          example: 15
+        account_info:
+          type: object
+          description: Account information from OpenRouter
+          properties:
+            credit_balance:
+              type: number
+              format: float
+              description: Remaining credit balance
+              example: 25.50
+            rate_limit:
+              type: object
+              description: Rate limit information
+              properties:
+                requests_per_minute:
+                  type: integer
+                  example: 60
+        error:
+          type: string
+          nullable: true
+          description: Error message if validation failed
+          example: null
+
+    CommandSuggestionRequest:
+      type: object
+      required:
+        - api_key
+        - description
+      properties:
+        api_key:
+          type: string
+          description: User's OpenRouter API key
+          example: "sk-or-v1-abc123..."
+        description:
+          type: string
+          description: Natural language description of what to accomplish
+          example: "List all files in the current directory with detailed information"
+        current_directory:
+          type: string
+          description: Current working directory context
+          example: "/home/user/projects"
+        shell_type:
+          type: string
+          enum: [bash, zsh, fish, powershell, cmd]
+          default: bash
+          description: Target shell type
+          example: "bash"
+        os_type:
+          type: string
+          enum: [linux, macos, windows]
+          default: linux
+          description: Target operating system
+          example: "linux"
+        max_suggestions:
+          type: integer
+          minimum: 1
+          maximum: 10
+          default: 3
+          description: Maximum number of command suggestions
+          example: 3
+        include_explanations:
+          type: boolean
+          default: true
+          description: Include explanations for each suggestion
+          example: true
+        preferred_model:
+          type: string
+          description: Preferred AI model for generation
+          example: "google/gemini-2.5-flash"
+
+    CommandSuggestion:
+      type: object
+      required:
+        - command
+        - description
+        - confidence_score
+        - safety_level
+      properties:
+        command:
+          type: string
+          description: The suggested command
+          example: "ls -la"
+        description:
+          type: string
+          description: Explanation of what the command does
+          example: "Lists all files and directories with detailed information including hidden files"
+        confidence_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: AI confidence in this suggestion
+          example: 0.95
+        safety_level:
+          type: string
+          enum: [safe, caution, dangerous]
+          description: Safety level of the command
+          example: "safe"
+        tags:
+          type: array
+          items:
+            type: string
+          description: Command category tags
+          example: ["file-management", "listing"]
+
+    CommandSuggestionResponse:
+      type: object
+      required:
+        - suggestions
+        - model_used
+        - response_time_ms
+      properties:
+        suggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommandSuggestion'
+          description: List of command suggestions
+        model_used:
+          type: string
+          description: AI model used for generation
+          example: "google/gemini-2.5-flash"
+        confidence_score:
+          type: number
+          format: float
+          description: Overall confidence score
+          example: 0.9
+        response_time_ms:
+          type: integer
+          description: Response time in milliseconds
+          example: 1250
+        tokens_used:
+          type: object
+          description: Token usage information
+          properties:
+            prompt_tokens:
+              type: integer
+              example: 45
+            completion_tokens:
+              type: integer
+              example: 120
+            total_tokens:
+              type: integer
+              example: 165
+
+    # Terminal Session schemas
+    TerminalSession:
+      type: object
+      required:
+        - id
+        - user_id
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Session unique identifier
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        user_id:
+          type: string
+          format: uuid
+          description: User who owns this session
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          description: User-defined session name
+          example: "Production Server"
+        session_type:
+          type: string
+          enum: [local, ssh, docker]
+          description: Type of terminal session
+          example: "ssh"
+        status:
+          type: string
+          enum: [active, inactive, terminated, error]
+          description: Current session status
+          example: "active"
+        ssh_profile_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Associated SSH profile ID if applicable
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        last_activity:
+          type: string
+          format: date-time
+          description: Last activity timestamp
+          example: "2023-01-01T12:00:00Z"
+        created_at:
+          type: string
+          format: date-time
+          description: Session creation timestamp
+          example: "2023-01-01T12:00:00Z"
+        metadata:
+          type: object
+          description: Additional session metadata
+          additionalProperties: true
+
+    CreateSessionRequest:
+      type: object
+      required:
+        - name
+        - session_type
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: User-defined session name
+          example: "Production Server"
+        session_type:
+          type: string
+          enum: [local, ssh, docker]
+          description: Type of terminal session
+          example: "ssh"
+        ssh_profile_id:
+          type: string
+          format: uuid
+          description: SSH profile to use (required for ssh session_type)
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        auto_connect:
+          type: boolean
+          default: false
+          description: Whether to automatically establish connection
+          example: true
+        metadata:
+          type: object
+          description: Additional session metadata
+          additionalProperties: true
+
+    # SSH Profile schemas
+    SSHProfile:
+      type: object
+      required:
+        - id
+        - user_id
+        - name
+        - hostname
+        - username
+        - port
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Profile unique identifier
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        user_id:
+          type: string
+          format: uuid
+          description: User who owns this profile
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          description: User-defined profile name
+          example: "Production Server"
+        hostname:
+          type: string
+          description: SSH server hostname or IP
+          example: "prod.example.com"
+        username:
+          type: string
+          description: SSH username
+          example: "deploy"
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+          description: SSH port number
+          example: 22
+        auth_method:
+          type: string
+          enum: [password, key, key_with_passphrase]
+          description: Authentication method
+          example: "key"
+        ssh_key_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Associated SSH key ID
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        connection_timeout:
+          type: integer
+          minimum: 1
+          maximum: 300
+          default: 30
+          description: Connection timeout in seconds
+          example: 30
+        keep_alive_interval:
+          type: integer
+          minimum: 0
+          maximum: 300
+          default: 60
+          description: Keep-alive interval in seconds
+          example: 60
+        created_at:
+          type: string
+          format: date-time
+          description: Profile creation timestamp
+          example: "2023-01-01T12:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2023-01-01T12:00:00Z"
+
+    CreateSSHProfileRequest:
+      type: object
+      required:
+        - name
+        - hostname
+        - username
+        - auth_method
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+          description: User-defined profile name
+          example: "Production Server"
+        hostname:
+          type: string
+          description: SSH server hostname or IP
+          example: "prod.example.com"
+        username:
+          type: string
+          description: SSH username
+          example: "deploy"
+        port:
+          type: integer
+          minimum: 1
+          maximum: 65535
+          default: 22
+          description: SSH port number
+          example: 22
+        auth_method:
+          type: string
+          enum: [password, key, key_with_passphrase]
+          description: Authentication method
+          example: "key"
+        password:
+          type: string
+          description: SSH password (for password auth)
+          example: "secret_password"
+        ssh_key_id:
+          type: string
+          format: uuid
+          description: SSH key ID (for key auth)
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        connection_timeout:
+          type: integer
+          minimum: 1
+          maximum: 300
+          default: 30
+          description: Connection timeout in seconds
+          example: 30
+
+    # Command schemas
+    Command:
+      type: object
+      required:
+        - id
+        - session_id
+        - command_text
+        - status
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Command unique identifier
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        session_id:
+          type: string
+          format: uuid
+          description: Terminal session this command belongs to
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        command_text:
+          type: string
+          description: The executed command
+          example: "ls -la /home/user"
+        output:
+          type: string
+          nullable: true
+          description: Command output
+          example: "total 12\ndrwxr-xr-x 3 user user 4096 Jan  1 12:00 .\n..."
+        error_output:
+          type: string
+          nullable: true
+          description: Command error output
+          example: "bash: command not found"
+        exit_code:
+          type: integer
+          nullable: true
+          description: Command exit code
+          example: 0
+        status:
+          type: string
+          enum: [pending, running, completed, failed, cancelled]
+          description: Command execution status
+          example: "completed"
+        execution_time_ms:
+          type: integer
+          nullable: true
+          description: Execution time in milliseconds
+          example: 150
+        created_at:
+          type: string
+          format: date-time
+          description: Command creation timestamp
+          example: "2023-01-01T12:00:00Z"
+        executed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Command execution timestamp
+          example: "2023-01-01T12:00:00Z"
+        completed_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Command completion timestamp
+          example: "2023-01-01T12:00:00Z"
+
+    # Sync schemas
+    SyncData:
+      type: object
+      required:
+        - id
+        - user_id
+        - data_type
+        - data
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Sync data unique identifier
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        user_id:
+          type: string
+          format: uuid
+          description: User who owns this data
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        device_id:
+          type: string
+          description: Source device identifier
+          example: "device-abc123"
+        data_type:
+          type: string
+          enum: [settings, ssh_profiles, command_history, ai_preferences]
+          description: Type of synchronized data
+          example: "settings"
+        data:
+          type: object
+          description: Synchronized data content
+          additionalProperties: true
+        version:
+          type: integer
+          description: Data version for conflict resolution
+          example: 5
+        checksum:
+          type: string
+          description: Data integrity checksum
+          example: "sha256:abc123..."
+        created_at:
+          type: string
+          format: date-time
+          description: Sync data creation timestamp
+          example: "2023-01-01T12:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2023-01-01T12:00:00Z"
+
+  responses:
+    UnauthorizedError:
+      description: Authentication required or token invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 401
+            message: "Authentication required"
+            type: "authentication_error"
+
+    ForbiddenError:
+      description: Access forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 403
+            message: "Access forbidden"
+            type: "authorization_error"
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 404
+            message: "Resource not found"
+            type: "not_found_error"
+
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 422
+            message: "Validation error"
+            type: "validation_error"
+            details:
+              field: "email"
+              issue: "invalid email format"
+
+    RateLimitError:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 429
+            message: "Rate limit exceeded"
+            type: "rate_limit_error"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: 500
+            message: "Internal server error"
+            type: "internal_error"
+
+paths:
+  # Health endpoints
+  /:
+    get:
+      tags:
+        - Health
+      summary: API Status
+      description: Get basic API information and status
+      operationId: getApiStatus
+      responses:
+        '200':
+          description: API status information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    example: "DevPocket API"
+                  version:
+                    type: string
+                    example: "1.0.0"
+                  status:
+                    type: string
+                    example: "operational"
+                  docs_url:
+                    type: string
+                    nullable: true
+                    example: "/docs"
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health Check
+      description: Check API health status including database and Redis connectivity
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  checks:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        example: "healthy"
+                      redis:
+                        type: string
+                        example: "healthy"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2023-01-01T12:00:00Z"
+        '503':
+          description: Service is unhealthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "unhealthy"
+                  error:
+                    type: string
+                    example: "Database connection failed"
+
+  # Authentication endpoints
+  /api/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register New User
+      description: |
+        Create a new user account with email, username, and password.
+        
+        Password requirements:
+        - At least 8 characters long
+        - Must contain uppercase letter
+        - Must contain lowercase letter  
+        - Must contain number
+        - Must contain special character
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+            examples:
+              basic_registration:
+                summary: Basic user registration
+                value:
+                  email: "user@example.com"
+                  username: "user123"
+                  password: "SecurePass123!"
+                  display_name: "John Doe"
+              mobile_registration:
+                summary: Mobile device registration
+                value:
+                  email: "mobile@example.com"
+                  username: "mobileuser"
+                  password: "MobilePass123!"
+                  device_id: "device-abc123"
+                  device_type: "ios"
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '400':
+          description: Invalid input or user already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                email_exists:
+                  summary: Email already registered
+                  value:
+                    code: 400
+                    message: "Email already registered"
+                    type: "validation_error"
+                weak_password:
+                  summary: Password too weak
+                  value:
+                    code: 400
+                    message: "Password requirements not met: Password must contain at least one uppercase letter"
+                    type: "validation_error"
+        '422':
+          $ref: '#/components/responses/ValidationError'
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User Login
+      description: |
+        Authenticate user with username/email and password.
+        Returns JWT access and refresh tokens on successful authentication.
+        
+        Rate limiting: 5 attempts per 15 minutes per IP/username.
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  description: Username or email address
+                  example: "user@example.com"
+                password:
+                  type: string
+                  description: User password
+                  example: "SecurePass123!"
+                grant_type:
+                  type: string
+                  default: "password"
+                  example: "password"
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                  description: Username or email address
+                  example: "user@example.com"
+                password:
+                  type: string
+                  description: User password
+                  example: "SecurePass123!"
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Token'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: 401
+                message: "Incorrect username or password"
+                type: "authentication_error"
+        '423':
+          description: Account locked due to too many failed attempts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                code: 423
+                message: "Account is locked until 2023-01-01T13:00:00Z. Please try again later."
+                type: "account_locked_error"
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /api/auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh Access Token
+      description: |
+        Generate a new access token using a valid refresh token.
+        The refresh token should be included in the request body.
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+                  description: Valid refresh token
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefreshResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: User Logout
+      description: |
+        Logout user and blacklist the current access token.
+        The token will be added to a blacklist to prevent further use.
+      operationId: logoutUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                message: "Logout successful"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get Current User
+      description: Get current authenticated user information
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/auth/forgot-password:
+    post:
+      tags:
+        - Authentication
+      summary: Request Password Reset
+      description: |
+        Send password reset email to user.
+        Always returns success for security (doesn't reveal if email exists).
+        
+        Rate limiting: 3 attempts per hour per IP/email.
+      operationId: forgotPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+                  example: "user@example.com"
+      responses:
+        '200':
+          description: Password reset email sent (always returned for security)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                message: "If the email exists in our system, you will receive a password reset link."
+        '429':
+          $ref: '#/components/responses/RateLimitError'
+
+  /api/auth/reset-password:
+    post:
+      tags:
+        - Authentication
+      summary: Reset Password
+      description: Reset user password using reset token from email
+      operationId: resetPassword
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - new_password
+              properties:
+                token:
+                  type: string
+                  description: Password reset token from email
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                new_password:
+                  type: string
+                  minLength: 8
+                  description: New password meeting complexity requirements
+                  example: "NewSecurePass123!"
+      responses:
+        '200':
+          description: Password reset successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+              example:
+                message: "Password reset successful"
+        '400':
+          description: Invalid or expired reset token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/auth/change-password:
+    post:
+      tags:
+        - Authentication
+      summary: Change Password
+      description: Change user password with current password verification
+      operationId: changePassword
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - current_password
+                - new_password
+              properties:
+                current_password:
+                  type: string
+                  description: Current password for verification
+                  example: "CurrentPass123!"
+                new_password:
+                  type: string
+                  minLength: 8
+                  description: New password meeting complexity requirements
+                  example: "NewSecurePass123!"
+      responses:
+        '200':
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          description: Current password is incorrect
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # AI Services endpoints
+  /api/ai/validate-key:
+    post:
+      tags:
+        - AI Services
+      summary: Validate OpenRouter API Key
+      description: |
+        Validate user's OpenRouter API key and get account information.
+        
+        This endpoint validates the API key against OpenRouter's API without storing it.
+        Returns information about available models and account status.
+      operationId: validateApiKey
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/APIKeyValidation'
+      responses:
+        '200':
+          description: API key validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIKeyValidationResponse'
+              examples:
+                valid_key:
+                  summary: Valid API key
+                  value:
+                    valid: true
+                    models_available: 15
+                    account_info:
+                      credit_balance: 25.50
+                      rate_limit:
+                        requests_per_minute: 60
+                    error: null
+                invalid_key:
+                  summary: Invalid API key
+                  value:
+                    valid: false
+                    models_available: 0
+                    account_info: null
+                    error: "Invalid API key"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/ai/suggest-command:
+    post:
+      tags:
+        - AI Services
+      summary: Get Command Suggestions
+      description: |
+        Convert natural language to command suggestions using AI.
+        
+        Uses the user's OpenRouter API key (BYOK model) to generate intelligent
+        command suggestions based on natural language descriptions.
+        
+        Supports multiple shell types and operating systems for accurate suggestions.
+      operationId: suggestCommand
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommandSuggestionRequest'
+            examples:
+              file_listing:
+                summary: List files request
+                value:
+                  api_key: "sk-or-v1-abc123..."
+                  description: "List all files in the current directory with detailed information"
+                  current_directory: "/home/user/projects"
+                  shell_type: "bash"
+                  os_type: "linux"
+                  max_suggestions: 3
+                  include_explanations: true
+              process_management:
+                summary: Process management request
+                value:
+                  api_key: "sk-or-v1-abc123..."
+                  description: "Find and kill all processes using port 8080"
+                  shell_type: "bash"
+                  os_type: "linux"
+                  max_suggestions: 2
+      responses:
+        '200':
+          description: Command suggestions generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandSuggestionResponse'
+              example:
+                suggestions:
+                  - command: "ls -la"
+                    description: "Lists all files and directories with detailed information including hidden files"
+                    confidence_score: 0.95
+                    safety_level: "safe"
+                    tags: ["file-management", "listing"]
+                  - command: "ls -lah"
+                    description: "Lists all files with human-readable file sizes"
+                    confidence_score: 0.90
+                    safety_level: "safe"
+                    tags: ["file-management", "listing"]
+                model_used: "google/gemini-2.5-flash"
+                confidence_score: 0.92
+                response_time_ms: 1250
+                tokens_used:
+                  prompt_tokens: 45
+                  completion_tokens: 120
+                  total_tokens: 165
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '429':
+          description: API rate limit exceeded (OpenRouter)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: AI service error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/ai/explain-command:
+    post:
+      tags:
+        - AI Services
+      summary: Explain Command
+      description: |
+        Get detailed explanation and documentation for a command.
+        
+        Provides comprehensive explanations of what a command does,
+        its parameters, potential risks, and usage examples.
+      operationId: explainCommand
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - api_key
+                - command
+              properties:
+                api_key:
+                  type: string
+                  description: User's OpenRouter API key
+                  example: "sk-or-v1-abc123..."
+                command:
+                  type: string
+                  description: Command to explain
+                  example: "tar -xzf archive.tar.gz"
+                context:
+                  type: object
+                  description: Additional context about the command environment
+                  properties:
+                    shell_type:
+                      type: string
+                      example: "bash"
+                    os_type:
+                      type: string
+                      example: "linux"
+                    current_directory:
+                      type: string
+                      example: "/home/user/downloads"
+                detail_level:
+                  type: string
+                  enum: [basic, detailed, comprehensive]
+                  default: detailed
+                  description: Level of explanation detail
+                  example: "detailed"
+      responses:
+        '200':
+          description: Command explanation generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  explanation:
+                    type: string
+                    description: Detailed command explanation
+                    example: "The 'tar' command extracts files from a compressed archive..."
+                  breakdown:
+                    type: object
+                    description: Command component breakdown
+                    properties:
+                      command:
+                        type: string
+                        example: "tar"
+                      flags:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            flag:
+                              type: string
+                              example: "-x"
+                            description:
+                              type: string
+                              example: "Extract files from archive"
+                  safety_analysis:
+                    type: object
+                    properties:
+                      safety_level:
+                        type: string
+                        enum: [safe, caution, dangerous]
+                        example: "safe"
+                      warnings:
+                        type: array
+                        items:
+                          type: string
+                        example: []
+                  examples:
+                    type: array
+                    items:
+                      type: string
+                    example: ["tar -xzf myarchive.tar.gz", "tar -xzf archive.tar.gz -C /destination/"]
+                  model_used:
+                    type: string
+                    example: "google/gemini-2.5-flash"
+                  response_time_ms:
+                    type: integer
+                    example: 800
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/ai/explain-error:
+    post:
+      tags:
+        - AI Services
+      summary: Analyze Command Error
+      description: |
+        Analyze and explain command errors with solution suggestions.
+        
+        Helps users understand why a command failed and provides
+        actionable suggestions to fix the issue.
+      operationId: explainError
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - api_key
+                - command
+                - error_output
+              properties:
+                api_key:
+                  type: string
+                  description: User's OpenRouter API key
+                  example: "sk-or-v1-abc123..."
+                command:
+                  type: string
+                  description: Command that failed
+                  example: "npm install"
+                error_output:
+                  type: string
+                  description: Error message or output
+                  example: "npm ERR! code EACCES\\nnpm ERR! syscall mkdir\\nnpm ERR! path /usr/local/lib/node_modules"
+                exit_code:
+                  type: integer
+                  description: Command exit code
+                  example: 1
+                context:
+                  type: object
+                  description: Additional context
+                  properties:
+                    working_directory:
+                      type: string
+                      example: "/home/user/project"
+                    environment:
+                      type: object
+                      additionalProperties: true
+      responses:
+        '200':
+          description: Error analysis completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error_analysis:
+                    type: string
+                    description: Analysis of what went wrong
+                    example: "This error occurs because npm is trying to install packages globally but doesn't have write permissions to the system directory."
+                  root_cause:
+                    type: string
+                    description: Root cause of the error
+                    example: "Permission denied - insufficient privileges for global package installation"
+                  solutions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        solution:
+                          type: string
+                          example: "Use sudo to run with elevated privileges"
+                        command:
+                          type: string
+                          example: "sudo npm install -g package-name"
+                        risk_level:
+                          type: string
+                          enum: [low, medium, high]
+                          example: "low"
+                        explanation:
+                          type: string
+                          example: "Running with sudo gives npm the necessary permissions"
+                  prevention_tips:
+                    type: array
+                    items:
+                      type: string
+                    example: ["Use a Node version manager like nvm", "Configure npm to use a different directory for global packages"]
+                  related_docs:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        title:
+                          type: string
+                          example: "npm permissions documentation"
+                        url:
+                          type: string
+                          example: "https://docs.npmjs.com/resolving-eacces-permissions-errors"
+                  model_used:
+                    type: string
+                    example: "google/gemini-2.5-flash"
+                  confidence_score:
+                    type: number
+                    format: float
+                    example: 0.92
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Terminal Sessions endpoints
+  /api/sessions:
+    get:
+      tags:
+        - Terminal Sessions
+      summary: List Terminal Sessions
+      description: |
+        Get a list of user's terminal sessions with optional filtering.
+        
+        Supports pagination and filtering by status, type, and search terms.
+      operationId: listSessions
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of sessions to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Number of sessions to skip for pagination
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: status
+          in: query
+          description: Filter by session status
+          schema:
+            type: string
+            enum: [active, inactive, terminated, error]
+        - name: session_type
+          in: query
+          description: Filter by session type
+          schema:
+            type: string
+            enum: [local, ssh, docker]
+        - name: search
+          in: query
+          description: Search sessions by name
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sessions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TerminalSession'
+                  total:
+                    type: integer
+                    description: Total number of sessions
+                    example: 45
+                  limit:
+                    type: integer
+                    example: 20
+                  offset:
+                    type: integer
+                    example: 0
+                  has_more:
+                    type: boolean
+                    description: Whether there are more sessions available
+                    example: true
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Terminal Sessions
+      summary: Create Terminal Session
+      description: |
+        Create a new terminal session.
+        
+        Supports local, SSH, and Docker session types.
+        For SSH sessions, an SSH profile ID must be provided.
+      operationId: createSession
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSessionRequest'
+            examples:
+              local_session:
+                summary: Local terminal session
+                value:
+                  name: "Local Development"
+                  session_type: "local"
+                  auto_connect: true
+              ssh_session:
+                summary: SSH terminal session
+                value:
+                  name: "Production Server"
+                  session_type: "ssh"
+                  ssh_profile_id: "123e4567-e89b-12d3-a456-426614174000"
+                  auto_connect: false
+      responses:
+        '201':
+          description: Session created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TerminalSession'
+        '400':
+          description: Invalid session configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/sessions/{session_id}:
+    get:
+      tags:
+        - Terminal Sessions
+      summary: Get Terminal Session
+      description: Get details of a specific terminal session
+      operationId: getSession
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Terminal session ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Session details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TerminalSession'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags:
+        - Terminal Sessions
+      summary: Update Terminal Session
+      description: Update terminal session configuration or status
+      operationId: updateSession
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Terminal session ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Updated session name
+                  example: "Updated Session Name"
+                status:
+                  type: string
+                  enum: [active, inactive, terminated]
+                  description: Updated session status
+                  example: "inactive"
+                metadata:
+                  type: object
+                  description: Additional session metadata
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Session updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TerminalSession'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - Terminal Sessions
+      summary: Delete Terminal Session
+      description: |
+        Delete a terminal session and all associated data.
+        
+        This will terminate any active connections and remove
+        the session from the user's session list.
+      operationId: deleteSession
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          description: Terminal session ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Session deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # SSH Management endpoints
+  /api/ssh/profiles:
+    get:
+      tags:
+        - SSH Management
+      summary: List SSH Profiles
+      description: |
+        Get a list of user's SSH profiles with optional filtering and search.
+        
+        SSH profiles contain connection information but not sensitive credentials.
+      operationId: listSSHProfiles
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of profiles to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Number of profiles to skip for pagination
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: search
+          in: query
+          description: Search profiles by name or hostname
+          schema:
+            type: string
+      responses:
+        '200':
+          description: SSH profiles retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  profiles:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SSHProfile'
+                  total:
+                    type: integer
+                    example: 12
+                  limit:
+                    type: integer
+                    example: 20
+                  offset:
+                    type: integer
+                    example: 0
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - SSH Management
+      summary: Create SSH Profile
+      description: |
+        Create a new SSH profile for connecting to remote servers.
+        
+        Supports password and key-based authentication methods.
+        Sensitive credentials are encrypted before storage.
+      operationId: createSSHProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSSHProfileRequest'
+            examples:
+              password_auth:
+                summary: Password authentication profile
+                value:
+                  name: "Development Server"
+                  hostname: "dev.example.com"
+                  username: "developer"
+                  port: 22
+                  auth_method: "password"
+                  password: "secret_password"
+              key_auth:
+                summary: SSH key authentication profile
+                value:
+                  name: "Production Server"
+                  hostname: "prod.example.com"
+                  username: "deploy"
+                  port: 22
+                  auth_method: "key"
+                  ssh_key_id: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '201':
+          description: SSH profile created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SSHProfile'
+        '400':
+          description: Invalid profile configuration
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/ssh/profiles/{profile_id}:
+    get:
+      tags:
+        - SSH Management
+      summary: Get SSH Profile
+      description: Get details of a specific SSH profile (excluding sensitive credentials)
+      operationId: getSSHProfile
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: profile_id
+          in: path
+          required: true
+          description: SSH profile ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: SSH profile details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SSHProfile'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    put:
+      tags:
+        - SSH Management
+      summary: Update SSH Profile
+      description: Update SSH profile configuration
+      operationId: updateSSHProfile
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: profile_id
+          in: path
+          required: true
+          description: SSH profile ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: Updated profile name
+                  example: "Updated Server Name"
+                hostname:
+                  type: string
+                  description: Updated hostname
+                  example: "new.example.com"
+                port:
+                  type: integer
+                  description: Updated port number
+                  example: 2222
+                username:
+                  type: string
+                  description: Updated username
+                  example: "newuser"
+                connection_timeout:
+                  type: integer
+                  description: Updated connection timeout
+                  example: 45
+      responses:
+        '200':
+          description: SSH profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SSHProfile'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - SSH Management
+      summary: Delete SSH Profile
+      description: |
+        Delete an SSH profile and all associated data.
+        
+        This will also terminate any active sessions using this profile.
+      operationId: deleteSSHProfile
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: profile_id
+          in: path
+          required: true
+          description: SSH profile ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: SSH profile deleted successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/ssh/profiles/{profile_id}/test:
+    post:
+      tags:
+        - SSH Management
+      summary: Test SSH Connection
+      description: |
+        Test SSH connection using the specified profile.
+        
+        Attempts to establish a connection and returns the result
+        without creating a persistent session.
+      operationId: testSSHConnection
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: profile_id
+          in: path
+          required: true
+          description: SSH profile ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Connection test completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: Whether the connection was successful
+                    example: true
+                  message:
+                    type: string
+                    description: Connection test result message
+                    example: "Connection successful"
+                  connection_time_ms:
+                    type: integer
+                    description: Connection time in milliseconds
+                    example: 250
+                  server_info:
+                    type: object
+                    description: Information about the SSH server
+                    properties:
+                      version:
+                        type: string
+                        example: "OpenSSH_8.2"
+                      host_key_fingerprint:
+                        type: string
+                        example: "SHA256:abc123..."
+                  error:
+                    type: string
+                    nullable: true
+                    description: Error message if connection failed
+                    example: null
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # Commands endpoints
+  /api/commands:
+    get:
+      tags:
+        - Commands
+      summary: Get Command History
+      description: |
+        Get user's command execution history with filtering and search capabilities.
+        
+        Supports pagination, filtering by session, status, and full-text search.
+      operationId: getCommandHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of commands to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+        - name: offset
+          in: query
+          description: Number of commands to skip for pagination
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: session_id
+          in: query
+          description: Filter by specific terminal session
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Filter by command execution status
+          schema:
+            type: string
+            enum: [pending, running, completed, failed, cancelled]
+        - name: search
+          in: query
+          description: Search commands by text content
+          schema:
+            type: string
+        - name: start_date
+          in: query
+          description: Filter commands from this date (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+        - name: end_date
+          in: query
+          description: Filter commands until this date (ISO 8601)
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Command history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  commands:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Command'
+                  total:
+                    type: integer
+                    description: Total number of commands matching filters
+                    example: 245
+                  limit:
+                    type: integer
+                    example: 100
+                  offset:
+                    type: integer
+                    example: 0
+                  has_more:
+                    type: boolean
+                    description: Whether there are more commands available
+                    example: true
+                  aggregations:
+                    type: object
+                    description: Summary statistics
+                    properties:
+                      by_status:
+                        type: object
+                        properties:
+                          completed:
+                            type: integer
+                            example: 200
+                          failed:
+                            type: integer
+                            example: 15
+                          cancelled:
+                            type: integer
+                            example: 2
+                      total_execution_time_ms:
+                        type: integer
+                        example: 45000
+                      most_used_commands:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            command:
+                              type: string
+                              example: "ls"
+                            count:
+                              type: integer
+                              example: 25
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/commands/{command_id}:
+    get:
+      tags:
+        - Commands
+      summary: Get Command Details
+      description: Get detailed information about a specific command execution
+      operationId: getCommand
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: command_id
+          in: path
+          required: true
+          description: Command ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Command details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Command'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /api/commands/search:
+    get:
+      tags:
+        - Commands
+      summary: Search Commands
+      description: |
+        Advanced command search with full-text search capabilities.
+        
+        Supports searching across command text, output, and metadata.
+      operationId: searchCommands
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Search query
+          schema:
+            type: string
+            example: "docker ps"
+        - name: limit
+          in: query
+          description: Maximum number of results
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: include_output
+          in: query
+          description: Include command output in search
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Search results retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  commands:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Command'
+                  total:
+                    type: integer
+                    example: 15
+                  search_time_ms:
+                    type: integer
+                    example: 45
+                  suggestions:
+                    type: array
+                    items:
+                      type: string
+                    description: Search suggestions for better results
+                    example: ["docker", "docker container", "docker images"]
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # Synchronization endpoints
+  /api/sync/status:
+    get:
+      tags:
+        - Synchronization
+      summary: Get Sync Status
+      description: |
+        Get current synchronization status across all devices.
+        
+        Shows last sync times, pending changes, and conflict information.
+      operationId: getSyncStatus
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Sync status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  last_sync:
+                    type: string
+                    format: date-time
+                    description: Last successful sync timestamp
+                    example: "2023-01-01T12:00:00Z"
+                  sync_enabled:
+                    type: boolean
+                    description: Whether sync is enabled for this user
+                    example: true
+                  pending_changes:
+                    type: integer
+                    description: Number of changes waiting to be synced
+                    example: 3
+                  devices:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        device_id:
+                          type: string
+                          example: "device-abc123"
+                        device_name:
+                          type: string
+                          example: "iPhone 13"
+                        last_seen:
+                          type: string
+                          format: date-time
+                          example: "2023-01-01T11:30:00Z"
+                        sync_status:
+                          type: string
+                          enum: [synced, pending, conflict, offline]
+                          example: "synced"
+                  conflicts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        data_type:
+                          type: string
+                          example: "ssh_profiles"
+                        conflict_count:
+                          type: integer
+                          example: 1
+                        last_conflict:
+                          type: string
+                          format: date-time
+                          example: "2023-01-01T10:00:00Z"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Sync not available for current subscription tier
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/sync/trigger:
+    post:
+      tags:
+        - Synchronization
+      summary: Trigger Manual Sync
+      description: |
+        Trigger a manual synchronization of user data across devices.
+        
+        Typically sync happens automatically, but this endpoint allows
+        manual sync for immediate consistency.
+      operationId: triggerSync
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data_types:
+                  type: array
+                  items:
+                    type: string
+                    enum: [settings, ssh_profiles, command_history, ai_preferences]
+                  description: Specific data types to sync (all if not specified)
+                  example: ["ssh_profiles", "settings"]
+                force:
+                  type: boolean
+                  default: false
+                  description: Force sync even if there are conflicts
+                  example: false
+      responses:
+        '200':
+          description: Sync triggered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sync_id:
+                    type: string
+                    format: uuid
+                    description: Sync operation identifier
+                    example: "123e4567-e89b-12d3-a456-426614174000"
+                  status:
+                    type: string
+                    enum: [started, completed, failed]
+                    description: Sync operation status
+                    example: "started"
+                  estimated_completion:
+                    type: string
+                    format: date-time
+                    description: Estimated completion time
+                    example: "2023-01-01T12:05:00Z"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          description: Sync not available for current subscription tier
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /api/sync/conflicts:
+    get:
+      tags:
+        - Synchronization
+      summary: Get Sync Conflicts
+      description: |
+        Get list of synchronization conflicts that require user resolution.
+        
+        Conflicts occur when the same data is modified on multiple devices.
+      operationId: getSyncConflicts
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Sync conflicts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  conflicts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                          example: "123e4567-e89b-12d3-a456-426614174000"
+                        data_type:
+                          type: string
+                          example: "ssh_profiles"
+                        resource_id:
+                          type: string
+                          example: "profile-123"
+                        conflict_type:
+                          type: string
+                          enum: [update_conflict, delete_conflict, create_conflict]
+                          example: "update_conflict"
+                        devices:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              device_id:
+                                type: string
+                                example: "device-abc123"
+                              version:
+                                type: integer
+                                example: 5
+                              data:
+                                type: object
+                                additionalProperties: true
+                              modified_at:
+                                type: string
+                                format: date-time
+                                example: "2023-01-01T12:00:00Z"
+                        created_at:
+                          type: string
+                          format: date-time
+                          example: "2023-01-01T12:01:00Z"
+                  total:
+                    type: integer
+                    example: 2
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/sync/conflicts/{conflict_id}/resolve:
+    post:
+      tags:
+        - Synchronization
+      summary: Resolve Sync Conflict
+      description: |
+        Resolve a synchronization conflict by choosing the preferred version.
+        
+        The user can choose which device's version to keep or provide
+        a merged version.
+      operationId: resolveSyncConflict
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conflict_id
+          in: path
+          required: true
+          description: Conflict ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - resolution_type
+              properties:
+                resolution_type:
+                  type: string
+                  enum: [keep_device, keep_latest, merge, custom]
+                  description: How to resolve the conflict
+                  example: "keep_device"
+                chosen_device_id:
+                  type: string
+                  description: Device ID to keep (for keep_device resolution)
+                  example: "device-abc123"
+                merged_data:
+                  type: object
+                  description: Custom merged data (for merge/custom resolution)
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Conflict resolved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  resolution:
+                    type: string
+                    description: Description of how the conflict was resolved
+                    example: "Conflict resolved by keeping device-abc123 version"
+                  synced_data:
+                    type: object
+                    description: Final synchronized data
+                    additionalProperties: true
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  # User Profile endpoints
+  /api/profile:
+    get:
+      tags:
+        - User Profile
+      summary: Get User Profile
+      description: Get current user's profile information and settings
+      operationId: getUserProfile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                allOf:
+                  - $ref: '#/components/schemas/UserResponse'
+                  - type: object
+                    properties:
+                      preferences:
+                        type: object
+                        description: User preferences and settings
+                        properties:
+                          theme:
+                            type: string
+                            enum: [light, dark, auto]
+                            example: "dark"
+                          terminal_font_size:
+                            type: integer
+                            example: 14
+                          default_shell:
+                            type: string
+                            example: "bash"
+                          ai_model_preference:
+                            type: string
+                            example: "google/gemini-2.5-flash"
+                          sync_enabled:
+                            type: boolean
+                            example: true
+                      subscription:
+                        type: object
+                        description: Subscription information
+                        properties:
+                          tier:
+                            type: string
+                            enum: [free, pro, team, enterprise]
+                            example: "pro"
+                          status:
+                            type: string
+                            enum: [active, inactive, cancelled, past_due]
+                            example: "active"
+                          current_period_end:
+                            type: string
+                            format: date-time
+                            example: "2023-02-01T12:00:00Z"
+                          features:
+                            type: array
+                            items:
+                              type: string
+                            example: ["multi_device_sync", "cloud_history", "ai_caching"]
+                      usage_stats:
+                        type: object
+                        description: Usage statistics
+                        properties:
+                          commands_executed:
+                            type: integer
+                            example: 1250
+                          ai_requests_made:
+                            type: integer
+                            example: 85
+                          ssh_connections:
+                            type: integer
+                            example: 42
+                          storage_used_mb:
+                            type: number
+                            format: float
+                            example: 15.7
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      tags:
+        - User Profile
+      summary: Update User Profile
+      description: Update user profile information and preferences
+      operationId: updateUserProfile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                display_name:
+                  type: string
+                  maxLength: 100
+                  description: Updated display name
+                  example: "John Smith"
+                preferences:
+                  type: object
+                  description: User preferences to update
+                  properties:
+                    theme:
+                      type: string
+                      enum: [light, dark, auto]
+                      example: "dark"
+                    terminal_font_size:
+                      type: integer
+                      minimum: 8
+                      maximum: 24
+                      example: 16
+                    default_shell:
+                      type: string
+                      enum: [bash, zsh, fish, powershell]
+                      example: "zsh"
+                    ai_model_preference:
+                      type: string
+                      example: "google/gemini-2.5-flash"
+                    sync_enabled:
+                      type: boolean
+                      example: true
+                    notification_preferences:
+                      type: object
+                      properties:
+                        email_notifications:
+                          type: boolean
+                          example: true
+                        sync_notifications:
+                          type: boolean
+                          example: false
+      responses:
+        '200':
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /api/profile/subscription:
+    get:
+      tags:
+        - User Profile
+      summary: Get Subscription Details
+      description: Get detailed subscription information including usage limits and billing
+      operationId: getSubscriptionDetails
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Subscription details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  tier:
+                    type: string
+                    enum: [free, pro, team, enterprise]
+                    example: "pro"
+                  status:
+                    type: string
+                    enum: [active, inactive, cancelled, past_due, trialing]
+                    example: "active"
+                  current_period_start:
+                    type: string
+                    format: date-time
+                    example: "2023-01-01T12:00:00Z"
+                  current_period_end:
+                    type: string
+                    format: date-time
+                    example: "2023-02-01T12:00:00Z"
+                  cancel_at_period_end:
+                    type: boolean
+                    example: false
+                  features:
+                    type: object
+                    description: Available features for current tier
+                    properties:
+                      max_ssh_profiles:
+                        type: integer
+                        example: 50
+                      max_devices:
+                        type: integer
+                        example: 5
+                      cloud_storage_gb:
+                        type: number
+                        format: float
+                        example: 1.0
+                      ai_requests_per_month:
+                        type: integer
+                        example: 1000
+                      sync_enabled:
+                        type: boolean
+                        example: true
+                      priority_support:
+                        type: boolean
+                        example: true
+                  usage:
+                    type: object
+                    description: Current usage against limits
+                    properties:
+                      ssh_profiles_used:
+                        type: integer
+                        example: 12
+                      devices_connected:
+                        type: integer
+                        example: 3
+                      storage_used_gb:
+                        type: number
+                        format: float
+                        example: 0.3
+                      ai_requests_this_month:
+                        type: integer
+                        example: 127
+                  billing:
+                    type: object
+                    description: Billing information
+                    properties:
+                      amount:
+                        type: number
+                        format: float
+                        example: 12.00
+                      currency:
+                        type: string
+                        example: "USD"
+                      interval:
+                        type: string
+                        enum: [month, year]
+                        example: "month"
+                      next_payment_date:
+                        type: string
+                        format: date-time
+                        example: "2023-02-01T12:00:00Z"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # WebSocket endpoint
+  /ws/terminal:
+    get:
+      tags:
+        - WebSocket
+      summary: WebSocket Terminal Connection
+      description: |
+        Establish WebSocket connection for real-time terminal communication.
+        
+        This endpoint provides:
+        - Real-time terminal I/O streaming
+        - SSH session management with PTY support
+        - Terminal resizing and signal handling
+        - Connection lifecycle management
+        
+        **Authentication**: Include JWT token as query parameter `token`
+        
+        **WebSocket Message Protocol**:
+        
+        All messages are JSON objects with the following structure:
+        
+        **Client to Server Messages**:
+        
+        1. **Connect to SSH**: Establish SSH connection
+        ```json
+        {
+          "type": "connect",
+          "data": {
+            "session_type": "ssh",
+            "ssh_profile_id": "uuid",
+            "terminal_size": {"rows": 24, "cols": 80}
+          }
+        }
+        ```
+        
+        2. **Terminal Input**: Send input to terminal
+        ```json
+        {
+          "type": "input",
+          "session_id": "uuid",
+          "data": "ls -la\\n",
+          "timestamp": "2023-01-01T12:00:00Z"
+        }
+        ```
+        
+        3. **Resize Terminal**: Change terminal dimensions
+        ```json
+        {
+          "type": "resize",
+          "session_id": "uuid", 
+          "data": {"rows": 30, "cols": 120}
+        }
+        ```
+        
+        4. **Send Signal**: Send control signals
+        ```json
+        {
+          "type": "signal",
+          "session_id": "uuid",
+          "data": {"signal": "SIGINT", "key": "ctrl+c"}
+        }
+        ```
+        
+        **Server to Client Messages**:
+        
+        1. **Terminal Output**: Stream terminal output
+        ```json
+        {
+          "type": "output",
+          "session_id": "uuid",
+          "data": "total 12\\ndrwxr-xr-x...",
+          "timestamp": "2023-01-01T12:00:00Z"
+        }
+        ```
+        
+        2. **Session Status**: Connection status updates
+        ```json
+        {
+          "type": "status",
+          "session_id": "uuid",
+          "data": {"status": "connected", "message": "SSH connection established"}
+        }
+        ```
+        
+        3. **Error Messages**: Error notifications
+        ```json
+        {
+          "type": "error",
+          "data": {"code": "connection_failed", "message": "SSH authentication failed"}
+        }
+        ```
+      operationId: websocketTerminal
+      parameters:
+        - name: token
+          in: query
+          required: true
+          description: JWT authentication token
+          schema:
+            type: string
+            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        - name: device_id
+          in: query
+          required: false
+          description: Device identifier for session tracking
+          schema:
+            type: string
+            example: "device-abc123"
+      responses:
+        '101':
+          description: WebSocket connection established
+          headers:
+            Upgrade:
+              description: Protocol upgrade to WebSocket
+              schema:
+                type: string
+                example: "websocket"
+            Connection:
+              description: Connection upgrade header
+              schema:
+                type: string
+                example: "Upgrade"
+        '400':
+          description: Invalid WebSocket request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: WebSocket access forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /ws/stats:
+    get:
+      tags:
+        - WebSocket
+      summary: WebSocket Statistics
+      description: Get statistics about active WebSocket connections and sessions
+      operationId: getWebSocketStats
+      responses:
+        '200':
+          description: WebSocket statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "success"
+                  data:
+                    type: object
+                    properties:
+                      active_connections:
+                        type: integer
+                        description: Number of active WebSocket connections
+                        example: 25
+                      active_sessions:
+                        type: integer
+                        description: Number of active terminal sessions
+                        example: 18
+                      uptime:
+                        type: string
+                        description: WebSocket service uptime status
+                        example: "active"
+                      connection_stats:
+                        type: object
+                        properties:
+                          total_connections_today:
+                            type: integer
+                            example: 245
+                          average_session_duration_minutes:
+                            type: number
+                            format: float
+                            example: 15.7
+                          peak_concurrent_connections:
+                            type: integer
+                            example: 42
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+security:
+  - bearerAuth: []

@@ -1,0 +1,162 @@
+{
+  "swagger": "3.0.0",
+  "swaggerVersion": "3.0.0",
+  "basePath": "/api",
+  "resourcePath": "/api",
+  "produces": ["application/json"],
+  "apis": [
+    {
+      "path": "/docs/openapi.yaml",
+      "description": "DevPocket API Documentation"
+    }
+  ],
+  "swaggerUiConfig": {
+    "displayOperationId": true,
+    "displayRequestDuration": true,
+    "deepLinking": true,
+    "defaultModelsExpandDepth": 2,
+    "defaultModelExpandDepth": 2,
+    "docExpansion": "list",
+    "filter": true,
+    "showExtensions": true,
+    "showCommonExtensions": true,
+    "tryItOutEnabled": true,
+    "supportedSubmitMethods": [
+      "get",
+      "post",
+      "put",
+      "delete",
+      "patch"
+    ],
+    "validatorUrl": null,
+    "oauth2RedirectUrl": null,
+    "persistAuthorization": true,
+    "layout": "StandaloneLayout",
+    "theme": {
+      "primary": "#1a73e8",
+      "secondary": "#f8f9fa",
+      "background": "#ffffff",
+      "text": "#333333",
+      "codeBackground": "#f8f9fa",
+      "borderColor": "#e8eaed"
+    },
+    "customCss": "docs/swagger-custom.css",
+    "customJs": "docs/swagger-custom.js"
+  },
+  "redocConfig": {
+    "theme": {
+      "colors": {
+        "primary": {
+          "main": "#1a73e8"
+        },
+        "success": {
+          "main": "#00c851"
+        },
+        "warning": {
+          "main": "#ffbb33"
+        },
+        "error": {
+          "main": "#ff4444"
+        },
+        "text": {
+          "primary": "#333333",
+          "secondary": "#666666"
+        },
+        "border": {
+          "dark": "#e8eaed",
+          "light": "#f1f3f4"
+        },
+        "responses": {
+          "success": {
+            "color": "#00c851",
+            "backgroundColor": "#f0fff4"
+          },
+          "error": {
+            "color": "#ff4444",
+            "backgroundColor": "#fff5f5"
+          },
+          "redirect": {
+            "color": "#ffbb33",
+            "backgroundColor": "#fffbf0"
+          },
+          "info": {
+            "color": "#1a73e8",
+            "backgroundColor": "#f0f7ff"
+          }
+        }
+      },
+      "typography": {
+        "fontSize": "14px",
+        "lineHeight": "1.6",
+        "code": {
+          "fontSize": "13px",
+          "fontFamily": "'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace"
+        },
+        "headings": {
+          "fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+          "fontWeight": "600"
+        }
+      },
+      "sidebar": {
+        "backgroundColor": "#fafbfc",
+        "width": "300px",
+        "textColor": "#333333"
+      },
+      "rightPanel": {
+        "backgroundColor": "#263238",
+        "width": "50%"
+      }
+    },
+    "options": {
+      "disableSearch": false,
+      "expandDefaultServerVariables": true,
+      "expandResponses": "200,201,204",
+      "generatedPayloadSamplesMaxDepth": 3,
+      "hideDownloadButton": false,
+      "hideHostname": false,
+      "hideLoading": false,
+      "hideSingleRequestSampleTab": false,
+      "jsonSampleExpandLevel": 2,
+      "menuToggle": true,
+      "nativeScrollbars": false,
+      "noAutoAuth": false,
+      "onlyRequiredInSamples": false,
+      "pathInMiddlePanel": false,
+      "requiredPropsFirst": true,
+      "scrollYOffset": 0,
+      "showExtensions": [
+        "x-summary",
+        "x-example",
+        "x-examples"
+      ],
+      "sortPropsAlphabetically": false,
+      "suppressWarnings": false,
+      "payloadSampleIdx": 0,
+      "expandSingleSchemaField": false,
+      "schemaExpansionLevel": 0,
+      "simpleOneOfTypeLabel": false
+    }
+  },
+  "apis_info": {
+    "contact": "support@devpocket.app",
+    "description": "AI-Powered Mobile Terminal Backend API with comprehensive terminal management, SSH connections, AI assistance using BYOK model, and multi-device synchronization.",
+    "license": "MIT",
+    "licenseUrl": "https://opensource.org/licenses/MIT",
+    "termsOfServiceUrl": "https://devpocket.app/terms",
+    "title": "DevPocket API"
+  },
+  "authorization": {
+    "type": "bearer",
+    "tokenLocation": "header",
+    "tokenName": "Authorization",
+    "tokenPrefix": "Bearer "
+  },
+  "securityDefinitions": {
+    "bearerAuth": {
+      "type": "http",
+      "scheme": "bearer",
+      "bearerFormat": "JWT",
+      "description": "JWT access token obtained from login or registration endpoints. Include in Authorization header as: `Bearer <token>`"
+    }
+  }
+}

@@ -1,0 +1,507 @@
+/* DevPocket API Documentation Custom Styles */
+
+/* Global theme customization */
+:root {
+  --devpocket-primary: #1a73e8;
+  --devpocket-secondary: #34a853;
+  --devpocket-warning: #fbbc05;
+  --devpocket-error: #ea4335;
+  --devpocket-background: #ffffff;
+  --devpocket-surface: #f8f9fa;
+  --devpocket-text-primary: #202124;
+  --devpocket-text-secondary: #5f6368;
+  --devpocket-border: #dadce0;
+  --devpocket-code-bg: #f1f3f4;
+  --devpocket-shadow: 0 1px 3px rgba(60,64,67,0.3);
+}
+
+/* Header customization */
+.swagger-ui .topbar {
+  background-color: var(--devpocket-primary);
+  background-image: linear-gradient(135deg, var(--devpocket-primary) 0%, #1557b0 100%);
+  padding: 16px 0;
+  box-shadow: var(--devpocket-shadow);
+}
+
+.swagger-ui .topbar .download-url-wrapper {
+  display: none;
+}
+
+.swagger-ui .topbar-wrapper .link {
+  color: white;
+  font-weight: 600;
+  font-size: 20px;
+  text-decoration: none;
+}
+
+.swagger-ui .topbar-wrapper .link:hover {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Add DevPocket branding */
+.swagger-ui .topbar::before {
+  content: "🚀 ";
+  font-size: 24px;
+  margin-right: 8px;
+}
+
+/* Info section styling */
+.swagger-ui .info {
+  background-color: var(--devpocket-surface);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+  border: 1px solid var(--devpocket-border);
+  box-shadow: var(--devpocket-shadow);
+}
+
+.swagger-ui .info .title {
+  color: var(--devpocket-text-primary);
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.swagger-ui .info .description {
+  color: var(--devpocket-text-secondary);
+  line-height: 1.6;
+  font-size: 16px;
+}
+
+.swagger-ui .info .description p {
+  margin-bottom: 16px;
+}
+
+.swagger-ui .info .description h2 {
+  color: var(--devpocket-text-primary);
+  font-size: 20px;
+  font-weight: 600;
+  margin-top: 24px;
+  margin-bottom: 12px;
+  border-bottom: 2px solid var(--devpocket-primary);
+  padding-bottom: 4px;
+}
+
+.swagger-ui .info .description h3 {
+  color: var(--devpocket-text-primary);
+  font-size: 16px;
+  font-weight: 600;
+  margin-top: 20px;
+  margin-bottom: 8px;
+}
+
+/* Tag sections */
+.swagger-ui .opblock-tag-section {
+  margin-bottom: 32px;
+}
+
+.swagger-ui .opblock-tag {
+  background-color: var(--devpocket-surface);
+  border: 1px solid var(--devpocket-border);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  padding: 16px 24px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--devpocket-text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.swagger-ui .opblock-tag:hover {
+  background-color: #f1f3f4;
+  border-color: var(--devpocket-primary);
+}
+
+/* Operation blocks */
+.swagger-ui .opblock {
+  border: 1px solid var(--devpocket-border);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  box-shadow: var(--devpocket-shadow);
+  overflow: hidden;
+}
+
+.swagger-ui .opblock.opblock-get {
+  border-left: 4px solid var(--devpocket-secondary);
+}
+
+.swagger-ui .opblock.opblock-post {
+  border-left: 4px solid var(--devpocket-primary);
+}
+
+.swagger-ui .opblock.opblock-put {
+  border-left: 4px solid var(--devpocket-warning);
+}
+
+.swagger-ui .opblock.opblock-delete {
+  border-left: 4px solid var(--devpocket-error);
+}
+
+.swagger-ui .opblock .opblock-summary {
+  padding: 16px 24px;
+  background-color: var(--devpocket-background);
+}
+
+.swagger-ui .opblock .opblock-summary-method {
+  font-weight: 700;
+  min-width: 80px;
+  text-align: center;
+  border-radius: 4px;
+  padding: 4px 8px;
+  color: white;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.swagger-ui .opblock.opblock-get .opblock-summary-method {
+  background-color: var(--devpocket-secondary);
+}
+
+.swagger-ui .opblock.opblock-post .opblock-summary-method {
+  background-color: var(--devpocket-primary);
+}
+
+.swagger-ui .opblock.opblock-put .opblock-summary-method {
+  background-color: var(--devpocket-warning);
+}
+
+.swagger-ui .opblock.opblock-delete .opblock-summary-method {
+  background-color: var(--devpocket-error);
+}
+
+.swagger-ui .opblock .opblock-summary-path {
+  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
+  font-weight: 600;
+  color: var(--devpocket-text-primary);
+  font-size: 16px;
+}
+
+.swagger-ui .opblock .opblock-summary-description {
+  color: var(--devpocket-text-secondary);
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+/* Response status badges */
+.swagger-ui .response-col_status {
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 4px 8px;
+  color: white;
+  min-width: 60px;
+  text-align: center;
+}
+
+.swagger-ui .response-col_status.response-200,
+.swagger-ui .response-col_status.response-201,
+.swagger-ui .response-col_status.response-204 {
+  background-color: var(--devpocket-secondary);
+}
+
+.swagger-ui .response-col_status.response-400,
+.swagger-ui .response-col_status.response-401,
+.swagger-ui .response-col_status.response-403,
+.swagger-ui .response-col_status.response-404,
+.swagger-ui .response-col_status.response-422,
+.swagger-ui .response-col_status.response-500 {
+  background-color: var(--devpocket-error);
+}
+
+.swagger-ui .response-col_status.response-429 {
+  background-color: var(--devpocket-warning);
+}
+
+/* Code blocks and examples */
+.swagger-ui .highlight-code {
+  background-color: var(--devpocket-code-bg);
+  border: 1px solid var(--devpocket-border);
+  border-radius: 4px;
+  padding: 16px;
+  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.swagger-ui .model-box {
+  background-color: var(--devpocket-surface);
+  border: 1px solid var(--devpocket-border);
+  border-radius: 4px;
+  padding: 16px;
+}
+
+.swagger-ui .model .property {
+  color: var(--devpocket-text-primary);
+  font-weight: 600;
+}
+
+.swagger-ui .model .property-type {
+  color: var(--devpocket-primary);
+  font-weight: 600;
+}
+
+/* Try it out section */
+.swagger-ui .try-out__btn {
+  background-color: var(--devpocket-primary);
+  border-color: var(--devpocket-primary);
+  color: white;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.swagger-ui .try-out__btn:hover {
+  background-color: #1557b0;
+  border-color: #1557b0;
+}
+
+.swagger-ui .btn.execute {
+  background-color: var(--devpocket-secondary);
+  border-color: var(--devpocket-secondary);
+  color: white;
+  border-radius: 4px;
+  padding: 12px 24px;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.swagger-ui .btn.execute:hover {
+  background-color: #2d8e47;
+  border-color: #2d8e47;
+}
+
+/* Parameter inputs */
+.swagger-ui .parameters .parameter input[type="text"],
+.swagger-ui .parameters .parameter input[type="password"],
+.swagger-ui .parameters .parameter textarea {
+  border: 1px solid var(--devpocket-border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 14px;
+  color: var(--devpocket-text-primary);
+  background-color: var(--devpocket-background);
+}
+
+.swagger-ui .parameters .parameter input[type="text"]:focus,
+.swagger-ui .parameters .parameter input[type="password"]:focus,
+.swagger-ui .parameters .parameter textarea:focus {
+  border-color: var(--devpocket-primary);
+  outline: 0;
+  box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+}
+
+/* Authentication section */
+.swagger-ui .auth-wrapper {
+  background-color: var(--devpocket-surface);
+  border: 1px solid var(--devpocket-border);
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.swagger-ui .auth-wrapper .auth-container .auth-btn-wrapper .btn-done {
+  background-color: var(--devpocket-primary);
+  border-color: var(--devpocket-primary);
+  color: white;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-weight: 600;
+}
+
+/* Server selection */
+.swagger-ui .scheme-container {
+  background-color: var(--devpocket-surface);
+  border: 1px solid var(--devpocket-border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.swagger-ui .scheme-container .schemes .schemes-title {
+  color: var(--devpocket-text-primary);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* Custom badges for subscription tiers */
+.tier-badge {
+  display: inline-block;
+  background-color: var(--devpocket-primary);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-left: 8px;
+}
+
+.tier-badge.free {
+  background-color: #6c757d;
+}
+
+.tier-badge.pro {
+  background-color: var(--devpocket-primary);
+}
+
+.tier-badge.team {
+  background-color: var(--devpocket-warning);
+  color: var(--devpocket-text-primary);
+}
+
+.tier-badge.enterprise {
+  background-color: #6f42c1;
+}
+
+/* BYOK indicator */
+.byok-indicator {
+  display: inline-block;
+  background-color: var(--devpocket-secondary);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-left: 8px;
+}
+
+/* WebSocket protocol documentation */
+.websocket-protocol {
+  background-color: #e8f0fe;
+  border: 1px solid #b3d4fc;
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0;
+}
+
+.websocket-protocol h4 {
+  color: var(--devpocket-primary);
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.websocket-protocol pre {
+  background-color: var(--devpocket-code-bg);
+  border: 1px solid var(--devpocket-border);
+  border-radius: 4px;
+  padding: 12px;
+  overflow-x: auto;
+  font-size: 12px;
+  margin: 8px 0;
+}
+
+/* Documentation footer */
+.api-footer {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--devpocket-border);
+  text-align: center;
+  color: var(--devpocket-text-secondary);
+  font-size: 14px;
+}
+
+.api-footer a {
+  color: var(--devpocket-primary);
+  text-decoration: none;
+}
+
+.api-footer a:hover {
+  text-decoration: underline;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .swagger-ui .info {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  
+  .swagger-ui .info .title {
+    font-size: 24px;
+  }
+  
+  .swagger-ui .opblock .opblock-summary {
+    padding: 12px 16px;
+  }
+  
+  .swagger-ui .opblock .opblock-summary-path {
+    font-size: 14px;
+    word-break: break-all;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --devpocket-background: #1a1a1a;
+    --devpocket-surface: #2d2d2d;
+    --devpocket-text-primary: #ffffff;
+    --devpocket-text-secondary: #b0b0b0;
+    --devpocket-border: #404040;
+    --devpocket-code-bg: #2d2d2d;
+  }
+  
+  .swagger-ui {
+    background-color: var(--devpocket-background);
+    color: var(--devpocket-text-primary);
+  }
+  
+  .swagger-ui .info,
+  .swagger-ui .opblock,
+  .swagger-ui .model-box,
+  .swagger-ui .auth-wrapper,
+  .swagger-ui .scheme-container {
+    background-color: var(--devpocket-surface);
+    border-color: var(--devpocket-border);
+  }
+  
+  .swagger-ui .highlight-code {
+    background-color: var(--devpocket-code-bg);
+    border-color: var(--devpocket-border);
+    color: var(--devpocket-text-primary);
+  }
+}
+
+/* Loading animation */
+.swagger-ui .loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+.swagger-ui .loading-container .spinner {
+  border: 3px solid var(--devpocket-border);
+  border-top: 3px solid var(--devpocket-primary);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Custom scrollbar */
+.swagger-ui ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.swagger-ui ::-webkit-scrollbar-track {
+  background: var(--devpocket-surface);
+}
+
+.swagger-ui ::-webkit-scrollbar-thumb {
+  background: var(--devpocket-border);
+  border-radius: 4px;
+}
+
+.swagger-ui ::-webkit-scrollbar-thumb:hover {
+  background: var(--devpocket-text-secondary);
+}
