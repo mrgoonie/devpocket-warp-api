@@ -54,9 +54,7 @@ async def create_database_from_models():
             # Create enum first
             print("🏷️  Creating user_role enum...")
             await conn.execute(
-                text(
-                    "CREATE TYPE user_role AS ENUM ('user', 'admin', 'premium')"
-                )
+                text("CREATE TYPE user_role AS ENUM ('user', 'admin', 'premium')")
             )
 
             # Create all tables from models
