@@ -134,7 +134,7 @@ def upgrade() -> None:
 
     # Create user_role enum FIRST, before any model imports can interfere
     bind = op.get_bind()
-    
+
     # Check and create enum atomically to prevent race conditions
     if not enum_exists("user_role"):
         try:
@@ -159,7 +159,7 @@ def upgrade() -> None:
                 )
                 existing_values = [row[0] for row in result.fetchall()]
                 expected_values = ["user", "admin", "premium"]
-                
+
                 if existing_values != expected_values:
                     raise Exception(
                         f"Enum 'user_role' was created with wrong values: {existing_values} (expected {expected_values})"
