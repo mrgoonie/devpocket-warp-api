@@ -43,7 +43,9 @@ def enum_exists(enum_name: str) -> bool:
     bind = op.get_bind()
     try:
         result = bind.execute(
-            sa.text("SELECT EXISTS (SELECT 1 FROM pg_type WHERE typname = :enum_name)"),
+            sa.text(
+                "SELECT EXISTS (SELECT 1 FROM pg_type WHERE typname = :enum_name AND typtype = 'e')"
+            ),
             {"enum_name": enum_name},
         )
         return result.scalar()
@@ -130,14 +132,42 @@ def upgrade() -> None:
     Handles both fresh installations and upgrades from existing schemas.
     """
 
-    # Create user_role enum using our idempotent function
-    try:
-        create_enum_idempotent("user_role", ["user", "admin", "premium"])
-    except Exception as e:
-        import logging
-
-        logging.error(f"Failed to create user_role enum: {e}")
-        raise
+    # Create user_role enum FIRST, before any model imports can interfere
+    bind = op.get_bind()
+    
+    # Check and create enum atomically to prevent race conditions
+    if not enum_exists("user_role"):
+        try:
+            values_str = "', '".join(["user", "admin", "premium"])
+            create_sql = f"CREATE TYPE user_role AS ENUM ('{values_str}')"
+            bind.execute(sa.text(create_sql))
+        except Exception as e:
+            # If creation fails due to race condition, verify it exists with correct values
+            if "already exists" in str(e).lower() and enum_exists("user_role"):
+                # Another process created it, verify values
+                result = bind.execute(
+                    sa.text(
+                        """
+                        SELECT enumlabel 
+                        FROM pg_enum e 
+                        JOIN pg_type t ON e.enumtypid = t.oid 
+                        WHERE t.typname = :enum_name 
+                        ORDER BY e.enumsortorder
+                        """
+                    ),
+                    {"enum_name": "user_role"},
+                )
+                existing_values = [row[0] for row in result.fetchall()]
+                expected_values = ["user", "admin", "premium"]
+                
+                if existing_values != expected_values:
+                    raise Exception(
+                        f"Enum 'user_role' was created with wrong values: {existing_values} (expected {expected_values})"
+                    )
+                # Values are correct, continue
+            else:
+                # Re-raise if it's not a race condition
+                raise
 
     # Create or modify users table
     if not table_exists("users"):
