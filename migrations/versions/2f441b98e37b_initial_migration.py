@@ -7,11 +7,22 @@ Create Date: 2025-08-15 16:48:29.622701
 """
 
 from typing import Sequence, Union
+import enum
 
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.dialects.postgresql import ENUM
+
+
+# Define UserRole enum locally to avoid import issues
+class UserRole(enum.Enum):
+    """User role enumeration - matches app.models.user.UserRole."""
+
+    USER = "user"
+    ADMIN = "admin"
+    PREMIUM = "premium"
+
 
 # revision identifiers, used by Alembic.
 revision: str = "2f441b98e37b"
@@ -27,32 +38,105 @@ def table_exists(table_name: str) -> bool:
     return table_name in inspector.get_table_names()
 
 
+def enum_exists(enum_name: str) -> bool:
+    """Check if an enum type exists in the database."""
+    bind = op.get_bind()
+    try:
+        result = bind.execute(
+            sa.text("SELECT EXISTS (SELECT 1 FROM pg_type WHERE typname = :enum_name)"),
+            {"enum_name": enum_name},
+        )
+        return result.scalar()
+    except Exception:
+        # If we can't check, assume it doesn't exist
+        return False
+
+
+def create_enum_idempotent(enum_name: str, enum_values: list) -> None:
+    """Create an enum type if it doesn't exist, with proper error handling."""
+    bind = op.get_bind()
+
+    # Check if enum already exists
+    if enum_exists(enum_name):
+        # Verify the existing enum has the correct values
+        try:
+            result = bind.execute(
+                sa.text(
+                    """
+                    SELECT enumlabel 
+                    FROM pg_enum e 
+                    JOIN pg_type t ON e.enumtypid = t.oid 
+                    WHERE t.typname = :enum_name 
+                    ORDER BY e.enumsortorder
+                    """
+                ),
+                {"enum_name": enum_name},
+            )
+            existing_values = [row[0] for row in result.fetchall()]
+
+            if existing_values == enum_values:
+                # Enum exists with correct values, nothing to do
+                return
+            else:
+                raise Exception(
+                    f"Enum '{enum_name}' exists but has wrong values: {existing_values} (expected {enum_values})"
+                )
+        except Exception as e:
+            import logging
+
+            logging.error(f"Error verifying existing enum: {e}")
+            raise
+
+    # Create the enum type
+    try:
+        values_str = "', '".join(enum_values)
+        create_sql = f"CREATE TYPE {enum_name} AS ENUM ('{values_str}')"
+        bind.execute(sa.text(create_sql))
+    except Exception as e:
+        # If creation fails, check if it was created by another process
+        if "already exists" in str(e).lower():
+            # Another process created it, verify it has correct values
+            if enum_exists(enum_name):
+                try:
+                    result = bind.execute(
+                        sa.text(
+                            """
+                            SELECT enumlabel 
+                            FROM pg_enum e 
+                            JOIN pg_type t ON e.enumtypid = t.oid 
+                            WHERE t.typname = :enum_name 
+                            ORDER BY e.enumsortorder
+                            """
+                        ),
+                        {"enum_name": enum_name},
+                    )
+                    existing_values = [row[0] for row in result.fetchall()]
+
+                    if existing_values != enum_values:
+                        raise Exception(
+                            f"Enum '{enum_name}' was created by another process but has wrong values: {existing_values} (expected {enum_values})"
+                        )
+                    # Values are correct, continue
+                    return
+                except Exception:
+                    pass
+
+        # Re-raise the original error if it's not about duplication
+        raise
+
+
 def upgrade() -> None:
     """
     Handles both fresh installations and upgrades from existing schemas.
     """
 
-    # Create user_role enum using atomic PostgreSQL IF NOT EXISTS syntax
-    bind = op.get_bind()
+    # Create user_role enum using our idempotent function
     try:
-        # Use DO block for atomic enum creation (PostgreSQL 9.1+)
-        bind.execute(
-            sa.text(
-                """
-                DO $$ 
-                BEGIN
-                    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
-                        CREATE TYPE user_role AS ENUM ('user', 'admin', 'premium');
-                    END IF;
-                END $$;
-                """
-            )
-        )
+        create_enum_idempotent("user_role", ["user", "admin", "premium"])
     except Exception as e:
-        # Log any unexpected errors but continue
         import logging
 
-        logging.error(f"Unexpected error creating enum: {e}")
+        logging.error(f"Failed to create user_role enum: {e}")
         raise
 
     # Create or modify users table
@@ -67,13 +151,7 @@ def upgrade() -> None:
             sa.Column("full_name", sa.String(length=255), nullable=True),
             sa.Column(
                 "role",
-                ENUM(
-                    "user",
-                    "admin",
-                    "premium",
-                    name="user_role",
-                    create_type=False,
-                ),
+                ENUM(UserRole, name="user_role", create_type=False),
                 nullable=False,
                 server_default="user",
             ),
