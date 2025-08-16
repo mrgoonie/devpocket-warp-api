@@ -34,8 +34,6 @@ from .schemas import (
     CommandOptimizationResponse,
     CommandOptimization,
     # Settings and models
-    AISettings,
-    AISettingsResponse,
     AIModelInfo,
     AvailableModelsResponse,
     # Batch processing

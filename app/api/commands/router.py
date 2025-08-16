@@ -6,7 +6,7 @@ search operations, and command insights.
 """
 
 from typing import Annotated, List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_active_user
@@ -22,7 +22,6 @@ from .schemas import (
     # Analytics schemas
     CommandUsageStats,
     SessionCommandStats,
-    CommandTypeStats,
     FrequentCommandsResponse,
     CommandMetrics,
     # Suggestion schemas

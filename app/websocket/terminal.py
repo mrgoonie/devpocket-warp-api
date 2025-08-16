@@ -5,7 +5,6 @@ Manages different types of terminal sessions (SSH, PTY, local) and coordinates
 between WebSocket connections and terminal handlers.
 """
 
-import asyncio
 from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 from sqlalchemy.ext.asyncio import AsyncSession

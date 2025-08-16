@@ -14,7 +14,7 @@ from fastapi.security import (
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.security import verify_token, decode_token, is_token_blacklisted
+from app.auth.security import verify_token, is_token_blacklisted
 from app.core.logging import logger
 from app.db.database import get_db
 from app.models.user import User

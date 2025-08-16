@@ -5,12 +5,10 @@ Pytest configuration and fixtures for script testing.
 import os
 import pytest
 import tempfile
-import shutil
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 import subprocess
-from typing import Generator, Dict, Any
-import asyncio
+from typing import Generator, Dict
 
 
 @pytest.fixture(scope="session")

@@ -11,14 +11,11 @@ Tests cover:
 
 import pytest
 import subprocess
-import asyncio
 import os
 import time
-import json
-from pathlib import Path
 from unittest.mock import patch
 import asyncpg
-from typing import Dict, List, Any
+from typing import Dict, List
 
 
 @pytest.mark.integration
@@ -393,7 +390,7 @@ class TestEndToEndWorkflows:
         assert session_commands >= 15, "Should have session-command relationships"
 
         # Check SSH key relationships
-        ssh_user_keys = await db_connection.fetchval(
+        await db_connection.fetchval(
             """
             SELECT COUNT(*) FROM ssh_profiles sp
             JOIN ssh_keys sk ON sp.ssh_key_id = sk.id

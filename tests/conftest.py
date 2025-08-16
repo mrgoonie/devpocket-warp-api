@@ -20,15 +20,14 @@ import redis.asyncio as aioredis
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from httpx import AsyncClient
-from sqlalchemy import create_engine, text
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from main import create_application
-from app.core.config import settings
-from app.auth.security import create_access_token, create_refresh_token
-from app.db.database import get_db, db_manager
+from app.auth.security import create_access_token
+from app.db.database import get_db
 from app.models.base import Base
 from app.models.user import User
 from app.repositories.user import UserRepository

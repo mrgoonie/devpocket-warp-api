@@ -14,17 +14,11 @@ Tests comprehensive error handling including:
 import pytest
 import asyncio
 import httpx
-from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import datetime, timedelta
-from fastapi import HTTPException, status
+from unittest.mock import AsyncMock, patch
 from sqlalchemy.exc import SQLAlchemyError
 import redis.exceptions
 
-from app.core.config import settings
-from app.db.database import get_db
 from app.auth.security import create_access_token
-from app.services.openrouter import OpenRouterService
-from app.websocket.manager import connection_manager
 
 
 class TestDatabaseErrorHandling:
@@ -322,7 +316,6 @@ class TestInputValidationEdgeCases:
     async def test_null_byte_injection(self, test_client, auth_headers):
         """Test null byte injection prevention."""
         # Arrange
-        malicious_input = "test\x00.txt"
 
         # Act & Assert
         # Should properly handle or reject null bytes

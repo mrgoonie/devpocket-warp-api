@@ -3,7 +3,6 @@ Test all SQLAlchemy models and their relationships.
 """
 
 import pytest
-from datetime import datetime, timedelta
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
@@ -12,15 +11,6 @@ from app.models.session import Session
 from app.models.ssh_profile import SSHProfile, SSHKey
 from app.models.command import Command
 from app.models.sync import SyncData
-from tests.factories import (
-    UserFactory,
-    UserSettingsFactory,
-    SessionFactory,
-    SSHProfileFactory,
-    SSHKeyFactory,
-    CommandFactory,
-    SyncDataFactory,
-)
 
 
 @pytest.mark.database

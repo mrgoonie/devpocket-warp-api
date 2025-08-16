@@ -11,7 +11,6 @@ from typing import Dict, Deque, Tuple, Optional
 from fastapi import Request, Response, HTTPException, status
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.core.config import settings
 from app.core.logging import logger
 
 

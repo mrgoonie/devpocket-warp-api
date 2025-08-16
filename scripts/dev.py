@@ -5,7 +5,6 @@ Development script for DevPocket API.
 
 import subprocess
 import sys
-import os
 from pathlib import Path
 
 

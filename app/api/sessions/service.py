@@ -8,7 +8,7 @@ and session monitoring.
 import asyncio
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Optional, List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
@@ -16,7 +16,6 @@ from fastapi import HTTPException, status
 from app.core.logging import logger
 from app.models.user import User
 from app.models.session import Session
-from app.models.ssh_profile import SSHProfile
 from app.repositories.session import SessionRepository
 from app.repositories.ssh_profile import SSHProfileRepository
 from .schemas import (
@@ -29,7 +28,6 @@ from .schemas import (
     SessionStats,
     SessionHistoryResponse,
     SessionHistoryEntry,
-    WSMessage,
     SessionHealthCheck,
 )
 

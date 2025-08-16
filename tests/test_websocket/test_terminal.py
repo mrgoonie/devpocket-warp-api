@@ -13,7 +13,6 @@ import json
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi import WebSocketDisconnect
-from fastapi.testclient import TestClient
 
 from app.websocket.terminal import TerminalWebSocket
 from app.websocket.manager import connection_manager
@@ -243,7 +242,7 @@ class TestPTYHandler:
         # Arrange
         with patch("pty.openpty") as mock_openpty, patch("os.fork") as mock_fork, patch(
             "os.execve"
-        ) as mock_execve:
+        ):
             mock_openpty.return_value = (3, 4)  # master_fd, slave_fd
             mock_fork.return_value = 1234  # child pid
 
@@ -296,7 +295,7 @@ class TestPTYHandler:
 
         with patch("os.close") as mock_close, patch("os.kill") as mock_kill, patch(
             "os.waitpid"
-        ) as mock_waitpid:
+        ):
             # Act
             await pty_handler.close()
 

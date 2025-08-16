@@ -10,11 +10,8 @@ Tests cover:
 """
 
 import pytest
-import subprocess
-from pathlib import Path
 from unittest.mock import patch, MagicMock, mock_open
 import os
-import tempfile
 import time
 
 
@@ -480,7 +477,7 @@ class TestScriptIntegration:
             mock_temp_file.name = "/tmp/test_script_temp"
             mock_temp.__enter__.return_value = mock_temp_file
 
-            with patch("os.remove") as mock_remove:
+            with patch("os.remove"):
                 with patch.dict(os.environ, mock_env):
                     # Scripts that create temporary files
                     result = script_runner.run_script("db_seed.sh", ["--stats-only"])

@@ -9,8 +9,6 @@ from typing import Optional, Dict, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import logger
-from app.models.session import Session
-from app.models.ssh_profile import SSHProfile
 from app.repositories.session import SessionRepository
 from app.repositories.ssh_profile import SSHProfileRepository
 from app.websocket.manager import connection_manager

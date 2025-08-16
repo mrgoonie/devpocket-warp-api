@@ -10,10 +10,8 @@ Tests AI service functionality with OpenRouter API mocking including:
 """
 
 import pytest
-import json
 import httpx
 from unittest.mock import AsyncMock, MagicMock, patch
-from datetime import datetime, timedelta
 
 from app.services.openrouter import OpenRouterService
 from app.api.ai.service import AIService
@@ -276,7 +274,7 @@ class TestAIService:
             result2 = await ai_service.validate_user_api_key(api_key)
 
             # Assert
-            assert result1 == result2 == True
+            assert result1 == result2 is True
             # Should only call the service once due to caching
             assert mock_service.validate_api_key.call_count == 1
 

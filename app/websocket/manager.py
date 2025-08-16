@@ -5,16 +5,14 @@ Manages WebSocket connections, message routing, and session lifecycle.
 """
 
 import asyncio
-import json
 import uuid
 from datetime import datetime
-from typing import Dict, List, Optional, Set
-from fastapi import WebSocket, WebSocketDisconnect
+from typing import Dict, Optional, Set
+from fastapi import WebSocket
 import redis.asyncio as aioredis
 
 from app.core.logging import logger
 from app.db.database import AsyncSessionLocal
-from app.models.session import Session
 from app.repositories.session import SessionRepository
 from .protocols import (
     TerminalMessage,

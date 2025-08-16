@@ -3,12 +3,11 @@ Test authentication API endpoints.
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import timedelta
 from fastapi import status
 from unittest.mock import patch, AsyncMock
 
 from app.auth.security import create_access_token, hash_password
-from app.models.user import User
 from tests.factories import UserFactory, VerifiedUserFactory
 
 

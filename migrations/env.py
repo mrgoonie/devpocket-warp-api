@@ -16,15 +16,6 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.realpath(__file__))))
 
 # Import all models to ensure they're registered with SQLAlchemy
 from app.models.base import Base
-from app.models import (
-    User,
-    UserSettings,
-    Session,
-    Command,
-    SSHProfile,
-    SSHKey,
-    SyncData,
-)
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

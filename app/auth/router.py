@@ -5,7 +5,7 @@ Handles all authentication-related endpoints including user registration,
 login, token management, and password operations.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Annotated
 from fastapi import (
     APIRouter,
@@ -22,7 +22,6 @@ from sqlalchemy.exc import IntegrityError
 from app.auth.dependencies import get_current_active_user, get_current_user
 from app.auth.schemas import (
     UserCreate,
-    UserLogin,
     UserResponse,
     Token,
     TokenRefreshResponse,
@@ -31,15 +30,12 @@ from app.auth.schemas import (
     ResetPassword,
     PasswordChange,
     AccountLockInfo,
-    APIKeyValidation,
-    APIKeyValidationResponse,
 )
 from app.auth.security import (
     hash_password,
     verify_password,
     create_access_token,
     create_refresh_token,
-    verify_token,
     blacklist_token,
     generate_password_reset_token,
     verify_password_reset_token,

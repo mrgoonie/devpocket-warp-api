@@ -4,27 +4,12 @@ Test repository CRUD operations and business logic.
 
 import pytest
 from datetime import datetime, timedelta, timezone
-from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
 
-from app.models.user import User, UserSettings
-from app.models.session import Session
-from app.models.ssh_profile import SSHProfile, SSHKey
-from app.models.command import Command
-from app.models.sync import SyncData
 from app.repositories.user import UserRepository
 from app.repositories.session import SessionRepository
 from app.repositories.ssh_profile import SSHProfileRepository
 from app.repositories.command import CommandRepository
 from app.repositories.sync import SyncDataRepository
-from tests.factories import (
-    UserFactory,
-    SessionFactory,
-    SSHProfileFactory,
-    SSHKeyFactory,
-    CommandFactory,
-    SyncDataFactory,
-)
 
 
 @pytest.mark.database
@@ -313,7 +298,7 @@ class TestSessionRepository:
             }
         )
 
-        inactive_session = await session_repo.create(
+        await session_repo.create(
             {
                 "user_id": user.id,
                 "device_id": "device2",
@@ -604,7 +589,7 @@ class TestSSHProfileRepository:
         )
 
         # Create profiles with different usage
-        profile1 = await ssh_repo.create(
+        await ssh_repo.create(
             {
                 "user_id": user.id,
                 "name": "Frequently Used",
@@ -615,7 +600,7 @@ class TestSSHProfileRepository:
             }
         )
 
-        profile2 = await ssh_repo.create(
+        await ssh_repo.create(
             {
                 "user_id": user.id,
                 "name": "Rarely Used",
@@ -1109,7 +1094,7 @@ class TestSyncDataRepository:
         await test_session.commit()
 
         # Create recent sync data
-        recent_sync = await sync_repo.create(
+        await sync_repo.create(
             {
                 "user_id": user.id,
                 "sync_type": "commands",

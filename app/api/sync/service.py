@@ -3,7 +3,7 @@ Multi-device synchronization service for DevPocket API.
 """
 
 from datetime import datetime, timezone
-from typing import Optional, Dict, Any, List
+from typing import Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
 
@@ -11,7 +11,7 @@ from app.core.logging import logger
 from app.models.user import User
 from app.models.sync import SyncData
 from app.repositories.sync import SyncDataRepository
-from .schemas import SyncDataRequest, SyncDataResponse, DeviceInfo, SyncStats
+from .schemas import SyncDataRequest, SyncDataResponse, SyncStats
 
 
 class SyncService:

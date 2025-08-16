@@ -9,13 +9,11 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional, List, Dict, Any, Tuple
 from collections import Counter, defaultdict
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
 
 from app.core.logging import logger
 from app.models.user import User
 from app.models.command import Command
-from app.models.session import Session
 from app.repositories.command import CommandRepository
 from app.repositories.session import SessionRepository
 from .schemas import (
@@ -25,7 +23,6 @@ from .schemas import (
     CommandHistoryEntry,
     CommandUsageStats,
     SessionCommandStats,
-    CommandTypeStats,
     FrequentCommand,
     FrequentCommandsResponse,
     CommandSuggestion,

@@ -12,8 +12,6 @@ from app.models.user import User
 from .schemas import (
     SyncDataRequest,
     SyncDataResponse,
-    DeviceRegistration,
-    DeviceInfo,
     SyncStats,
     MessageResponse,
 )

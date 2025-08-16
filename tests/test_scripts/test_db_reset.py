@@ -11,11 +11,8 @@ Tests cover:
 """
 
 import pytest
-import subprocess
-from pathlib import Path
 from unittest.mock import patch, MagicMock, mock_open, call
 import os
-import tempfile
 
 
 @pytest.mark.database
@@ -518,7 +515,7 @@ class TestDbResetScript:
             result = script_runner.run_script("db_reset.sh", ["--force"])
 
         # Verify the correct sequence of calls
-        expected_calls = [
+        [
             call(
                 ["python", mock_run.call_args_list[0][0][1], "reset"],
                 cwd=mock_run.call_args_list[0][1]["cwd"],

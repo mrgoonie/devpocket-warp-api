@@ -11,15 +11,11 @@ Tests SSH and PTY functionality including:
 """
 
 import pytest
-import asyncio
 import paramiko
-from unittest.mock import AsyncMock, MagicMock, patch, call
-from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from app.services.ssh_client import SSHClient, SSHConnectionPool
 from app.websocket.ssh_handler import SSHWebSocketHandler
-from app.models.ssh_profile import SSHProfile
-from app.models.ssh_keys import SSHKey
 
 
 class TestSSHClient:

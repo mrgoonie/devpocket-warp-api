@@ -5,7 +5,7 @@ Test authentication dependencies and middleware.
 import pytest
 from fastapi import Request, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials
-from unittest.mock import Mock, AsyncMock
+from unittest.mock import Mock
 
 from app.auth.dependencies import (
     get_token_from_request,
@@ -18,7 +18,6 @@ from app.auth.dependencies import (
     InactiveUserError,
 )
 from app.auth.security import create_access_token, set_redis_client
-from app.models.user import User
 from tests.factories import (
     UserFactory,
     VerifiedUserFactory,

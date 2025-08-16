@@ -4,7 +4,7 @@ Command repository for DevPocket API.
 
 from typing import Optional, List
 from datetime import datetime, timedelta
-from sqlalchemy import select, and_, func, desc, asc, or_
+from sqlalchemy import select, and_, func, desc, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.command import Command
@@ -207,7 +207,7 @@ class CommandRepository(BaseRepository[Command]):
         self, user_id: str = None, offset: int = 0, limit: int = 100
     ) -> List[Command]:
         """Get commands that were AI-suggested."""
-        query = select(Command).where(Command.was_ai_suggested == True)
+        query = select(Command).where(Command.was_ai_suggested is True)
 
         if user_id:
             from app.models.session import Session
@@ -281,7 +281,7 @@ class CommandRepository(BaseRepository[Command]):
         ai_commands = await self.session.execute(
             select(func.count(Command.id))
             .select_from(base_query.subquery())
-            .where(Command.was_ai_suggested == True)
+            .where(Command.was_ai_suggested is True)
         )
 
         # Average execution time

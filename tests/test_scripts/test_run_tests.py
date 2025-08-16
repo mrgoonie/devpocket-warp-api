@@ -12,11 +12,8 @@ Tests cover:
 """
 
 import pytest
-import subprocess
-from pathlib import Path
-from unittest.mock import patch, MagicMock, mock_open, call
+from unittest.mock import patch, MagicMock, mock_open
 import os
-import tempfile
 
 
 @pytest.mark.unit
@@ -301,8 +298,8 @@ class TestRunTestsScript:
     def test_clean_artifacts_only(self, mock_run, script_runner):
         """Test cleaning artifacts only."""
         with patch("os.path.exists", return_value=True):
-            with patch("shutil.rmtree") as mock_rmtree:
-                with patch("os.remove") as mock_remove:
+            with patch("shutil.rmtree"):
+                with patch("os.remove"):
                     result = script_runner.run_script("run_tests.sh", ["--clean-only"])
 
         assert result.returncode == 0

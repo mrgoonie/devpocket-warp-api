@@ -4,7 +4,7 @@ Sync data repository for DevPocket API.
 
 from typing import Optional, List
 from datetime import datetime, timedelta
-from sqlalchemy import select, and_, func, desc, or_
+from sqlalchemy import select, and_, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.sync import SyncData
@@ -32,7 +32,7 @@ class SyncDataRepository(BaseRepository[SyncData]):
             query = query.where(SyncData.sync_type == sync_type)
 
         if not include_deleted:
-            query = query.where(SyncData.is_deleted == False)
+            query = query.where(SyncData.is_deleted is False)
 
         query = (
             query.order_by(desc(SyncData.last_modified_at)).offset(offset).limit(limit)
@@ -251,7 +251,7 @@ class SyncDataRepository(BaseRepository[SyncData]):
         # Deleted items
         deleted_items = await self.session.execute(
             select(func.count(SyncData.id)).where(
-                and_(SyncData.user_id == user_id, SyncData.is_deleted == True)
+                and_(SyncData.user_id == user_id, SyncData.is_deleted is True)
             )
         )
 
@@ -278,7 +278,7 @@ class SyncDataRepository(BaseRepository[SyncData]):
 
         conditions = [
             SyncData.last_modified_at < cutoff_date,
-            SyncData.is_deleted == True,
+            SyncData.is_deleted is True,
         ]
 
         if user_id:
@@ -319,7 +319,7 @@ class SyncDataRepository(BaseRepository[SyncData]):
     async def export_user_sync_data(self, user_id: str, sync_type: str = None) -> dict:
         """Export all sync data for a user."""
         query = select(SyncData).where(
-            and_(SyncData.user_id == user_id, SyncData.is_deleted == False)
+            and_(SyncData.user_id == user_id, SyncData.is_deleted is False)
         )
 
         if sync_type:

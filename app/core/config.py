@@ -2,9 +2,8 @@
 Configuration settings for DevPocket API.
 """
 
-from typing import List, Optional, Union, Annotated
-import os
-from pydantic import BaseModel, field_validator, Field
+from typing import List, Union
+from pydantic import BaseModel, field_validator
 from pydantic_settings import BaseSettings
 
 

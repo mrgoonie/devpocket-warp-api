@@ -2,9 +2,7 @@
 User and UserSettings factories for testing.
 """
 
-from datetime import datetime, timedelta
 import factory
-from factory import fuzzy
 from faker import Faker
 
 from app.models.user import User, UserRole, UserSettings

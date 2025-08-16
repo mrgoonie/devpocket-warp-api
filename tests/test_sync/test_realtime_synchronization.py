@@ -11,18 +11,13 @@ Tests multi-device synchronization functionality including:
 """
 
 import pytest
-import asyncio
-import json
 from datetime import datetime, timedelta, timezone
-from unittest.mock import AsyncMock, MagicMock, patch
-from typing import Dict, List
+from unittest.mock import AsyncMock, patch
 
 import redis.asyncio as aioredis
 
 from app.api.sync.service import SyncService
 from app.api.sync.schemas import (
-    SyncDataRequest,
-    SyncDataResponse,
     SyncConflictResponse,
     DeviceRegistration,
 )
@@ -110,7 +105,6 @@ class TestSyncService:
     async def test_sync_data_merge_strategy(self, sync_service):
         """Test different merge strategies for conflicts."""
         # Arrange
-        user_id = "user-123"
         local_data = {
             "sync_type": "user_settings",
             "data": {
@@ -303,7 +297,6 @@ class TestSSHProfileSync:
     async def test_ssh_profile_conflict_resolution(self, ssh_sync_service):
         """Test SSH profile conflict resolution."""
         # Arrange - Same profile modified on different devices
-        user_id = "user-123"
         local_profile = {
             "name": "server1",
             "host": "old.example.com",
@@ -383,7 +376,6 @@ class TestUserSettingsSync:
         # Only sync changed settings, not entire settings object
 
         # Arrange
-        user_id = "user-123"
         current_settings = {
             "terminal_theme": "light",
             "terminal_font_size": 14,

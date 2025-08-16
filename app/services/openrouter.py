@@ -5,8 +5,6 @@ Provides BYOK (Bring Your Own Key) integration with OpenRouter API
 for AI-powered command suggestions, explanations, and error analysis.
 """
 
-import json
-import asyncio
 from typing import Optional, Dict, Any, List
 from datetime import datetime, timedelta, timezone
 import httpx

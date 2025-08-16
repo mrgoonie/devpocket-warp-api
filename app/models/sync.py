@@ -5,7 +5,7 @@ Sync data model for DevPocket API.
 from datetime import datetime
 from typing import Optional
 from uuid import UUID as PyUUID
-from sqlalchemy import String, ForeignKey, Text, Boolean, JSON, Integer
+from sqlalchemy import String, ForeignKey, Boolean, JSON, Integer
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseModel

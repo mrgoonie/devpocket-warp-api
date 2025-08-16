@@ -6,8 +6,6 @@ project infrastructure and dependencies.
 """
 
 import pytest
-import subprocess
-from pathlib import Path
 from unittest.mock import patch, MagicMock
 import os
 
@@ -213,7 +211,7 @@ class TestScriptVerification:
                 ]
 
                 for marker_args in marker_tests:
-                    result = script_runner.run_script(
+                    script_runner.run_script(
                         "run_tests.sh", marker_args, timeout=5
                     )
                     # Should not fail due to marker syntax
@@ -236,7 +234,7 @@ class TestScriptVerification:
 
             for dangerous_input in dangerous_inputs:
                 # Scripts should either reject these or handle them safely
-                result = script_runner.run_script(
+                script_runner.run_script(
                     "format_code.sh", [dangerous_input], timeout=5
                 )
                 # Should either fail safely or handle the input properly
@@ -311,6 +309,6 @@ class TestScriptVerification:
                 with patch("os.path.exists", return_value=True):
                     for script_name, args in basic_patterns:
                         # These should either work or fail gracefully
-                        result = script_runner.run_script(script_name, args, timeout=10)
+                        script_runner.run_script(script_name, args, timeout=10)
                         # We don't assert success here since some operations need real infrastructure
                         # but we ensure they don't hang or crash catastrophically

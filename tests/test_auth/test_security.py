@@ -5,7 +5,6 @@ Test JWT and password security functionality.
 import pytest
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
-from unittest.mock import AsyncMock, patch
 
 from app.auth.security import (
     hash_password,

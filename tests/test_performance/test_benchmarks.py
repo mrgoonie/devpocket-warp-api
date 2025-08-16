@@ -14,11 +14,8 @@ Establishes performance benchmarks for:
 import pytest
 import asyncio
 import time
-import statistics
-from concurrent.futures import ThreadPoolExecutor
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
-import pytest_benchmark
 from httpx import AsyncClient
 
 from app.main import create_application
@@ -133,7 +130,7 @@ class TestDatabasePerformance:
         def user_query():
             return asyncio.run(user_repository.get_by_email("test@example.com"))
 
-        result = benchmark(user_query)
+        benchmark(user_query)
 
         # Performance assertions
         assert benchmark.stats["mean"] < 0.1  # Should complete within 100ms
@@ -169,7 +166,7 @@ class TestDatabasePerformance:
                 command_repository.get_user_command_statistics("user-123")
             )
 
-        result = benchmark(complex_query)
+        benchmark(complex_query)
 
         # Performance assertions
         assert benchmark.stats["mean"] < 0.5  # Complex query within 500ms
@@ -301,14 +298,14 @@ class TestSSHPerformance:
         """Test SSH file transfer performance."""
 
         def ssh_transfer():
-            with patch.object(ssh_client, "upload_file") as mock_upload:
+            with patch.object(ssh_client, "upload_file"):
                 # Simulate 1MB file transfer
                 file_size_mb = 1
                 transfer_time = file_size_mb * 0.1  # 100ms per MB
                 time.sleep(transfer_time)
                 return transfer_time
 
-        transfer_time = benchmark(ssh_transfer)
+        benchmark(ssh_transfer)
 
         # Performance assertions
         assert benchmark.stats["mean"] < 0.5  # 1MB transfer within 500ms
@@ -360,7 +357,7 @@ class TestAIServicePerformance:
         results = benchmark(cached_validation)
 
         # Performance assertions
-        assert results[0] == results[1] == True
+        assert results[0] == results[1] is True
         assert benchmark.stats["mean"] < 0.1  # Cached validation within 100ms
 
 
@@ -397,7 +394,7 @@ class TestSynchronizationPerformance:
         """Test real-time sync notification performance."""
 
         def sync_notification():
-            with patch.object(sync_service, "redis_client") as mock_redis:
+            with patch.object(sync_service, "redis_client"):
                 return asyncio.run(
                     sync_service.notify_sync_update(
                         "user-123",
@@ -408,7 +405,7 @@ class TestSynchronizationPerformance:
                     )
                 )
 
-        result = benchmark(sync_notification)
+        benchmark(sync_notification)
 
         # Performance assertions
         assert benchmark.stats["mean"] < 0.05  # Notification within 50ms
@@ -446,7 +443,7 @@ class TestLoadTesting:
                 # Simulate 50 concurrent users making requests
                 tasks = []
                 for i in range(50):
-                    tasks.append(client.get(f"/api/auth/profile"))
+                    tasks.append(client.get("/api/auth/profile"))
 
                 responses = await asyncio.gather(*tasks, return_exceptions=True)
                 return responses

@@ -5,8 +5,8 @@ Contains request and response models for command history, analytics, and search 
 """
 
 from datetime import datetime
-from typing import Optional, List, Dict, Any, Union
-from pydantic import BaseModel, Field, ConfigDict, validator
+from typing import Optional, List, Dict, Any
+from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
 
 

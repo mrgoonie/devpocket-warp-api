@@ -6,12 +6,9 @@ This script can be used to run the script tests even without pytest installed.
 It provides basic test discovery and execution functionality.
 """
 
-import os
 import sys
-import traceback
 import importlib.util
 from pathlib import Path
-from unittest.mock import patch, MagicMock
 import subprocess
 
 

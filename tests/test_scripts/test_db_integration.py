@@ -10,14 +10,10 @@ Tests cover:
 """
 
 import pytest
-import subprocess
-import asyncio
 import os
-from pathlib import Path
 from unittest.mock import patch
 import asyncpg
 import time
-import json
 
 
 @pytest.mark.integration

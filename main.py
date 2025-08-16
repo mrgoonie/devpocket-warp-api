@@ -5,7 +5,6 @@ Main FastAPI application for DevPocket API.
 from contextlib import asynccontextmanager
 from datetime import datetime
 from fastapi import FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 import redis.asyncio as aioredis
@@ -21,7 +20,7 @@ from app.api.profile import router as profile_router
 from app.websocket import websocket_router
 from app.websocket.manager import connection_manager
 from app.core.config import settings
-from app.core.logging import logger, log_request, log_error
+from app.core.logging import logger, log_error
 from app.db.database import (
     db_manager,
     init_database,

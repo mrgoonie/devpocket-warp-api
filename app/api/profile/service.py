@@ -3,7 +3,7 @@ User profile and settings service for DevPocket API.
 """
 
 from datetime import datetime, timezone
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
 
@@ -234,7 +234,6 @@ class ProfileService:
 
     def _calculate_profile_completeness(self, user: User) -> int:
         """Calculate profile completeness percentage."""
-        completeness = 0
         fields = [user.username, user.email, user.display_name]
 
         completed_fields = sum(

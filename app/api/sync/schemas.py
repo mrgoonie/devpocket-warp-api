@@ -4,7 +4,7 @@ Pydantic schemas for multi-device synchronization endpoints.
 
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field
 from enum import Enum
 
 

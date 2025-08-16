@@ -6,7 +6,7 @@ Contains request and response models for AI-powered features using BYOK model.
 
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict, validator
+from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
 
 

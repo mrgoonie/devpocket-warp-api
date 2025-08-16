@@ -5,8 +5,8 @@ Handles all terminal session endpoints including lifecycle management,
 command execution, and session monitoring.
 """
 
-from typing import Annotated, List
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
+from typing import Annotated
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_active_user
@@ -28,8 +28,6 @@ from .schemas import (
     # History schemas
     SessionHistoryResponse,
     # WebSocket schemas
-    WSMessage,
-    # Batch operations
     BatchSessionOperation,
     BatchSessionResponse,
     # Common schemas

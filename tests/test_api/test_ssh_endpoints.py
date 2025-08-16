@@ -7,7 +7,6 @@ from fastapi import status
 from unittest.mock import patch, AsyncMock
 
 from tests.factories import (
-    UserFactory,
     VerifiedUserFactory,
     SSHProfileFactory,
     SSHKeyFactory,

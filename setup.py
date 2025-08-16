@@ -4,11 +4,9 @@ DevPocket API Setup Script
 Automated environment setup and initialization for development and production.
 """
 
-import os
 import sys
 import subprocess
 import shutil
-import asyncio
 import argparse
 from pathlib import Path
 from typing import Optional
@@ -229,7 +227,7 @@ except ImportError as e:
                 f.write(test_script)
 
             try:
-                result = self.run_command(f"{python_path} {test_file}")
+                self.run_command(f"{python_path} {test_file}")
                 self.log("Installation validation completed successfully")
                 return True
             finally:

@@ -6,7 +6,6 @@ from datetime import datetime, timedelta, timezone
 import factory
 from factory import fuzzy
 from faker import Faker
-import json
 
 from app.models.sync import SyncData
 

@@ -5,17 +5,15 @@ Contains business logic for SSH profile and key management,
 connection testing, and related operations.
 """
 
-import asyncio
 import time
 from datetime import datetime, timezone
-from typing import Optional, List, Dict, Any, Tuple
+from typing import List, Tuple
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
 
 from app.core.logging import logger
 from app.models.user import User
-from app.models.ssh_profile import SSHProfile, SSHKey
 from app.repositories.ssh_profile import SSHProfileRepository, SSHKeyRepository
 from app.services.ssh_client import SSHClientService
 from .schemas import (

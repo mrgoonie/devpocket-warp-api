@@ -11,11 +11,8 @@ Tests cover:
 """
 
 import pytest
-import subprocess
-from pathlib import Path
 from unittest.mock import patch, MagicMock, mock_open
 import os
-import tempfile
 
 
 @pytest.mark.database

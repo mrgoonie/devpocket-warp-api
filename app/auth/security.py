@@ -7,7 +7,7 @@ token blacklisting, and password reset functionality.
 
 import secrets
 from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any, Union
+from typing import Optional, Dict, Any
 import redis.asyncio as aioredis
 from jose import JWTError, jwt
 from jose.exceptions import (

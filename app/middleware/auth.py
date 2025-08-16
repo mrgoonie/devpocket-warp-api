@@ -6,7 +6,7 @@ and authentication logging for protected routes.
 """
 
 from typing import Optional, Callable
-from fastapi import Request, Response, HTTPException, status
+from fastapi import Request, Response, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.auth.security import verify_token, is_token_blacklisted_sync

@@ -31,7 +31,7 @@ class SessionRepository(BaseRepository[Session]):
         query = select(Session).where(Session.user_id == user_id)
 
         if active_only and not include_inactive:
-            query = query.where(Session.is_active == True)
+            query = query.where(Session.is_active is True)
 
         if session_type:
             query = query.where(Session.session_type == session_type)
@@ -61,7 +61,7 @@ class SessionRepository(BaseRepository[Session]):
         self, user_id: str = None, offset: int = 0, limit: int = 100
     ) -> List[Session]:
         """Get all active sessions, optionally filtered by user."""
-        query = select(Session).where(Session.is_active == True)
+        query = select(Session).where(Session.is_active is True)
 
         if user_id:
             query = query.where(Session.user_id == user_id)
@@ -210,7 +210,7 @@ class SessionRepository(BaseRepository[Session]):
         result = await self.session.execute(
             select(Session).where(
                 and_(
-                    Session.is_active == True,
+                    Session.is_active is True,
                     Session.last_activity_at < threshold_time,
                 )
             )
@@ -240,7 +240,7 @@ class SessionRepository(BaseRepository[Session]):
         active_sessions = await self.session.execute(
             select(func.count(Session.id)).where(
                 and_(
-                    Session.is_active == True,
+                    Session.is_active is True,
                     Session.user_id == user_id if user_id else True,
                 )
             )
@@ -322,7 +322,7 @@ class SessionRepository(BaseRepository[Session]):
         conditions = [Session.created_at < cutoff_date]
 
         if keep_active:
-            conditions.append(Session.is_active == False)
+            conditions.append(Session.is_active is False)
 
         result = await self.session.execute(select(Session).where(and_(*conditions)))
 

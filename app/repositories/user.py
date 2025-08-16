@@ -3,7 +3,7 @@ User repository for DevPocket API.
 """
 
 from typing import Optional, List
-from datetime import datetime, timedelta
+from datetime import datetime
 from sqlalchemy import select, and_, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -110,7 +110,7 @@ class UserRepository(BaseRepository[User]):
         """Get all active users."""
         result = await self.session.execute(
             select(User)
-            .where(User.is_active == True)
+            .where(User.is_active is True)
             .order_by(User.created_at.desc())
             .offset(offset)
             .limit(limit)
@@ -162,7 +162,7 @@ class UserRepository(BaseRepository[User]):
         """Get users who have validated API keys."""
         result = await self.session.execute(
             select(User)
-            .where(User.has_api_key == True)
+            .where(User.has_api_key is True)
             .order_by(User.api_key_validated_at.desc())
             .offset(offset)
             .limit(limit)

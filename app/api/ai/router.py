@@ -4,7 +4,7 @@ AI Service Integration API router for DevPocket.
 Handles all AI-powered endpoints using BYOK model with OpenRouter integration.
 """
 
-from typing import Annotated, List
+from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -33,9 +33,6 @@ from .schemas import (
     # Batch processing
     BatchAIRequest,
     BatchAIResponse,
-    # Common schemas
-    MessageResponse,
-    AIErrorResponse,
 )
 from .service import AIService
 
@@ -518,7 +515,7 @@ async def get_ai_service_status(
 ) -> dict:
     """Get current AI service operational status."""
     try:
-        service = AIService(db)
+        AIService(db)
 
         return {
             "operational": True,

@@ -8,8 +8,6 @@ without requiring external dependencies like Redis or PostgreSQL.
 
 import os
 import sys
-import asyncio
-from datetime import datetime, timedelta
 
 # Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -150,8 +148,6 @@ def test_schemas():
     try:
         from app.auth.schemas import (
             UserCreate,
-            UserLogin,
-            Token,
             is_password_strong,
         )
 

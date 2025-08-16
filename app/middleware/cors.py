@@ -5,7 +5,7 @@ Configures Cross-Origin Resource Sharing (CORS) settings to allow
 the Flutter mobile app and web clients to access the API securely.
 """
 
-from typing import List, Union
+from typing import List
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

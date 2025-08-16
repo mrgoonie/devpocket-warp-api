@@ -5,7 +5,7 @@ User model for DevPocket API.
 from datetime import datetime, timezone
 from typing import Optional, List
 from uuid import UUID as PyUUID
-from sqlalchemy import String, Boolean, Text, JSON, ForeignKey
+from sqlalchemy import String, Boolean, JSON, ForeignKey
 from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship

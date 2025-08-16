@@ -3,7 +3,6 @@ SSH Profile repository for DevPocket API.
 """
 
 from typing import Optional, List
-from datetime import datetime
 from sqlalchemy import select, and_, func, desc, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -29,7 +28,7 @@ class SSHProfileRepository(BaseRepository[SSHProfile]):
         query = select(SSHProfile).where(SSHProfile.user_id == user_id)
 
         if active_only:
-            query = query.where(SSHProfile.is_active == True)
+            query = query.where(SSHProfile.is_active is True)
 
         query = (
             query.order_by(desc(SSHProfile.last_used_at), SSHProfile.name)
@@ -177,7 +176,7 @@ class SSHKeyRepository(BaseRepository[SSHKey]):
         query = select(SSHKey).where(SSHKey.user_id == user_id)
 
         if active_only:
-            query = query.where(SSHKey.is_active == True)
+            query = query.where(SSHKey.is_active is True)
 
         query = (
             query.order_by(desc(SSHKey.last_used_at), SSHKey.name)
@@ -342,7 +341,7 @@ class SSHKeyRepository(BaseRepository[SSHKey]):
         active_keys = await self.session.execute(
             select(func.count(SSHKey.id))
             .select_from(base_query.subquery())
-            .where(SSHKey.is_active == True)
+            .where(SSHKey.is_active is True)
         )
 
         return {

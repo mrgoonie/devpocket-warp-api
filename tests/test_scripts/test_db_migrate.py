@@ -10,9 +10,7 @@ Tests cover:
 """
 
 import pytest
-import subprocess
-from pathlib import Path
-from unittest.mock import patch, MagicMock, call
+from unittest.mock import patch, MagicMock
 import os
 
 
@@ -364,7 +362,7 @@ class TestDbMigrateScript:
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
 
-            result = script_runner.run_script(
+            script_runner.run_script(
                 "db_migrate.sh", ["head", "abc123", "--check-only"]
             )
 
