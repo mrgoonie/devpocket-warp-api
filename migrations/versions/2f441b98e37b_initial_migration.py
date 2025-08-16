@@ -26,19 +26,6 @@ def table_exists(table_name: str) -> bool:
     return table_name in inspector.get_table_names()
 
 
-def enum_exists(enum_name: str) -> bool:
-    """Check if an enum type exists in the database."""
-    bind = op.get_bind()
-    result = bind.execute(
-        sa.text(
-            """
-        SELECT 1 FROM pg_type 
-        WHERE typname = :enum_name AND typtype = 'e'
-    """
-        ),
-        {"enum_name": enum_name},
-    )
-    return result.fetchone() is not None
 
 
 def upgrade() -> None:
@@ -46,48 +33,27 @@ def upgrade() -> None:
     Handles both fresh installations and upgrades from existing schemas.
     """
 
-    # Create user_role enum if it doesn't exist (completely idempotent)
+    # Create user_role enum using atomic PostgreSQL IF NOT EXISTS syntax
     bind = op.get_bind()
     try:
-        # First check if enum exists, then create if it doesn't
-        if not enum_exists("user_role"):
-            bind.execute(
-                sa.text(
-                    "CREATE TYPE user_role AS ENUM ('user', 'admin', 'premium')"
-                )
+        # Use DO block for atomic enum creation (PostgreSQL 9.1+)
+        bind.execute(
+            sa.text(
+                """
+                DO $$ 
+                BEGIN
+                    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+                        CREATE TYPE user_role AS ENUM ('user', 'admin', 'premium');
+                    END IF;
+                END $$;
+                """
             )
-    except Exception as e:
-        # If enum already exists, this is expected and safe to ignore
-        # Log the exception for debugging but continue
-        import logging
-
-        logging.warning(
-            f"Enum creation warning (likely already exists, safe to ignore): {e}"
         )
-
-        # Double-check that enum actually exists with correct values
-        try:
-            result = bind.execute(
-                sa.text(
-                    """
-                SELECT enumlabel 
-                FROM pg_enum e 
-                JOIN pg_type t ON e.enumtypid = t.oid 
-                WHERE t.typname = 'user_role' 
-                ORDER BY e.enumsortorder
-            """
-                )
-            )
-            enum_values = [row[0] for row in result.fetchall()]
-            expected_values = ["user", "admin", "premium"]
-            if enum_values != expected_values:
-                raise Exception(
-                    f"Enum 'user_role' exists but has wrong values: {enum_values} (expected {expected_values})"
-                )
-            logging.info("Enum 'user_role' already exists with correct values")
-        except Exception as verify_error:
-            logging.error(f"Failed to verify enum values: {verify_error}")
-            raise
+    except Exception as e:
+        # Log any unexpected errors but continue
+        import logging
+        logging.error(f"Unexpected error creating enum: {e}")
+        raise
 
     # Create or modify users table
     if not table_exists("users"):
