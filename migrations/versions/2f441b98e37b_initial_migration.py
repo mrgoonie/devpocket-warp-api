@@ -25,10 +25,28 @@ def table_exists(table_name: str) -> bool:
     return table_name in inspector.get_table_names()
 
 
+def enum_exists(enum_name: str) -> bool:
+    """Check if an enum type exists in the database."""
+    bind = op.get_bind()
+    result = bind.execute(sa.text("""
+        SELECT 1 FROM pg_type 
+        WHERE typname = :enum_name AND typtype = 'e'
+    """), {'enum_name': enum_name})
+    return result.fetchone() is not None
+
+
 def upgrade() -> None:
     """
     Handles both fresh installations and upgrades from existing schemas.
     """
+    
+    # Create user_role enum if it doesn't exist
+    if not enum_exists('user_role'):
+        try:
+            bind = op.get_bind()
+            bind.execute(sa.text("CREATE TYPE user_role AS ENUM ('user', 'admin', 'premium')"))
+        except Exception:
+            pass
     
     # Create or modify users table
     if not table_exists('users'):
@@ -40,7 +58,7 @@ def upgrade() -> None:
             sa.Column('username', sa.String(length=50), nullable=False),
             sa.Column('hashed_password', sa.String(length=255), nullable=False),
             sa.Column('full_name', sa.String(length=255), nullable=True),
-            sa.Column('role', sa.Enum('user', 'admin', 'premium', name='user_role', create_type=True), 
+            sa.Column('role', sa.Enum('user', 'admin', 'premium', name='user_role', create_type=False), 
                      nullable=False, server_default='user'),
             sa.Column('is_active', sa.Boolean(), nullable=False, server_default='true'),
             sa.Column('is_verified', sa.Boolean(), nullable=False, server_default='false'),
@@ -191,9 +209,11 @@ def upgrade() -> None:
             pass
 
     # Drop old tables if they exist
+    # Using raw SQL with IF EXISTS to avoid transaction abortion
+    bind = op.get_bind()
     for table_name in ['workflows', 'sync_queue', 'command_history', 'ssh_connections']:
         try:
-            op.drop_table(table_name)
+            bind.execute(sa.text(f'DROP TABLE IF EXISTS {table_name} CASCADE'))
         except Exception:
             pass
 
@@ -371,17 +391,18 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Reverse the migration."""
-    # Drop tables in reverse order of dependencies
-    op.drop_table('ssh_profiles')
-    op.drop_table('commands')
-    op.drop_table('sync_data')
-    op.drop_table('user_settings')
-    op.drop_table('ssh_keys')
-    op.drop_table('sessions')
-    op.drop_table('users')
+    # Drop tables in reverse order of dependencies using IF EXISTS to avoid errors
+    bind = op.get_bind()
+    tables = ['ssh_profiles', 'commands', 'sync_data', 'user_settings', 'ssh_keys', 'sessions', 'users']
+    
+    for table_name in tables:
+        try:
+            bind.execute(sa.text(f'DROP TABLE IF EXISTS {table_name} CASCADE'))
+        except Exception:
+            pass
     
     # Drop enum type
     try:
-        op.execute('DROP TYPE user_role')
+        bind.execute(sa.text('DROP TYPE IF EXISTS user_role'))
     except Exception:
         pass
