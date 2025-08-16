@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Test Database
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: devpocket_postgres_test
+    environment:
+      POSTGRES_DB: devpocket_test
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./scripts/init_test_db.sql:/docker-entrypoint-initdb.d/init_test_db.sql
+    networks:
+      - devpocket_test_network
+    restart: "no"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test -d devpocket_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  # Redis Test Cache
+  redis-test:
+    image: redis:7-alpine
+    container_name: devpocket_redis_test
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_test_data:/data
+      - ./docker/redis-test.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - devpocket_test_network
+    restart: "no"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+
+  # Test Runner Container
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: devpocket_test_runner
+    environment:
+      - ENVIRONMENT=test
+      - TESTING=true
+      - APP_DEBUG=true
+      - DATABASE_URL=postgresql://test:test@postgres-test:5432/devpocket_test
+      - REDIS_URL=redis://redis-test:6379/0
+      - JWT_SECRET_KEY=test_secret_key_for_testing_only
+      - JWT_ALGORITHM=HS256
+      - JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
+      - OPENROUTER_API_BASE_URL=http://localhost:8001/mock
+      - LOG_LEVEL=INFO
+      - PYTHONPATH=/app
+    volumes:
+      - .:/app
+      - ./test-reports:/app/test-reports
+      - ./htmlcov:/app/htmlcov
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+      redis-test:
+        condition: service_healthy
+    networks:
+      - devpocket_test_network
+    working_dir: /app
+    command: >
+      sh -c "
+        echo 'Waiting for test databases to be ready...' &&
+        python -c 'import asyncio; from app.db.database import check_database_connection; asyncio.run(check_database_connection())' &&
+        echo 'Creating test database from models...' &&
+        python create_database_from_models.py &&
+        echo 'Running tests...' &&
+        python -m pytest tests/ --tb=short -v --cov=app --cov-report=html --cov-report=xml --cov-report=term-missing
+      "
+
+volumes:
+  postgres_test_data:
+    driver: local
+  redis_test_data:
+    driver: local
+
+networks:
+  devpocket_test_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16

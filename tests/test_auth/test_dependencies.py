@@ -22,6 +22,7 @@ from tests.factories import UserFactory, VerifiedUserFactory, PremiumUserFactory
 class TestTokenExtraction:
     """Test token extraction from requests."""
     
+    @pytest.mark.asyncio
     async def test_get_token_from_bearer_header(self):
         """Test extracting token from Bearer header."""
         request = Mock(spec=Request)
@@ -40,6 +41,7 @@ class TestTokenExtraction:
         
         assert token == "test_token_123"
     
+    @pytest.mark.asyncio
     async def test_get_token_from_oauth2_scheme(self):
         """Test extracting token from OAuth2 scheme."""
         request = Mock(spec=Request)
@@ -53,6 +55,7 @@ class TestTokenExtraction:
         
         assert token == "oauth2_token_456"
     
+    @pytest.mark.asyncio
     async def test_get_token_from_cookie(self):
         """Test extracting token from cookie."""
         request = Mock(spec=Request)
@@ -66,6 +69,8 @@ class TestTokenExtraction:
         
         assert token == "cookie_token_789"
     
+    @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_get_token_priority_order(self):
         """Test token extraction priority (Bearer > OAuth2 > Cookie)."""
         request = Mock(spec=Request)
@@ -85,6 +90,7 @@ class TestTokenExtraction:
         # Bearer should have highest priority
         assert token == "bearer_token"
     
+    @pytest.mark.asyncio
     async def test_get_token_no_token_found(self):
         """Test when no token is found."""
         request = Mock(spec=Request)
@@ -104,6 +110,7 @@ class TestTokenExtraction:
 class TestCurrentUser:
     """Test current user extraction and validation."""
     
+    @pytest.mark.asyncio
     async def test_get_current_user_success(self, test_session, mock_redis):
         """Test successful user authentication."""
         set_redis_client(mock_redis)
@@ -124,11 +131,13 @@ class TestCurrentUser:
         assert authenticated_user.id == user.id
         assert authenticated_user.email == user.email
     
+    @pytest.mark.asyncio
     async def test_get_current_user_no_token(self, test_session):
         """Test authentication without token."""
         with pytest.raises(AuthenticationError, match="Authentication token required"):
             await get_current_user(test_session, None)
     
+    @pytest.mark.asyncio
     async def test_get_current_user_invalid_token(self, test_session, mock_redis):
         """Test authentication with invalid token."""
         set_redis_client(mock_redis)
@@ -139,6 +148,7 @@ class TestCurrentUser:
         with pytest.raises(AuthenticationError, match="Invalid or expired token"):
             await get_current_user(test_session, invalid_token)
     
+    @pytest.mark.asyncio
     async def test_get_current_user_blacklisted_token(self, test_session, mock_redis):
         """Test authentication with blacklisted token."""
         set_redis_client(mock_redis)
@@ -156,6 +166,7 @@ class TestCurrentUser:
         with pytest.raises(AuthenticationError, match="Token has been revoked"):
             await get_current_user(test_session, token)
     
+    @pytest.mark.asyncio
     async def test_get_current_user_user_not_found(self, test_session, mock_redis):
         """Test authentication when user doesn't exist."""
         set_redis_client(mock_redis)
@@ -167,6 +178,7 @@ class TestCurrentUser:
         with pytest.raises(AuthenticationError, match="User not found"):
             await get_current_user(test_session, token)
     
+    @pytest.mark.asyncio
     async def test_get_current_user_malformed_token(self, test_session, mock_redis):
         """Test authentication with malformed token payload."""
         set_redis_client(mock_redis)
@@ -184,6 +196,7 @@ class TestCurrentUser:
 class TestActiveUser:
     """Test active user validation."""
     
+    @pytest.mark.asyncio
     async def test_get_current_active_user_success(self, test_session):
         """Test getting active user successfully."""
         user = VerifiedUserFactory()
@@ -194,6 +207,7 @@ class TestActiveUser:
         
         assert active_user == user
     
+    @pytest.mark.asyncio
     async def test_get_current_active_user_inactive(self, test_session):
         """Test getting inactive user."""
         user = VerifiedUserFactory()
@@ -202,6 +216,7 @@ class TestActiveUser:
         with pytest.raises(InactiveUserError, match="Account has been deactivated"):
             await get_current_active_user(user)
     
+    @pytest.mark.asyncio
     async def test_get_current_active_user_unverified(self, test_session):
         """Test getting unverified user."""
         user = UserFactory()
@@ -211,6 +226,7 @@ class TestActiveUser:
         with pytest.raises(InactiveUserError, match="Email verification required"):
             await get_current_active_user(user)
     
+    @pytest.mark.asyncio
     async def test_get_current_active_user_locked(self, test_session):
         """Test getting locked user."""
         user = VerifiedUserFactory()
@@ -230,6 +246,7 @@ class TestActiveUser:
 class TestOptionalUser:
     """Test optional user authentication."""
     
+    @pytest.mark.asyncio
     async def test_get_optional_current_user_with_valid_token(self, test_session, mock_redis):
         """Test optional authentication with valid token."""
         set_redis_client(mock_redis)
@@ -247,12 +264,14 @@ class TestOptionalUser:
         assert optional_user is not None
         assert optional_user.id == user.id
     
+    @pytest.mark.asyncio
     async def test_get_optional_current_user_no_token(self, test_session):
         """Test optional authentication without token."""
         optional_user = await get_optional_current_user(test_session, None)
         
         assert optional_user is None
     
+    @pytest.mark.asyncio
     async def test_get_optional_current_user_invalid_token(self, test_session, mock_redis):
         """Test optional authentication with invalid token."""
         set_redis_client(mock_redis)
@@ -270,6 +289,7 @@ class TestOptionalUser:
 class TestSubscriptionTiers:
     """Test subscription tier requirements."""
     
+    @pytest.mark.asyncio
     async def test_require_subscription_tier_sufficient(self):
         """Test user with sufficient subscription tier."""
         user = PremiumUserFactory()
@@ -279,6 +299,7 @@ class TestSubscriptionTiers:
         
         assert result_user == user
     
+    @pytest.mark.asyncio
     async def test_require_subscription_tier_exact_match(self):
         """Test user with exact subscription tier."""
         user = PremiumUserFactory()
@@ -288,6 +309,7 @@ class TestSubscriptionTiers:
         
         assert result_user == user
     
+    @pytest.mark.asyncio
     async def test_require_subscription_tier_insufficient(self):
         """Test user with insufficient subscription tier."""
         user = UserFactory()
@@ -299,6 +321,7 @@ class TestSubscriptionTiers:
         assert exc_info.value.status_code == 403
         assert "requires pro subscription" in exc_info.value.detail.lower()
     
+    @pytest.mark.asyncio
     async def test_require_subscription_tier_unknown_tier(self):
         """Test user with unknown subscription tier."""
         user = UserFactory()
@@ -309,6 +332,7 @@ class TestSubscriptionTiers:
         
         assert exc_info.value.status_code == 403
     
+    @pytest.mark.asyncio
     async def test_subscription_tier_hierarchy(self):
         """Test subscription tier hierarchy logic."""
         # Team tier should satisfy pro requirement
@@ -331,6 +355,7 @@ class TestSubscriptionTiers:
 class TestUserFromToken:
     """Test utility function for getting user from token."""
     
+    @pytest.mark.asyncio
     async def test_get_user_from_token_success(self, test_session, mock_redis):
         """Test successfully getting user from token."""
         set_redis_client(mock_redis)
@@ -348,6 +373,7 @@ class TestUserFromToken:
         assert result_user is not None
         assert result_user.id == user.id
     
+    @pytest.mark.asyncio
     async def test_get_user_from_token_blacklisted(self, test_session, mock_redis):
         """Test getting user from blacklisted token."""
         set_redis_client(mock_redis)
@@ -359,6 +385,7 @@ class TestUserFromToken:
         
         assert result_user is None
     
+    @pytest.mark.asyncio
     async def test_get_user_from_token_invalid_token(self, test_session, mock_redis):
         """Test getting user from invalid token."""
         set_redis_client(mock_redis)
@@ -370,6 +397,7 @@ class TestUserFromToken:
         
         assert result_user is None
     
+    @pytest.mark.asyncio
     async def test_get_user_from_token_inactive_user(self, test_session, mock_redis):
         """Test getting inactive user from token."""
         set_redis_client(mock_redis)
@@ -388,6 +416,7 @@ class TestUserFromToken:
         
         assert result_user is None
     
+    @pytest.mark.asyncio
     async def test_get_user_from_token_unverified_user(self, test_session, mock_redis):
         """Test getting unverified user from token."""
         set_redis_client(mock_redis)
@@ -450,6 +479,7 @@ class TestAuthenticationErrors:
 class TestDependencyIntegration:
     """Test integration between different authentication dependencies."""
     
+    @pytest.mark.asyncio
     async def test_dependency_chain_success(self, test_session, mock_redis):
         """Test successful dependency chain from token to active user."""
         set_redis_client(mock_redis)
@@ -470,6 +500,7 @@ class TestDependencyIntegration:
         assert active_user.is_active is True
         assert active_user.is_verified is True
     
+    @pytest.mark.asyncio
     async def test_dependency_chain_failure_at_verification(self, test_session, mock_redis):
         """Test dependency chain failure at user verification step."""
         set_redis_client(mock_redis)
@@ -491,6 +522,7 @@ class TestDependencyIntegration:
         with pytest.raises(InactiveUserError, match="Email verification required"):
             await get_current_active_user(current_user)
     
+    @pytest.mark.asyncio
     async def test_subscription_tier_with_auth_chain(self, test_session, mock_redis):
         """Test subscription tier check with full auth chain."""
         set_redis_client(mock_redis)

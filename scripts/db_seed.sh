@@ -85,6 +85,10 @@ import sys
 import os
 from pathlib import Path
 
+# CRITICAL: Load environment variables FIRST before importing any app modules
+from dotenv import load_dotenv
+load_dotenv(override=True)
+
 # Add project root to Python path
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -250,6 +254,10 @@ import uuid
 import random
 from pathlib import Path
 from datetime import datetime, timedelta
+
+# CRITICAL: Load environment variables FIRST before importing any app modules
+from dotenv import load_dotenv
+load_dotenv(override=True)
 
 # Add project root to Python path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -659,6 +667,10 @@ Database statistics script
 import asyncio
 import sys
 from pathlib import Path
+
+# CRITICAL: Load environment variables FIRST before importing any app modules
+from dotenv import load_dotenv
+load_dotenv(override=True)
 
 # Add project root to Python path
 sys.path.insert(0, str(Path(__file__).parent))

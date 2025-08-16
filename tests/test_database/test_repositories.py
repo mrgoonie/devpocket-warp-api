@@ -16,7 +16,7 @@ from app.repositories.user import UserRepository
 from app.repositories.session import SessionRepository
 from app.repositories.ssh_profile import SSHProfileRepository
 from app.repositories.command import CommandRepository
-from app.repositories.sync import SyncRepository
+from app.repositories.sync import SyncDataRepository
 from tests.factories import (
     UserFactory, SessionFactory, SSHProfileFactory, 
     SSHKeyFactory, CommandFactory, SyncDataFactory
@@ -775,13 +775,13 @@ class TestCommandRepository:
 
 @pytest.mark.database
 @pytest.mark.unit
-class TestSyncRepository:
-    """Test SyncRepository CRUD operations."""
+class TestSyncDataRepository:
+    """Test SyncDataRepository CRUD operations."""
     
     async def test_create_sync_data(self, test_session):
         """Test sync data creation."""
         user_repo = UserRepository(test_session)
-        sync_repo = SyncRepository(test_session)
+        sync_repo = SyncDataRepository(test_session)
         
         # Create user
         user = await user_repo.create({
@@ -810,7 +810,7 @@ class TestSyncRepository:
     async def test_get_sync_data_for_user(self, test_session):
         """Test getting sync data for a user."""
         user_repo = UserRepository(test_session)
-        sync_repo = SyncRepository(test_session)
+        sync_repo = SyncDataRepository(test_session)
         
         # Create users
         user1 = await user_repo.create({
@@ -851,7 +851,7 @@ class TestSyncRepository:
     async def test_get_sync_data_by_type(self, test_session):
         """Test getting sync data by type."""
         user_repo = UserRepository(test_session)
-        sync_repo = SyncRepository(test_session)
+        sync_repo = SyncDataRepository(test_session)
         
         # Create user
         user = await user_repo.create({
@@ -890,7 +890,7 @@ class TestSyncRepository:
     async def test_update_sync_data(self, test_session):
         """Test updating sync data."""
         user_repo = UserRepository(test_session)
-        sync_repo = SyncRepository(test_session)
+        sync_repo = SyncDataRepository(test_session)
         
         # Create user and sync data
         user = await user_repo.create({
@@ -924,7 +924,7 @@ class TestSyncRepository:
     async def test_resolve_sync_conflict(self, test_session):
         """Test resolving sync conflicts."""
         user_repo = UserRepository(test_session)
-        sync_repo = SyncRepository(test_session)
+        sync_repo = SyncDataRepository(test_session)
         
         # Create user and sync data
         user = await user_repo.create({
@@ -965,7 +965,7 @@ class TestSyncRepository:
     async def test_cleanup_old_sync_data(self, test_session):
         """Test cleaning up old sync data."""
         user_repo = UserRepository(test_session)
-        sync_repo = SyncRepository(test_session)
+        sync_repo = SyncDataRepository(test_session)
         
         # Create user
         user = await user_repo.create({

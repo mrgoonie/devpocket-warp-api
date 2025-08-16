@@ -7,7 +7,7 @@ and password management with comprehensive validation.
 
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr, Field, validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 def is_password_strong(password: str) -> tuple[bool, list[str]]:
@@ -72,7 +72,8 @@ class UserCreate(UserBase):
         description="Device type (ios, android, or web)",
     )
 
-    @validator("password")
+    @field_validator("password")
+    @classmethod
     def validate_password_strength(cls, v):
         """Validate password meets strength requirements."""
         is_strong, errors = is_password_strong(v)
@@ -157,7 +158,8 @@ class PasswordChange(BaseModel):
         ..., min_length=8, max_length=128, description="New password"
     )
 
-    @validator("new_password")
+    @field_validator("new_password")
+    @classmethod
     def validate_new_password_strength(cls, v):
         """Validate new password meets strength requirements."""
         is_strong, errors = is_password_strong(v)
@@ -180,7 +182,8 @@ class ResetPassword(BaseModel):
         ..., min_length=8, max_length=128, description="New password"
     )
 
-    @validator("new_password")
+    @field_validator("new_password")
+    @classmethod  
     def validate_password_strength(cls, v):
         """Validate new password meets strength requirements."""
         is_strong, errors = is_password_strong(v)

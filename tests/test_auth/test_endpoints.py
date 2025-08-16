@@ -17,6 +17,7 @@ from tests.factories import UserFactory, VerifiedUserFactory
 class TestRegistrationEndpoint:
     """Test user registration endpoint."""
     
+    @pytest.mark.asyncio
     async def test_register_user_success(self, async_client):
         """Test successful user registration."""
         user_data = {
@@ -38,6 +39,7 @@ class TestRegistrationEndpoint:
         assert "password" not in data  # Password should not be returned
         assert data["is_verified"] is False  # Should start unverified
     
+    @pytest.mark.asyncio
     async def test_register_user_duplicate_email(self, async_client, test_session):
         """Test registration with duplicate email."""
         # Create existing user
@@ -58,6 +60,7 @@ class TestRegistrationEndpoint:
         data = response.json()
         assert "email" in data["detail"].lower()
     
+    @pytest.mark.asyncio
     async def test_register_user_duplicate_username(self, async_client, test_session):
         """Test registration with duplicate username."""
         # Create existing user
@@ -78,6 +81,7 @@ class TestRegistrationEndpoint:
         data = response.json()
         assert "username" in data["detail"].lower()
     
+    @pytest.mark.asyncio
     async def test_register_user_weak_password(self, async_client):
         """Test registration with weak password."""
         user_data = {
@@ -93,6 +97,7 @@ class TestRegistrationEndpoint:
         data = response.json()
         assert "password" in data["detail"].lower()
     
+    @pytest.mark.asyncio
     async def test_register_user_invalid_email(self, async_client):
         """Test registration with invalid email format."""
         user_data = {
@@ -106,6 +111,7 @@ class TestRegistrationEndpoint:
         
         assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
     
+    @pytest.mark.asyncio
     async def test_register_user_missing_fields(self, async_client):
         """Test registration with missing required fields."""
         incomplete_data = {
@@ -123,6 +129,7 @@ class TestRegistrationEndpoint:
 class TestLoginEndpoint:
     """Test user login endpoint."""
     
+    @pytest.mark.asyncio
     async def test_login_success(self, async_client, test_session):
         """Test successful user login."""
         password = "SecurePass123!"
@@ -150,6 +157,7 @@ class TestLoginEndpoint:
         assert data["token_type"] == "bearer"
         assert "expires_in" in data
     
+    @pytest.mark.asyncio
     async def test_login_with_username(self, async_client, test_session):
         """Test login using username instead of email."""
         password = "SecurePass123!"
@@ -171,6 +179,7 @@ class TestLoginEndpoint:
         
         assert response.status_code == status.HTTP_200_OK
     
+    @pytest.mark.asyncio
     async def test_login_invalid_credentials(self, async_client, test_session):
         """Test login with invalid credentials."""
         user = VerifiedUserFactory()
@@ -193,6 +202,7 @@ class TestLoginEndpoint:
         data = response.json()
         assert "Invalid credentials" in data["detail"]
     
+    @pytest.mark.asyncio
     async def test_login_nonexistent_user(self, async_client):
         """Test login with non-existent user."""
         login_data = {
@@ -208,6 +218,7 @@ class TestLoginEndpoint:
         
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
     
+    @pytest.mark.asyncio
     async def test_login_unverified_user(self, async_client, test_session):
         """Test login with unverified user."""
         password = "SecurePass123!"
@@ -232,6 +243,7 @@ class TestLoginEndpoint:
         data = response.json()
         assert "verify" in data["detail"].lower()
     
+    @pytest.mark.asyncio
     async def test_login_inactive_user(self, async_client, test_session):
         """Test login with inactive user."""
         password = "SecurePass123!"
@@ -256,6 +268,7 @@ class TestLoginEndpoint:
         data = response.json()
         assert "deactivated" in data["detail"].lower()
     
+    @pytest.mark.asyncio
     async def test_login_locked_user(self, async_client, test_session):
         """Test login with locked user account."""
         password = "SecurePass123!"
@@ -284,6 +297,7 @@ class TestLoginEndpoint:
         data = response.json()
         assert "locked" in data["detail"].lower()
     
+    @pytest.mark.asyncio
     async def test_login_failed_attempt_tracking(self, async_client, test_session):
         """Test failed login attempt tracking."""
         password = "SecurePass123!"
@@ -317,6 +331,8 @@ class TestLoginEndpoint:
 class TestLogoutEndpoint:
     """Test user logout endpoint."""
     
+    @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_logout_success(self, async_client, auth_headers, mock_redis):
         """Test successful logout."""
         response = await async_client.post(
@@ -331,6 +347,8 @@ class TestLogoutEndpoint:
         # Verify token was blacklisted
         mock_redis.setex.assert_called_once()
     
+    @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_logout_without_auth(self, async_client):
         """Test logout without authentication."""
         response = await async_client.post("/api/auth/logout")
@@ -343,6 +361,7 @@ class TestLogoutEndpoint:
 class TestRefreshTokenEndpoint:
     """Test token refresh endpoint."""
     
+    @pytest.mark.asyncio
     async def test_refresh_token_success(self, async_client, test_session):
         """Test successful token refresh."""
         user = VerifiedUserFactory()
@@ -363,6 +382,7 @@ class TestRefreshTokenEndpoint:
         assert "refresh_token" in data  # New refresh token
         assert data["token_type"] == "bearer"
     
+    @pytest.mark.asyncio
     async def test_refresh_token_invalid(self, async_client):
         """Test refresh with invalid token."""
         refresh_data = {"refresh_token": "invalid.refresh.token"}
@@ -371,6 +391,7 @@ class TestRefreshTokenEndpoint:
         
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
     
+    @pytest.mark.asyncio
     async def test_refresh_token_wrong_type(self, async_client, test_session):
         """Test refresh with access token instead of refresh token."""
         user = VerifiedUserFactory()
@@ -392,6 +413,7 @@ class TestPasswordResetEndpoints:
     """Test password reset endpoints."""
     
     @patch('app.auth.router.send_password_reset_email')
+    @pytest.mark.asyncio
     async def test_request_password_reset_success(self, mock_send_email, async_client, test_session):
         """Test successful password reset request."""
         user = VerifiedUserFactory()
@@ -411,6 +433,7 @@ class TestPasswordResetEndpoints:
         # Verify email was sent
         mock_send_email.assert_called_once_with(user.email)
     
+    @pytest.mark.asyncio
     async def test_request_password_reset_nonexistent_email(self, async_client):
         """Test password reset request for non-existent email."""
         reset_data = {"email": "nonexistent@example.com"}
@@ -420,6 +443,7 @@ class TestPasswordResetEndpoints:
         # Should return success to prevent email enumeration
         assert response.status_code == status.HTTP_200_OK
     
+    @pytest.mark.asyncio
     async def test_confirm_password_reset_success(self, async_client, test_session):
         """Test successful password reset confirmation."""
         user = VerifiedUserFactory()
@@ -442,6 +466,7 @@ class TestPasswordResetEndpoints:
         data = response.json()
         assert "password reset successfully" in data["message"].lower()
     
+    @pytest.mark.asyncio
     async def test_confirm_password_reset_invalid_token(self, async_client):
         """Test password reset with invalid token."""
         reset_data = {
@@ -455,6 +480,7 @@ class TestPasswordResetEndpoints:
         data = response.json()
         assert "invalid" in data["detail"].lower()
     
+    @pytest.mark.asyncio
     async def test_confirm_password_reset_weak_password(self, async_client, test_session):
         """Test password reset with weak new password."""
         user = VerifiedUserFactory()
@@ -482,6 +508,7 @@ class TestEmailVerificationEndpoints:
     """Test email verification endpoints."""
     
     @patch('app.auth.router.send_verification_email')
+    @pytest.mark.asyncio
     async def test_request_email_verification_success(self, mock_send_email, async_client, test_session):
         """Test successful email verification request."""
         user = UserFactory()  # Unverified user
@@ -502,6 +529,7 @@ class TestEmailVerificationEndpoints:
         # Verify email was sent
         mock_send_email.assert_called_once_with(user.email)
     
+    @pytest.mark.asyncio
     async def test_request_email_verification_already_verified(self, async_client, test_session):
         """Test email verification request for already verified user."""
         user = VerifiedUserFactory()  # Already verified
@@ -516,6 +544,7 @@ class TestEmailVerificationEndpoints:
         data = response.json()
         assert "already verified" in data["detail"].lower()
     
+    @pytest.mark.asyncio
     async def test_confirm_email_verification_success(self, async_client, test_session):
         """Test successful email verification confirmation."""
         user = UserFactory()
@@ -539,6 +568,7 @@ class TestEmailVerificationEndpoints:
         await test_session.refresh(user)
         assert user.is_verified is True
     
+    @pytest.mark.asyncio
     async def test_confirm_email_verification_invalid_token(self, async_client):
         """Test email verification with invalid token."""
         response = await async_client.get("/api/auth/verify-email/invalid.token")
@@ -553,6 +583,8 @@ class TestEmailVerificationEndpoints:
 class TestProtectedEndpoints:
     """Test access to protected endpoints."""
     
+    @pytest.mark.asyncio
+    @pytest.mark.asyncio
     async def test_protected_endpoint_with_auth(self, async_client, auth_headers):
         """Test accessing protected endpoint with valid authentication."""
         response = await async_client.get("/api/auth/me", headers=auth_headers)
@@ -563,12 +595,14 @@ class TestProtectedEndpoints:
         assert "email" in data
         assert "username" in data
     
+    @pytest.mark.asyncio
     async def test_protected_endpoint_without_auth(self, async_client):
         """Test accessing protected endpoint without authentication."""
         response = await async_client.get("/api/auth/me")
         
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
     
+    @pytest.mark.asyncio
     async def test_protected_endpoint_with_invalid_token(self, async_client):
         """Test accessing protected endpoint with invalid token."""
         headers = {"Authorization": "Bearer invalid.jwt.token"}
@@ -577,6 +611,7 @@ class TestProtectedEndpoints:
         
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
     
+    @pytest.mark.asyncio
     async def test_protected_endpoint_with_expired_token(self, async_client, test_session):
         """Test accessing protected endpoint with expired token."""
         user = VerifiedUserFactory()
@@ -601,6 +636,7 @@ class TestProtectedEndpoints:
 class TestRateLimiting:
     """Test rate limiting on authentication endpoints."""
     
+    @pytest.mark.asyncio
     async def test_login_rate_limiting(self, async_client, test_session):
         """Test rate limiting on login endpoint."""
         user = VerifiedUserFactory()
@@ -628,6 +664,7 @@ class TestRateLimiting:
                 # Should return 429 for rate limiting after too many attempts
                 assert response.status_code in [status.HTTP_429_TOO_MANY_REQUESTS, status.HTTP_401_UNAUTHORIZED]
     
+    @pytest.mark.asyncio
     async def test_registration_rate_limiting(self, async_client):
         """Test rate limiting on registration endpoint."""
         # Make multiple registration attempts

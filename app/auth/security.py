@@ -10,6 +10,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any, Union
 import redis.asyncio as aioredis
 from jose import JWTError, jwt
+from jose.exceptions import ExpiredSignatureError, JWTClaimsError, JWSSignatureError
 from passlib.context import CryptContext
 
 from app.core.config import settings
@@ -175,16 +176,14 @@ def decode_token(token: str) -> Dict[str, Any]:
         payload = jwt.decode(
             token, settings.jwt_secret_key, algorithms=[settings.jwt_algorithm]
         )
-
-        # Verify token hasn't expired
-        exp = payload.get("exp")
-        if exp and datetime.fromtimestamp(exp, tz=timezone.utc) < datetime.now(
-            timezone.utc
-        ):
-            raise JWTError("Token has expired")
-
         return payload
 
+    except ExpiredSignatureError:
+        logger.warning("JWT token has expired")
+        raise JWTError("Token has expired")
+    except (JWTClaimsError, JWSSignatureError) as e:
+        logger.warning(f"JWT decoding failed: {e}")
+        raise JWTError(f"Invalid token: {e}")
     except JWTError as e:
         logger.warning(f"JWT decoding failed: {e}")
         raise
@@ -301,6 +300,9 @@ def generate_password_reset_token(email: str) -> str:
     Returns:
         A secure reset token
     """
+    if not email:
+        raise ValueError("Token data must include 'sub' (subject) field")
+
     data = {
         "sub": email,
         "type": "password_reset",
@@ -309,8 +311,25 @@ def generate_password_reset_token(email: str) -> str:
 
     # Password reset tokens expire in 1 hour
     expires_delta = timedelta(hours=1)
+    expire = datetime.now(timezone.utc) + expires_delta
 
-    return create_access_token(data, expires_delta)
+    # Create the token data
+    to_encode = data.copy()
+    to_encode.update(
+        {"exp": expire, "iat": datetime.now(timezone.utc)}
+    )
+
+    try:
+        encoded_jwt = jwt.encode(
+            to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
+        )
+
+        logger.debug(f"Password reset token created for user: {email}")
+        return encoded_jwt
+
+    except Exception as e:
+        logger.error(f"JWT password reset token encoding failed: {e}")
+        raise ValueError("Failed to create password reset token")
 
 
 def verify_password_reset_token(token: str) -> Optional[str]:

@@ -19,10 +19,10 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.main import create_application
+from main import create_application
 from app.core.config import settings
-from app.core.security import create_access_token, create_refresh_token
-from app.db.database import get_db_session, db_manager
+from app.auth.security import create_access_token, create_refresh_token
+from app.db.database import get_db, db_manager
 from app.models.base import Base
 from app.models.user import User
 from app.repositories.user import UserRepository
@@ -127,7 +127,7 @@ def app(test_session, mock_redis) -> FastAPI:
     app = create_application()
     
     # Override dependencies
-    app.dependency_overrides[get_db_session] = lambda: test_session
+    app.dependency_overrides[get_db] = lambda: test_session
     app.state.redis = mock_redis
     
     # Set Redis client for auth module
@@ -173,9 +173,9 @@ def user_data() -> dict:
 @pytest.fixture
 async def test_user(user_repository, user_data) -> User:
     """Create a test user in the database."""
-    from app.auth.security import get_password_hash
+    from app.auth.security import hash_password
     
-    hashed_password = get_password_hash(user_data["password"])
+    hashed_password = hash_password(user_data["password"])
     user = await user_repository.create({
         **user_data,
         "hashed_password": hashed_password
@@ -186,9 +186,9 @@ async def test_user(user_repository, user_data) -> User:
 @pytest.fixture
 async def verified_user(user_repository, user_data) -> User:
     """Create a verified test user."""
-    from app.auth.security import get_password_hash
+    from app.auth.security import hash_password
     
-    hashed_password = get_password_hash(user_data["password"])
+    hashed_password = hash_password(user_data["password"])
     user = await user_repository.create({
         **user_data,
         "hashed_password": hashed_password,
@@ -201,9 +201,9 @@ async def verified_user(user_repository, user_data) -> User:
 @pytest.fixture
 async def premium_user(user_repository, user_data) -> User:
     """Create a premium test user."""
-    from app.auth.security import get_password_hash
+    from app.auth.security import hash_password
     
-    hashed_password = get_password_hash(user_data["password"])
+    hashed_password = hash_password(user_data["password"])
     user = await user_repository.create({
         **user_data,
         "hashed_password": hashed_password,

@@ -63,6 +63,24 @@ class User(BaseModel):
         String(255), nullable=True
     )
 
+    # Subscription information
+    subscription_tier: Mapped[str] = mapped_column(
+        String(50), nullable=False, default="free", server_default="'free'"
+    )
+
+    subscription_expires_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+
+    # Security fields
+    failed_login_attempts: Mapped[int] = mapped_column(
+        nullable=False, default=0, server_default="0"
+    )
+
+    locked_until: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+
+    last_login_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+
+    verified_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+
     # Relationships
     sessions: Mapped[List["Session"]] = relationship(
         "Session", back_populates="user", cascade="all, delete-orphan"

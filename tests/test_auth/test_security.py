@@ -4,7 +4,7 @@ Test JWT and password security functionality.
 
 import pytest
 from datetime import datetime, timedelta, timezone
-from jose import JWTError
+from jose import JWTError, jwt
 from unittest.mock import AsyncMock, patch
 
 from app.auth.security import (
@@ -213,6 +213,7 @@ class TestJWTTokens:
 class TestTokenBlacklisting:
     """Test token blacklisting functionality."""
     
+    @pytest.mark.asyncio
     async def test_blacklist_token(self, mock_redis):
         """Test adding token to blacklist."""
         set_redis_client(mock_redis)
@@ -228,6 +229,7 @@ class TestTokenBlacklisting:
         assert call_args[0][0].startswith("blacklist:")
         assert call_args[0][2] == "blacklisted"
     
+    @pytest.mark.asyncio
     async def test_blacklist_token_with_custom_expiry(self, mock_redis):
         """Test blacklisting token with custom expiration."""
         set_redis_client(mock_redis)
@@ -239,6 +241,7 @@ class TestTokenBlacklisting:
         
         mock_redis.setex.assert_called_once()
     
+    @pytest.mark.asyncio
     async def test_is_token_blacklisted_true(self, mock_redis):
         """Test checking if token is blacklisted (blacklisted)."""
         set_redis_client(mock_redis)
@@ -251,6 +254,7 @@ class TestTokenBlacklisting:
         assert is_blacklisted is True
         mock_redis.get.assert_called_once_with(f"blacklist:{token}")
     
+    @pytest.mark.asyncio
     async def test_is_token_blacklisted_false(self, mock_redis):
         """Test checking if token is blacklisted (not blacklisted)."""
         set_redis_client(mock_redis)
@@ -263,6 +267,7 @@ class TestTokenBlacklisting:
         assert is_blacklisted is False
         mock_redis.get.assert_called_once_with(f"blacklist:{token}")
     
+    @pytest.mark.asyncio
     async def test_is_token_blacklisted_redis_error(self, mock_redis):
         """Test token blacklist check with Redis error."""
         set_redis_client(mock_redis)
@@ -274,6 +279,7 @@ class TestTokenBlacklisting:
         
         assert is_blacklisted is False  # Should return False on error
     
+    @pytest.mark.asyncio
     async def test_blacklist_token_no_redis(self):
         """Test blacklisting token when Redis is unavailable."""
         set_redis_client(None)
@@ -339,16 +345,18 @@ class TestPasswordReset:
     def test_verify_password_reset_token_expired(self):
         """Test verifying expired password reset token."""
         email = "test@example.com"
+        
+        # Create expired token using manual encoding
         data = {
             "sub": email,
             "type": "password_reset",
-            "reset_id": "test123"
+            "reset_id": "test123",
+            "exp": datetime.now(timezone.utc) + timedelta(seconds=-1),  # Already expired
+            "iat": datetime.now(timezone.utc)
         }
         
-        # Create expired token
-        expired_token = create_access_token(
-            data,
-            expires_delta=timedelta(seconds=-1)
+        expired_token = jwt.encode(
+            data, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
         )
         
         verified_email = verify_password_reset_token(expired_token)
@@ -405,7 +413,7 @@ class TestSecurityEdgeCases:
     def test_decode_token_with_wrong_algorithm(self):
         """Test decoding token with wrong algorithm."""
         # Create token with different algorithm (not supported by our settings)
-        import jwt as jose_jwt
+        from jose import jwt as jose_jwt
         
         payload = {"sub": "test@example.com", "exp": datetime.now(timezone.utc) + timedelta(hours=1)}
         wrong_algo_token = jose_jwt.encode(payload, "wrong_secret", algorithm="HS512")
@@ -416,7 +424,7 @@ class TestSecurityEdgeCases:
     def test_decode_token_with_wrong_secret(self):
         """Test decoding token with wrong secret."""
         # Create token with different secret
-        import jwt as jose_jwt
+        from jose import jwt as jose_jwt
         
         payload = {
             "sub": "test@example.com", 
