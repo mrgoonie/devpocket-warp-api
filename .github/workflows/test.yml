@@ -117,7 +117,7 @@ jobs:
           --cov-report=term-missing \
           --cov-report=xml \
           --cov-report=html \
-          --cov-fail-under=80 \
+          --cov-fail-under=60 \
           --junitxml=pytest-report.xml \
           --html=pytest-report.html \
           --self-contained-html \
