@@ -174,8 +174,10 @@ class TestScriptIntegration:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                result1 = script_runner.run_script("run_tests.sh", ["-t", "unit"])
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+            os.environ, mock_env
+        ):
+            result1 = script_runner.run_script("run_tests.sh", ["-t", "unit"])
 
         assert result1.returncode == 0
 
@@ -190,8 +192,10 @@ class TestScriptIntegration:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
-                    result2 = script_runner.run_script("format_code.sh", ["--check"])
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch(
+            "os.path.exists", return_value=True
+        ), patch.dict(os.environ, mock_env):
+            result2 = script_runner.run_script("format_code.sh", ["--check"])
 
         assert result2.returncode == 0
 
@@ -217,8 +221,10 @@ class TestScriptIntegration:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
-                    result2 = script_runner.run_script("format_code.sh")
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch(
+            "os.path.exists", return_value=True
+        ), patch.dict(os.environ, mock_env):
+            result2 = script_runner.run_script("format_code.sh")
 
         assert result2.returncode == 0
 
@@ -252,9 +258,11 @@ class TestScriptIntegration:
             with patch("subprocess.run") as mock_run:
                 mock_run.return_value = MagicMock(returncode=0)
 
-                with patch("shutil.which", return_value="/usr/bin/tool"), patch("os.path.exists", return_value=True):
-                        result = script_runner.run_script(script_name, args or [])
-                        results.put((script_name, result.returncode))
+                with patch("shutil.which", return_value="/usr/bin/tool"), patch(
+                    "os.path.exists", return_value=True
+                ):
+                    result = script_runner.run_script(script_name, args or [])
+                    results.put((script_name, result.returncode))
 
         # Start multiple scripts concurrently
         threads = [
@@ -328,8 +336,10 @@ class TestScriptIntegration:
             ]
 
             for script_name, args in scripts_to_test:
-                with patch("shutil.which", return_value="/usr/bin/tool"), patch("os.path.exists", return_value=True):
-                        result = script_runner.run_script(script_name, args)
+                with patch("shutil.which", return_value="/usr/bin/tool"), patch(
+                    "os.path.exists", return_value=True
+                ):
+                    result = script_runner.run_script(script_name, args)
 
                 # Check for consistent logging patterns
                 output = result.stdout + result.stderr
@@ -362,8 +372,10 @@ class TestScriptIntegration:
         for script_name, args in scripts_to_test:
             start_time = time.time()
 
-            with patch("shutil.which", return_value="/usr/bin/tool"), patch("os.path.exists", return_value=True):
-                    result = script_runner.run_script(script_name, args, timeout=30)
+            with patch("shutil.which", return_value="/usr/bin/tool"), patch(
+                "os.path.exists", return_value=True
+            ):
+                result = script_runner.run_script(script_name, args, timeout=30)
 
             execution_time = time.time() - start_time
 
@@ -413,11 +425,13 @@ class TestScriptIntegration:
             ]
 
             for script_name, args in success_tests:
-                with patch("shutil.which", return_value="/usr/bin/tool"), patch("os.path.exists", return_value=True):
-                        result = script_runner.run_script(script_name, args)
-                        assert (
-                            result.returncode == 0
-                        ), f"Successful {script_name} should return 0"
+                with patch("shutil.which", return_value="/usr/bin/tool"), patch(
+                    "os.path.exists", return_value=True
+                ):
+                    result = script_runner.run_script(script_name, args)
+                    assert (
+                        result.returncode == 0
+                    ), f"Successful {script_name} should return 0"
 
         # Test help operations (should always succeed)
         help_tests = [

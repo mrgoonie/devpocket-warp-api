@@ -69,8 +69,10 @@ class TestRunTestsScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("run_tests.sh")
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("run_tests.sh")
 
         assert result.returncode == 0
 
@@ -87,8 +89,10 @@ class TestRunTestsScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("run_tests.sh", ["-t", "unit"])
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("run_tests.sh", ["-t", "unit"])
 
         assert result.returncode == 0
 
@@ -105,10 +109,10 @@ class TestRunTestsScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script(
-                    "run_tests.sh", ["--type", "integration"]
-                )
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("run_tests.sh", ["--type", "integration"])
 
         assert result.returncode == 0
 
@@ -123,8 +127,10 @@ class TestRunTestsScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("run_tests.sh", ["-t", "api"])
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("run_tests.sh", ["-t", "api"])
 
         assert result.returncode == 0
 
@@ -141,8 +147,10 @@ class TestRunTestsScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("run_tests.sh", ["tests/test_auth/"])
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("run_tests.sh", ["tests/test_auth/"])
 
         assert result.returncode == 0
 
@@ -157,8 +165,10 @@ class TestRunTestsScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("run_tests.sh", ["-m", "not slow"])
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("run_tests.sh", ["-m", "not slow"])
 
         assert result.returncode == 0
 
@@ -173,8 +183,10 @@ class TestRunTestsScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch("os.cpu_count", return_value=4), patch.dict(os.environ, mock_env):
-                    result = script_runner.run_script("run_tests.sh", ["-p"])
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch(
+            "os.cpu_count", return_value=4
+        ), patch.dict(os.environ, mock_env):
+            result = script_runner.run_script("run_tests.sh", ["-p"])
 
         assert result.returncode == 0
 
@@ -189,8 +201,10 @@ class TestRunTestsScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("run_tests.sh", ["-v"])
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("run_tests.sh", ["-v"])
 
         assert result.returncode == 0
 
@@ -205,8 +219,10 @@ class TestRunTestsScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("run_tests.sh", ["-q"])
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("run_tests.sh", ["-q"])
 
         assert result.returncode == 0
 
@@ -223,8 +239,10 @@ class TestRunTestsScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("run_tests.sh", ["--no-cov"])
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("run_tests.sh", ["--no-cov"])
 
         assert result.returncode == 0
 
@@ -239,8 +257,10 @@ class TestRunTestsScript:
             MagicMock(returncode=0)
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("run_tests.sh", ["--no-db-check"])
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("run_tests.sh", ["--no-db-check"])
 
         assert result.returncode == 0
 
@@ -257,8 +277,10 @@ class TestRunTestsScript:
         """Test handling of database check failure."""
         mock_run.return_value = MagicMock(returncode=1)
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("run_tests.sh")
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("run_tests.sh")
 
         # Should continue with warning
         assert result.returncode == 0
@@ -276,16 +298,20 @@ class TestRunTestsScript:
             MagicMock(returncode=1),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("run_tests.sh")
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("run_tests.sh")
 
         assert result.returncode != 0
 
     @patch("subprocess.run")
     def test_clean_artifacts_only(self, mock_run, script_runner):
         """Test cleaning artifacts only."""
-        with patch("os.path.exists", return_value=True), patch("shutil.rmtree"), patch("os.remove"):
-                result = script_runner.run_script("run_tests.sh", ["--clean-only"])
+        with patch("os.path.exists", return_value=True), patch("shutil.rmtree"), patch(
+            "os.remove"
+        ):
+            result = script_runner.run_script("run_tests.sh", ["--clean-only"])
 
         assert result.returncode == 0
 
@@ -302,8 +328,10 @@ class TestRunTestsScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch("shutil.rmtree"), patch("os.remove"), patch.dict(os.environ, mock_env):
-                        result = script_runner.run_script("run_tests.sh", ["--clean"])
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch(
+            "shutil.rmtree"
+        ), patch("os.remove"), patch.dict(os.environ, mock_env):
+            result = script_runner.run_script("run_tests.sh", ["--clean"])
 
         assert result.returncode == 0
 
@@ -365,8 +393,10 @@ class TestRunTestsScript:
                 MagicMock(returncode=0),
             ]
 
-            with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                    result = script_runner.run_script("run_tests.sh", ["-t", test_type])
+            with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+                os.environ, mock_env
+            ):
+                result = script_runner.run_script("run_tests.sh", ["-t", test_type])
 
             assert result.returncode == 0, f"Test type '{test_type}' should be valid"
 
@@ -385,8 +415,10 @@ class TestRunTestsScript:
                 MagicMock(returncode=0),
             ]
 
-            with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                    result = script_runner.run_script("run_tests.sh", ["--no-db-check"])
+            with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+                os.environ, mock_env
+            ):
+                result = script_runner.run_script("run_tests.sh", ["--no-db-check"])
 
         assert result.returncode == 0
 
@@ -403,8 +435,10 @@ class TestRunTestsScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("run_tests.sh")
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("run_tests.sh")
 
         assert result.returncode == 0
 
@@ -421,8 +455,10 @@ class TestRunTestsScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("run_tests.sh")
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("run_tests.sh")
 
         assert result.returncode == 0
         mock_makedirs.assert_called()
@@ -441,8 +477,10 @@ class TestRunTestsScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("run_tests.sh")
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("run_tests.sh")
 
         assert result.returncode == 0
         # Verify database check script was created
@@ -461,11 +499,13 @@ class TestRunTestsScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script(
-                    "run_tests.sh",
-                    ["-t", "unit", "-m", "not slow", "-v", "-p"],
-                )
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script(
+                "run_tests.sh",
+                ["-t", "unit", "-m", "not slow", "-v", "-p"],
+            )
 
         assert result.returncode == 0
 
@@ -482,8 +522,10 @@ class TestRunTestsScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("run_tests.sh")
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("run_tests.sh")
 
         assert result.returncode == 0
 
@@ -500,8 +542,10 @@ class TestRunTestsScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("run_tests.sh")
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("run_tests.sh")
 
         assert result.returncode == 0
 
@@ -520,34 +564,36 @@ class TestRunTestsScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("run_tests.sh")
+        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("run_tests.sh")
 
         assert result.returncode == 0
 
     def test_parallel_execution_cpu_detection(self, script_runner):
         """Test CPU count detection for parallel execution."""
         with patch("os.cpu_count", return_value=8), patch("subprocess.run") as mock_run:
-                mock_run.side_effect = [
-                    # Database check
-                    MagicMock(returncode=0),
-                    # pytest execution
-                    MagicMock(returncode=0),
-                ]
+            mock_run.side_effect = [
+                # Database check
+                MagicMock(returncode=0),
+                # pytest execution
+                MagicMock(returncode=0),
+            ]
 
-                with patch("shutil.which", return_value="/usr/bin/pytest"):
-                    result = script_runner.run_script(
-                        "run_tests.sh", ["-p", "--no-db-check"]
-                    )
+            with patch("shutil.which", return_value="/usr/bin/pytest"):
+                result = script_runner.run_script(
+                    "run_tests.sh", ["-p", "--no-db-check"]
+                )
 
         assert result.returncode == 0
 
     def test_cleanup_operations(self, script_runner):
         """Test various cleanup operations."""
-        with patch("os.path.exists", return_value=True), patch("shutil.rmtree") as mock_rmtree, patch("os.remove") as mock_remove, patch("subprocess.run"):
-                        result = script_runner.run_script(
-                            "run_tests.sh", ["--clean-only"]
-                        )
+        with patch("os.path.exists", return_value=True), patch(
+            "shutil.rmtree"
+        ) as mock_rmtree, patch("os.remove") as mock_remove, patch("subprocess.run"):
+            result = script_runner.run_script("run_tests.sh", ["--clean-only"])
 
         assert result.returncode == 0
         assert mock_rmtree.called or mock_remove.called
@@ -576,21 +622,21 @@ class TestRunTestsScript:
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
 
-            with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(os.environ, custom_env):
-                    result = script_runner.run_script("run_tests.sh", ["--no-db-check"])
+            with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
+                os.environ, custom_env
+            ):
+                result = script_runner.run_script("run_tests.sh", ["--no-db-check"])
 
         assert result.returncode == 0
 
     def test_test_structure_discovery(self, script_runner):
         """Test test structure discovery functionality."""
-        with patch("os.path.isdir", return_value=True), patch("subprocess.run") as mock_run:
-                mock_run.return_value = MagicMock(
-                    returncode=0, stdout="5 tests collected"
-                )
+        with patch("os.path.isdir", return_value=True), patch(
+            "subprocess.run"
+        ) as mock_run:
+            mock_run.return_value = MagicMock(returncode=0, stdout="5 tests collected")
 
-                with patch("shutil.which", return_value="/usr/bin/pytest"):
-                    result = script_runner.run_script(
-                        "run_tests.sh", ["--summary-only"]
-                    )
+            with patch("shutil.which", return_value="/usr/bin/pytest"):
+                result = script_runner.run_script("run_tests.sh", ["--summary-only"])
 
         assert result.returncode == 0

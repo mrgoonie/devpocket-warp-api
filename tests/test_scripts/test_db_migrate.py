@@ -153,7 +153,7 @@ class TestDbMigrateScript:
     def test_alembic_not_found(self, mock_run, script_runner, mock_env):
         """Test handling when Alembic is not available."""
         with patch("shutil.which", return_value=None), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("db_migrate.sh")
+            result = script_runner.run_script("db_migrate.sh")
 
         assert result.returncode != 0
 
@@ -523,28 +523,30 @@ class TestDbMigrateScript:
     def test_backup_creation_success(self, mock_run, script_runner, mock_env, temp_dir):
         """Test successful backup creation before migration."""
         # Mock pg_dump availability and success
-        with patch("shutil.which", return_value="/usr/bin/pg_dump"), patch("subprocess.run") as mock_run:
-                mock_run.side_effect = [
-                    # db_utils.py test
-                    MagicMock(returncode=0),
-                    # alembic current
-                    MagicMock(returncode=0, stdout="abc123"),
-                    # alembic show head
-                    MagicMock(returncode=0),
-                    # Check data safety
-                    MagicMock(returncode=0, stdout="def456"),
-                    # pg_dump (backup)
-                    MagicMock(returncode=0),
-                    # alembic upgrade
-                    MagicMock(returncode=0),
-                    # alembic current (final)
-                    MagicMock(returncode=0),
-                ]
+        with patch("shutil.which", return_value="/usr/bin/pg_dump"), patch(
+            "subprocess.run"
+        ) as mock_run:
+            mock_run.side_effect = [
+                # db_utils.py test
+                MagicMock(returncode=0),
+                # alembic current
+                MagicMock(returncode=0, stdout="abc123"),
+                # alembic show head
+                MagicMock(returncode=0),
+                # Check data safety
+                MagicMock(returncode=0, stdout="def456"),
+                # pg_dump (backup)
+                MagicMock(returncode=0),
+                # alembic upgrade
+                MagicMock(returncode=0),
+                # alembic current (final)
+                MagicMock(returncode=0),
+            ]
 
-                with patch.dict(os.environ, mock_env):
-                    result = script_runner.run_script("db_migrate.sh", ["--force"])
+            with patch.dict(os.environ, mock_env):
+                result = script_runner.run_script("db_migrate.sh", ["--force"])
 
-                assert result.returncode == 0
+            assert result.returncode == 0
 
     @patch("subprocess.run")
     def test_backup_creation_failure_warning(self, mock_run, script_runner, mock_env):

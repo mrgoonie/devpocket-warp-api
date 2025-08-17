@@ -496,10 +496,10 @@ class TestDbSeedScript:
         ]
 
         # Mock user confirmation input
-        with patch("builtins.input", return_value="y"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script(
-                    "db_seed.sh", ["--clean", "users", "10"]
-                )
+        with patch("builtins.input", return_value="y"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("db_seed.sh", ["--clean", "users", "10"])
 
         assert result.returncode == 0
         output = result.stdout + result.stderr
@@ -570,8 +570,10 @@ class TestDbSeedScript:
         ]
 
         # Mock user confirmation input
-        with patch("builtins.input", return_value="y"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("db_seed.sh", ["--reset", "all", "5"])
+        with patch("builtins.input", return_value="y"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("db_seed.sh", ["--reset", "all", "5"])
 
         assert result.returncode == 0
         output = result.stdout + result.stderr
@@ -668,10 +670,10 @@ class TestDbSeedScript:
         ]
 
         # Mock user cancellation
-        with patch("builtins.input", return_value="n"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script(
-                    "db_seed.sh", ["--clean", "users", "10"]
-                )
+        with patch("builtins.input", return_value="n"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("db_seed.sh", ["--clean", "users", "10"])
 
         assert result.returncode == 0
         output = result.stdout + result.stderr
@@ -689,8 +691,10 @@ class TestDbSeedScript:
         ]
 
         # Mock user cancellation
-        with patch("builtins.input", return_value="n"), patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("db_seed.sh", ["--reset", "all", "5"])
+        with patch("builtins.input", return_value="n"), patch.dict(
+            os.environ, mock_env
+        ):
+            result = script_runner.run_script("db_seed.sh", ["--reset", "all", "5"])
 
         assert result.returncode == 0
         output = result.stdout + result.stderr
