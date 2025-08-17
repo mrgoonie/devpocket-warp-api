@@ -19,6 +19,7 @@ import redis.asyncio as aioredis
 # Conditional imports to handle missing classes
 try:
     from app.api.sync.schemas import DeviceRegistration, SyncDataResponse
+
     # Use existing response class instead of missing one
     SyncConflictResponse = SyncDataResponse
 except ImportError:
