@@ -116,6 +116,22 @@ class UserResponse(UserBase):
         default=None, description="Last login timestamp"
     )
 
+    @classmethod
+    def from_user(cls, user: "User") -> "UserResponse":
+        """Create UserResponse from User model."""
+        return cls(
+            id=str(user.id),
+            email=user.email,
+            username=user.username,
+            display_name=user.display_name,
+            subscription_tier=user.subscription_tier,
+            is_active=user.is_active,
+            is_verified=user.is_verified,
+            has_api_key=bool(user.openrouter_api_key),
+            created_at=user.created_at,
+            last_login_at=user.last_login_at,
+        )
+
     class Config:
         from_attributes = True
 

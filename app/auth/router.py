@@ -179,7 +179,7 @@ async def register_user(
         await db.commit()
 
         # Generate tokens
-        token_data = {"sub": created_user.id, "email": created_user.email}
+        token_data = {"sub": str(created_user.id), "email": created_user.email}
         access_token = create_access_token(token_data)
         refresh_token = create_refresh_token(token_data)
 
@@ -190,7 +190,7 @@ async def register_user(
             refresh_token=refresh_token,
             token_type="bearer",
             expires_in=settings.jwt_expiration_hours * 3600,
-            user=UserResponse.from_orm(created_user),
+            user=UserResponse.from_user(created_user),
         )
 
     except HTTPException:
@@ -284,7 +284,7 @@ async def login_user(
 
         # Generate tokens
         token_data = {
-            "sub": user.id,
+            "sub": str(user.id),
             "email": user.email,
             "subscription_tier": user.subscription_tier,
         }
@@ -299,7 +299,7 @@ async def login_user(
             refresh_token=refresh_token,
             token_type="bearer",
             expires_in=settings.jwt_expiration_hours * 3600,
-            user=UserResponse.from_orm(user),
+            user=UserResponse.from_user(user),
         )
 
     except HTTPException:
@@ -357,7 +357,7 @@ async def refresh_token(
 
         # Generate new access token
         token_data = {
-            "sub": user.id,
+            "sub": str(user.id),
             "email": user.email,
             "subscription_tier": user.subscription_tier,
         }
@@ -421,7 +421,7 @@ async def get_current_user_info(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ) -> UserResponse:
     """Get current user information."""
-    return UserResponse.from_orm(current_user)
+    return UserResponse.from_user(current_user)
 
 
 # Password Management Endpoints

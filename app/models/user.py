@@ -48,7 +48,12 @@ class User(BaseModel):
     display_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     role: Mapped[UserRole] = mapped_column(
-        ENUM(UserRole, name="user_role", create_type=False),
+        ENUM(
+            UserRole,
+            name="user_role",
+            create_type=False,
+            values_callable=lambda x: [e.value for e in x],
+        ),
         nullable=False,
         default=UserRole.USER,
         server_default="user",

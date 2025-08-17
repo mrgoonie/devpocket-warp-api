@@ -23,7 +23,7 @@ class UserFactory(factory.Factory):
     username = factory.Sequence(lambda n: f"user{n}")
     hashed_password = factory.LazyFunction(lambda: hash_password("TestPassword123!"))
     full_name = factory.LazyAttribute(lambda obj: f"{obj.username.title()} User")
-    role = UserRole.USER.value
+    role = UserRole.USER
 
     # Account status
     is_active = True

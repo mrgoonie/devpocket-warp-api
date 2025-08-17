@@ -110,13 +110,124 @@ jobs:
         bandit -r app/ -f json -o bandit-report.json || true
         safety check --json --output safety-report.json || true
 
-    - name: Run tests with coverage
+    - name: Run Unit Tests
       run: |
-        pytest \
+        echo "::group::Unit Tests"
+        pytest tests/test_auth/ tests/test_database/ tests/test_api/ \
           --cov=app \
           --cov-report=term-missing \
-          --cov-report=xml \
-          --cov-report=html \
+          --cov-report=xml:unit-coverage.xml \
+          --cov-report=html:unit-htmlcov \
+          --junitxml=unit-pytest-report.xml \
+          --html=unit-pytest-report.html \
+          --self-contained-html \
+          -v \
+          --tb=short \
+          --durations=10 \
+          --randomly-seed=12345 \
+          -m "not integration and not performance and not external"
+        echo "::endgroup::"
+      env:
+        DATABASE_URL: postgresql://test:test@localhost:5433/devpocket_test
+        REDIS_URL: redis://localhost:6380
+
+    - name: Run Service Layer Tests
+      run: |
+        echo "::group::Service Layer Tests"
+        pytest tests/test_ssh/ tests/test_ai/ tests/test_sync/ \
+          --cov=app \
+          --cov-append \
+          --cov-report=term-missing \
+          --cov-report=xml:service-coverage.xml \
+          --cov-report=html:service-htmlcov \
+          --junitxml=service-pytest-report.xml \
+          --html=service-pytest-report.html \
+          --self-contained-html \
+          -v \
+          --tb=short \
+          --durations=10 \
+          --randomly-seed=12345 \
+          -m "not integration and not performance and not external"
+        echo "::endgroup::"
+      env:
+        DATABASE_URL: postgresql://test:test@localhost:5433/devpocket_test
+        REDIS_URL: redis://localhost:6380
+
+    - name: Run WebSocket Tests
+      run: |
+        echo "::group::WebSocket Tests"
+        pytest tests/test_websocket/ \
+          --cov=app \
+          --cov-append \
+          --cov-report=term-missing \
+          --cov-report=xml:websocket-coverage.xml \
+          --cov-report=html:websocket-htmlcov \
+          --junitxml=websocket-pytest-report.xml \
+          --html=websocket-pytest-report.html \
+          --self-contained-html \
+          -v \
+          --tb=short \
+          --durations=10 \
+          --randomly-seed=12345 \
+          -m "not integration and not performance and not external"
+        echo "::endgroup::"
+      env:
+        DATABASE_URL: postgresql://test:test@localhost:5433/devpocket_test
+        REDIS_URL: redis://localhost:6380
+
+    - name: Run Error Handling Tests
+      run: |
+        echo "::group::Error Handling Tests"
+        pytest tests/test_error_handling/ \
+          --cov=app \
+          --cov-append \
+          --cov-report=term-missing \
+          --cov-report=xml:error-coverage.xml \
+          --cov-report=html:error-htmlcov \
+          --junitxml=error-pytest-report.xml \
+          --html=error-pytest-report.html \
+          --self-contained-html \
+          -v \
+          --tb=short \
+          --durations=10 \
+          --randomly-seed=12345 \
+          -m "not integration and not performance and not external"
+        echo "::endgroup::"
+      env:
+        DATABASE_URL: postgresql://test:test@localhost:5433/devpocket_test
+        REDIS_URL: redis://localhost:6380
+
+    - name: Run Script Tests
+      run: |
+        echo "::group::Script Tests"
+        pytest tests/test_scripts/ \
+          --cov=app \
+          --cov-append \
+          --cov-report=term-missing \
+          --cov-report=xml:script-coverage.xml \
+          --cov-report=html:script-htmlcov \
+          --junitxml=script-pytest-report.xml \
+          --html=script-pytest-report.html \
+          --self-contained-html \
+          -v \
+          --tb=short \
+          --durations=10 \
+          --randomly-seed=12345 \
+          -m "not integration and not performance and not external"
+        echo "::endgroup::"
+      env:
+        DATABASE_URL: postgresql://test:test@localhost:5433/devpocket_test
+        REDIS_URL: redis://localhost:6380
+
+    - name: Run Basic Coverage Tests
+      run: |
+        echo "::group::Basic Coverage Tests"
+        pytest tests/test_basic_coverage.py tests/test_app_coverage.py \
+          --cov=app \
+          --cov-append \
+          --cov-report=term-missing \
+          --cov-report=xml:coverage.xml \
+          --cov-report=html:htmlcov \
           --cov-fail-under=30 \
           --junitxml=pytest-report.xml \
           --html=pytest-report.html \
@@ -125,7 +236,8 @@ jobs:
           --tb=short \
           --durations=10 \
           --randomly-seed=12345 \
-          -n auto
+          -m "not integration and not performance and not external"
+        echo "::endgroup::"
       env:
         DATABASE_URL: postgresql://test:test@localhost:5433/devpocket_test
         REDIS_URL: redis://localhost:6380
@@ -144,9 +256,14 @@ jobs:
       with:
         name: test-reports-${{ matrix.python-version }}
         path: |
+          *-pytest-report.html
+          *-pytest-report.xml
           pytest-report.html
           pytest-report.xml
+          *-htmlcov/
           htmlcov/
+          *-coverage.xml
+          coverage.xml
           bandit-report.json
           safety-report.json
 

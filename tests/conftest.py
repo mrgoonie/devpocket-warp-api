@@ -224,7 +224,7 @@ async def client(app) -> TestClient:
 @pytest_asyncio.fixture
 async def async_client(app) -> AsyncGenerator[AsyncClient, None]:
     """Create async test client for async requests."""
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(app=app, base_url="http://testserver") as ac:
         yield ac
 
 
@@ -250,9 +250,12 @@ def user_data() -> dict:
 async def test_user(user_repository, user_data) -> User:
     """Create a test user in the database."""
     from app.auth.security import hash_password
+    from app.models.user import UserRole
 
     hashed_password = hash_password(user_data["password"])
     create_data = {k: v for k, v in user_data.items() if k != "password"}
+    # Explicitly set the role to ensure it's using the enum value correctly
+    create_data["role"] = UserRole.USER
     user = await user_repository.create(**create_data, hashed_password=hashed_password)
     return user
 
@@ -261,9 +264,11 @@ async def test_user(user_repository, user_data) -> User:
 async def verified_user(user_repository, user_data) -> User:
     """Create a verified test user."""
     from app.auth.security import hash_password
+    from app.models.user import UserRole
 
     hashed_password = hash_password(user_data["password"])
     create_data = {k: v for k, v in user_data.items() if k != "password"}
+    create_data["role"] = UserRole.USER
     user = await user_repository.create(
         **create_data,
         hashed_password=hashed_password,
@@ -277,9 +282,11 @@ async def verified_user(user_repository, user_data) -> User:
 async def premium_user(user_repository, user_data) -> User:
     """Create a premium test user."""
     from app.auth.security import hash_password
+    from app.models.user import UserRole
 
     hashed_password = hash_password(user_data["password"])
     create_data = {k: v for k, v in user_data.items() if k != "password"}
+    create_data["role"] = UserRole.PREMIUM
     user = await user_repository.create(
         **create_data,
         hashed_password=hashed_password,
@@ -293,10 +300,10 @@ async def premium_user(user_repository, user_data) -> User:
 
 # Authentication fixtures
 @pytest_asyncio.fixture
-async def auth_headers(test_user) -> dict:
-    """Create authentication headers for test user."""
-    user = test_user  # test_user is already awaited
-    access_token = create_access_token({"sub": user.email})
+async def auth_headers(verified_user) -> dict:
+    """Create authentication headers for verified user."""
+    user = verified_user  # verified_user is already awaited
+    access_token = create_access_token({"sub": str(user.id)})
     return {"Authorization": f"Bearer {access_token}"}
 
 
@@ -304,7 +311,7 @@ async def auth_headers(test_user) -> dict:
 async def premium_auth_headers(premium_user) -> dict:
     """Create authentication headers for premium user."""
     user = premium_user  # premium_user is already awaited
-    access_token = create_access_token({"sub": user.email})
+    access_token = create_access_token({"sub": str(user.id)})
     return {"Authorization": f"Bearer {access_token}"}
 
 
