@@ -96,9 +96,7 @@ class Settings(BaseSettings):
     app_port: int = 8000
 
     # Database settings
-    database_url: str = (
-        "postgresql://devpocket_user:devpocket_password@localhost:5432/devpocket_warp_dev"
-    )
+    database_url: str = "postgresql://devpocket_user:devpocket_password@localhost:5432/devpocket_warp_dev"
     database_host: str = "localhost"
     database_port: int = 5432
     database_name: str = "devpocket_warp_dev"
@@ -118,9 +116,9 @@ class Settings(BaseSettings):
     jwt_refresh_expiration_days: int = 30
 
     # CORS settings
-    cors_origins: str | list[str] = (
-        "http://localhost:3000,http://127.0.0.1:3000,https://devpocket.app"
-    )
+    cors_origins: str | list[
+        str
+    ] = "http://localhost:3000,http://127.0.0.1:3000,https://devpocket.app"
     cors_allow_credentials: bool = True
     cors_allow_methods: str | list[str] = "GET,POST,PUT,DELETE,OPTIONS,PATCH"
     cors_allow_headers: str | list[str] = "*"

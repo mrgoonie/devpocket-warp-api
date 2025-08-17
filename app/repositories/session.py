@@ -213,10 +213,10 @@ class SessionRepository(BaseRepository[Session]):
         conditions: list[BinaryExpression[bool]] = [Session.ssh_host.is_not(None)]
 
         if user_id:
-            conditions.append(Session.user_id == user_id)  # type: ignore
+            conditions.append(Session.user_id == user_id)
 
         if host:
-            conditions.append(Session.ssh_host == host)  # type: ignore
+            conditions.append(Session.ssh_host == host)
 
         result = await self.session.execute(
             select(Session)
@@ -447,10 +447,10 @@ class SessionRepository(BaseRepository[Session]):
         """Delete old sessions to save space."""
         cutoff_date = datetime.now() - timedelta(days=days_old)
 
-        conditions: list[BinaryExpression[bool]] = [Session.created_at < cutoff_date]  # type: ignore
+        conditions: list[BinaryExpression[bool]] = [Session.created_at < cutoff_date]
 
         if keep_active:
-            conditions.append(Session.is_active is False)  # type: ignore
+            conditions.append(Session.is_active is False)
 
         result = await self.session.execute(select(Session).where(and_(*conditions)))
 

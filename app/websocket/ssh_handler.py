@@ -133,11 +133,11 @@ class SSHHandler:
                 self.server_info = {
                     "version": transport.remote_version,
                     "cipher": (
-                        transport.get_cipher()[0]
-                        if transport.get_cipher()
+                        transport.get_cipher()[0]  # type: ignore[attr-defined]
+                        if transport.get_cipher()  # type: ignore[attr-defined]
                         else "unknown"
                     ),
-                    "host_key_type": transport.get_host_key().get_name(),
+                    "host_key_type": transport.get_host_key().get_name(),  # type: ignore[attr-defined]
                     "auth_method": auth_method,
                 }
 

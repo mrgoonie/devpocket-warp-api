@@ -558,7 +558,7 @@ class AIService:
             if datetime.now(UTC) - cached_data["timestamp"] < timedelta(
                 seconds=self._cache_ttl
             ):
-                return cached_data["response"]  # type: ignore
+                return cached_data["response"]
             else:
                 # Remove expired cache
                 del self._response_cache[cache_key]

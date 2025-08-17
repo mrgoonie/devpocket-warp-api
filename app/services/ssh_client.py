@@ -11,7 +11,7 @@ import socket
 from typing import Any
 
 import paramiko
-from paramiko import (
+from paramiko import (  # type: ignore[attr-defined]
     AutoAddPolicy,
     DSSKey,
     ECDSAKey,
@@ -113,13 +113,13 @@ class SSHClientService:
             if transport:
                 server_version = transport.remote_version
                 server_cipher = (
-                    transport.get_cipher()[0] if transport.get_cipher() else "unknown"
+                    transport.get_cipher()[0] if transport.get_cipher() else "unknown"  # type: ignore[attr-defined]
                 )
 
                 result["server_info"] = {
                     "version": server_version,
                     "cipher": server_cipher,
-                    "host_key_type": transport.get_host_key().get_name(),
+                    "host_key_type": transport.get_host_key().get_name(),  # type: ignore[attr-defined]
                 }
 
             # Test basic command execution
@@ -134,9 +134,9 @@ class SSHClientService:
                     result["message"] = "Connection successful"
                     result["details"]["command_test"] = "passed"
                 else:
-                    result["message"] = (
-                        "Connection established but command execution failed"
-                    )
+                    result[
+                        "message"
+                    ] = "Connection established but command execution failed"
                     result["details"]["command_test"] = "failed"
                     result["details"]["command_output"] = test_output
 
@@ -170,9 +170,9 @@ class SSHClientService:
 
         except ConnectionRefusedError:
             logger.warning(f"Connection refused for {host}:{port}")
-            result["message"] = (
-                f"Connection refused. Is SSH server running on port {port}?"
-            )
+            result[
+                "message"
+            ] = f"Connection refused. Is SSH server running on port {port}?"
             result["details"]["error_type"] = "connection_refused"
 
         except Exception as e:
@@ -282,7 +282,7 @@ class SSHClientService:
             elif key_type == "ecdsa":
                 key = ECDSAKey.generate()
             elif key_type == "ed25519":
-                key = Ed25519Key.generate()
+                key = Ed25519Key.generate()  # type: ignore[attr-defined]
             else:
                 raise ValueError(f"Unsupported key type: {key_type}")
 

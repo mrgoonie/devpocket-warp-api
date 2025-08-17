@@ -305,7 +305,7 @@ class SyncDataRepository(BaseRepository[SyncData]):
 
         from sqlalchemy import BinaryExpression
 
-        typed_conditions: list[BinaryExpression[bool]] = conditions  # type: ignore
+        typed_conditions: list[BinaryExpression[bool]] = conditions
         result = await self.session.execute(
             select(SyncData).where(and_(*typed_conditions))
         )
