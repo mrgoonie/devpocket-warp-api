@@ -9,7 +9,7 @@ class TestBasicIntegration:
     def test_placeholder(self):
         """Placeholder test to prevent empty test suite error."""
         assert True
-        
+
     @pytest.mark.asyncio
     async def test_app_startup(self):
         """Test that the app can start up successfully."""
