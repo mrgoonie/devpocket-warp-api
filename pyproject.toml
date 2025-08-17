@@ -185,6 +185,12 @@ markers = [
     "ssh: marks tests related to SSH functionality",
     "websocket: marks tests related to WebSocket functionality",
     "ai: marks tests related to AI features",
+    "e2e: marks tests as end-to-end tests",
+    "api: marks tests as API endpoint tests",
+    "services: marks tests as service layer tests",
+    "security: marks tests as security tests",
+    "performance: marks tests as performance tests",
+    "external: marks tests that require external services",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning",
