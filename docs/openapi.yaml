@@ -9,13 +9,15 @@ info:
     BYOK (Bring Your Own Key) model, and multi-device synchronization.
     
     ## Key Features
-    - **JWT Authentication**: Secure token-based authentication with refresh tokens
+    - **JWT Authentication**: Secure token-based authentication with refresh tokens and account locking
     - **Terminal Sessions**: Create and manage terminal sessions with real-time WebSocket communication
-    - **SSH Management**: Secure SSH profiles, keys, and connections
-    - **AI Command Assistance**: BYOK model with OpenRouter integration for command suggestions and explanations
-    - **Multi-device Sync**: Synchronize data across multiple devices
-    - **Command History**: Track and search command execution history
-    - **Real-time Communication**: WebSocket-based terminal I/O with PTY support
+    - **SSH Management**: Secure SSH profiles, keys, and connections with connection testing
+    - **AI Command Assistance**: BYOK model with OpenRouter integration for command suggestions, explanations, error analysis, and optimization
+    - **Multi-device Sync**: Synchronize data across multiple devices with conflict resolution
+    - **Command History**: Track and search command execution history with advanced filtering
+    - **Real-time Communication**: WebSocket-based terminal I/O with PTY support and signal handling
+    - **Batch Processing**: Efficient batch AI operations for multiple requests
+    - **Health Monitoring**: Comprehensive health checks and service status monitoring
     
     ## Business Model
     DevPocket uses a freemium subscription model with the following tiers:
@@ -92,6 +94,8 @@ tags:
     description: User profile and account management
   - name: WebSocket
     description: Real-time terminal communication via WebSocket
+  - name: Health
+    description: Service health checks and system status
 
 components:
   securitySchemes:
@@ -1270,6 +1274,54 @@ paths:
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
+  /api/auth/account-status:
+    get:
+      tags:
+        - Authentication
+      summary: Get Account Status
+      description: |
+        Get current account lock status and failed login attempts.
+        
+        Provides information about account security status including:
+        - Whether the account is currently locked
+        - Lock expiration time if applicable
+        - Number of failed login attempts
+      operationId: getAccountStatus
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Account status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  is_locked:
+                    type: boolean
+                    description: Whether the account is currently locked
+                    example: false
+                  locked_until:
+                    type: string
+                    format: date-time
+                    nullable: true
+                    description: Lock expiration time (null if not locked)
+                    example: null
+                  failed_attempts:
+                    type: integer
+                    description: Number of failed login attempts
+                    example: 0
+                  max_attempts:
+                    type: integer
+                    description: Maximum allowed failed attempts before lock
+                    example: 5
+                  lock_duration_minutes:
+                    type: integer
+                    description: Duration of account lock in minutes
+                    example: 15
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
   # AI Services endpoints
   /api/ai/validate-key:
     post:
@@ -1612,6 +1664,283 @@ paths:
                     type: number
                     format: float
                     example: 0.92
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/ai/optimize-command:
+    post:
+      tags:
+        - AI Services
+      summary: Optimize Command
+      description: |
+        Get optimization suggestions and improvements for commands.
+        
+        Analyzes existing commands and provides suggestions for:
+        - Performance improvements
+        - Security enhancements
+        - Best practice recommendations
+        - Alternative approaches
+      operationId: optimizeCommand
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - api_key
+                - command
+              properties:
+                api_key:
+                  type: string
+                  description: User's OpenRouter API key
+                  example: "sk-or-v1-abc123..."
+                command:
+                  type: string
+                  description: Command to optimize
+                  example: "find / -name '*.log' -exec rm {} \\;"
+                context:
+                  type: object
+                  description: Command execution context
+                  properties:
+                    working_directory:
+                      type: string
+                      example: "/var/log"
+                    previous_commands:
+                      type: array
+                      items:
+                        type: string
+                      example: ["cd /var/log", "ls -la"]
+                optimization_goals:
+                  type: array
+                  items:
+                    type: string
+                    enum: [performance, security, readability, efficiency]
+                  description: Optimization priorities
+                  example: ["security", "performance"]
+      responses:
+        '200':
+          description: Command optimization completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  original_command:
+                    type: string
+                    example: "find / -name '*.log' -exec rm {} \\;"
+                  optimized_suggestions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        command:
+                          type: string
+                          example: "find /var/log -name '*.log' -type f -mtime +7 -delete"
+                        improvement_type:
+                          type: string
+                          enum: [performance, security, safety, efficiency]
+                          example: "safety"
+                        explanation:
+                          type: string
+                          example: "Limits search scope and adds safety checks"
+                        risk_level:
+                          type: string
+                          enum: [low, medium, high]
+                          example: "low"
+                  analysis:
+                    type: object
+                    properties:
+                      potential_issues:
+                        type: array
+                        items:
+                          type: string
+                        example: ["Searches entire filesystem", "No time-based filtering"]
+                      best_practices:
+                        type: array
+                        items:
+                          type: string
+                        example: ["Use specific paths", "Add time constraints"]
+                  model_used:
+                    type: string
+                    example: "google/gemini-2.5-flash"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/ai/batch:
+    post:
+      tags:
+        - AI Services
+      summary: Batch AI Processing
+      description: |
+        Process multiple AI requests in a single batch operation.
+        
+        Efficiently handles multiple AI requests with:
+        - Reduced API overhead
+        - Consistent context sharing
+        - Bulk processing optimization
+      operationId: processBatchRequests
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - api_key
+                - requests
+              properties:
+                api_key:
+                  type: string
+                  description: User's OpenRouter API key
+                  example: "sk-or-v1-abc123..."
+                requests:
+                  type: array
+                  maxItems: 10
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        description: Request identifier
+                        example: "req_1"
+                      type:
+                        type: string
+                        enum: [suggest, explain, analyze_error, optimize]
+                        description: Type of AI request
+                        example: "suggest"
+                      data:
+                        type: object
+                        description: Request-specific data
+                        additionalProperties: true
+                shared_context:
+                  type: object
+                  description: Context shared across all requests
+                  properties:
+                    working_directory:
+                      type: string
+                      example: "/home/user/project"
+                    shell_type:
+                      type: string
+                      example: "bash"
+      responses:
+        '200':
+          description: Batch processing completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  batch_id:
+                    type: string
+                    format: uuid
+                    example: "123e4567-e89b-12d3-a456-426614174000"
+                  success_count:
+                    type: integer
+                    example: 8
+                  error_count:
+                    type: integer
+                    example: 2
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        request_id:
+                          type: string
+                          example: "req_1"
+                        status:
+                          type: string
+                          enum: [success, error]
+                          example: "success"
+                        result:
+                          type: object
+                          additionalProperties: true
+                        error:
+                          type: string
+                          nullable: true
+                          example: null
+                  processing_time_ms:
+                    type: integer
+                    example: 3450
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/ai/health:
+    get:
+      tags:
+        - AI Services
+      summary: AI Service Health Check
+      description: |
+        Check AI service health and operational status.
+        
+        Provides information about:
+        - Service availability
+        - Feature status
+        - Performance metrics
+        - System capabilities
+      operationId: aiServiceHealth
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: AI service health status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [healthy, unhealthy]
+                    example: "healthy"
+                  service:
+                    type: string
+                    example: "ai_integration"
+                  openrouter_api:
+                    type: string
+                    enum: [available, unavailable]
+                    example: "available"
+                  features:
+                    type: object
+                    properties:
+                      command_suggestions:
+                        type: string
+                        enum: [available, unavailable]
+                        example: "available"
+                      command_explanations:
+                        type: string
+                        enum: [available, unavailable]
+                        example: "available"
+                      error_analysis:
+                        type: string
+                        enum: [available, unavailable]
+                        example: "available"
+                      command_optimization:
+                        type: string
+                        enum: [available, unavailable]
+                        example: "available"
+                      batch_processing:
+                        type: string
+                        enum: [available, unavailable]
+                        example: "available"
+                  byok_model:
+                    type: string
+                    enum: [active, inactive]
+                    example: "active"
+                  supported_models:
+                    type: array
+                    items:
+                      type: string
+                    example: ["google/gemini-2.5-flash"]
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2023-01-01T12:00:00Z"
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
