@@ -129,6 +129,15 @@ async def get_current_user(
             logger.warning("Token missing user identifier")
             raise AuthenticationError("Invalid token format")
 
+        # Validate UUID format
+        try:
+            from uuid import UUID
+            # Attempt to create UUID to validate format
+            UUID(user_id)
+        except (ValueError, TypeError):
+            logger.warning(f"Invalid UUID format for user ID: {user_id}")
+            raise AuthenticationError("User not found")
+
         # Get user from database
         user_repo = UserRepository(db)
         user = await user_repo.get_by_id(user_id)
@@ -292,6 +301,14 @@ async def get_user_from_token(token: str, db: AsyncSession) -> User | None:
         # Extract user identifier
         user_id = payload.get("sub")
         if not user_id:
+            return None
+
+        # Validate UUID format
+        try:
+            from uuid import UUID
+            # Attempt to create UUID to validate format
+            UUID(user_id)
+        except (ValueError, TypeError):
             return None
 
         # Get user from database

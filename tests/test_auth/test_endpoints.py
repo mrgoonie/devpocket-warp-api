@@ -55,12 +55,14 @@ class TestRegistrationEndpoint:
         existing_user = VerifiedUserFactory()
         test_session.add(existing_user)
         await test_session.commit()
+        await test_session.refresh(existing_user)  # Get the ID
 
+        import random
         user_data = {
             "email": existing_user.email,  # Duplicate email
-            "username": "newuser",
+            "username": f"newuser{random.randint(1000, 9999)}",  # Unique username
             "password": "SecurePass123!",
-            "full_name": "New User",
+            "display_name": "New User",
         }
 
         response = await async_client.post("/api/auth/register", json=user_data)
@@ -76,12 +78,14 @@ class TestRegistrationEndpoint:
         existing_user = VerifiedUserFactory()
         test_session.add(existing_user)
         await test_session.commit()
+        await test_session.refresh(existing_user)  # Get the ID
 
+        import random
         user_data = {
-            "email": "newuser@example.com",
+            "email": f"newuser{random.randint(1000, 9999)}@example.com",  # Unique email
             "username": existing_user.username,  # Duplicate username
             "password": "SecurePass123!",
-            "full_name": "New User",
+            "display_name": "New User",
         }
 
         response = await async_client.post("/api/auth/register", json=user_data)
@@ -97,7 +101,7 @@ class TestRegistrationEndpoint:
             "email": "newuser@example.com",
             "username": "newuser",
             "password": "weak",  # Weak password
-            "full_name": "New User",
+            "display_name": "New User",
         }
 
         response = await async_client.post("/api/auth/register", json=user_data)
@@ -113,7 +117,7 @@ class TestRegistrationEndpoint:
             "email": "invalid-email",  # Invalid email
             "username": "newuser",
             "password": "SecurePass123!",
-            "full_name": "New User",
+            "display_name": "New User",
         }
 
         response = await async_client.post("/api/auth/register", json=user_data)
@@ -125,7 +129,7 @@ class TestRegistrationEndpoint:
         """Test registration with missing required fields."""
         incomplete_data = {
             "email": "newuser@example.com",
-            # Missing username, password, full_name
+            # Missing username, password, display_name
         }
 
         response = await async_client.post("/api/auth/register", json=incomplete_data)
@@ -675,7 +679,7 @@ class TestRateLimiting:
                 "email": f"user{i}@example.com",
                 "username": f"user{i}",
                 "password": "SecurePass123!",
-                "full_name": f"User {i}",
+                "display_name": f"User {i}",
             }
 
             response = await async_client.post("/api/auth/register", json=user_data)

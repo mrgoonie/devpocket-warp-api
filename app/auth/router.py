@@ -5,7 +5,7 @@ Handles all authentication-related endpoints including user registration,
 login, token management, and password operations.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Annotated, Any
 
 from fastapi import (
@@ -23,11 +23,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth.dependencies import get_current_active_user, get_current_user
 from app.auth.schemas import (
     AccountLockInfo,
+    EmailVerificationRequest,
     ForgotPassword,
     MessageResponse,
     PasswordChange,
     ResetPassword,
     Token,
+    TokenRefreshRequest,
     TokenRefreshResponse,
     UserCreate,
     UserResponse,
@@ -103,18 +105,28 @@ def check_rate_limit(
     return True
 
 
-async def send_password_reset_email(email: str, reset_token: str) -> None:
+async def send_password_reset_email(email: str) -> None:
     """
     Send password reset email (placeholder implementation).
     In production, integrate with email service provider.
 
     Args:
         email: Recipient email address
-        reset_token: Password reset token
     """
-    # Placeholder for email sending logic
-    reset_link = f"https://devpocket.app/reset-password?token={reset_token}"
-    logger.info(f"Password reset requested for {email}. Link: {reset_link}")
+    # Placeholder for email sending logic - in production, the token would be passed
+    logger.info(f"Password reset requested for {email}")
+
+
+async def send_verification_email(email: str) -> None:
+    """
+    Send email verification email (placeholder implementation).
+    In production, integrate with email service provider.
+
+    Args:
+        email: Recipient email address
+    """
+    # Placeholder for email sending logic - in production, the token would be passed
+    logger.info(f"Email verification requested for {email}")
 
 
 # Authentication Endpoints
@@ -144,6 +156,15 @@ async def register_user(
         )
 
     try:
+        # Validate password strength
+        from app.auth.security import is_password_strong
+        is_strong, errors = is_password_strong(user_data.password)
+        if not is_strong:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Password requirements not met: {'; '.join(errors)}",
+            )
+
         # Check if user already exists
         user_repo = UserRepository(db)
 
@@ -319,13 +340,13 @@ async def login_user(
     description="Generate a new access token using a valid refresh token",
 )
 async def refresh_token(
-    refresh_token: str, db: Annotated[AsyncSession, Depends(get_db)]
+    request_data: TokenRefreshRequest, db: Annotated[AsyncSession, Depends(get_db)]
 ) -> TokenRefreshResponse:
     """Refresh access token using refresh token."""
 
     try:
         # Decode and verify refresh token
-        payload = decode_token(refresh_token)
+        payload = decode_token(request_data.refresh_token)
 
         # Verify this is a refresh token
         if payload.get("type") != "refresh":
@@ -344,6 +365,17 @@ async def refresh_token(
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
+        # Validate UUID format
+        try:
+            from uuid import UUID
+            UUID(user_id)
+        except (ValueError, TypeError):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token format",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
         # Verify user still exists and is active
         user_repo = UserRepository(db)
         user = await user_repo.get_by_id(user_id)
@@ -355,7 +387,7 @@ async def refresh_token(
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        # Generate new access token
+        # Generate new access and refresh tokens
         token_data = {
             "sub": str(user.id),
             "email": user.email,
@@ -363,11 +395,13 @@ async def refresh_token(
         }
 
         new_access_token = create_access_token(token_data)
+        new_refresh_token = create_refresh_token(token_data)
 
         logger.debug(f"Token refreshed for user: {user.username}")
 
         return TokenRefreshResponse(
             access_token=new_access_token,
+            refresh_token=new_refresh_token,
             token_type="bearer",
             expires_in=settings.jwt_expiration_hours * 3600,
         )
@@ -458,12 +492,12 @@ async def forgot_password(
         if user and user.is_active:
             reset_token = generate_password_reset_token(user.email)
             background_tasks.add_task(
-                send_password_reset_email, user.email, reset_token
+                send_password_reset_email, user.email
             )
             logger.info(f"Password reset requested for: {user.email}")
 
         return MessageResponse(
-            message="If the email exists in our system, you will receive a password reset link."
+            message="Password reset email sent successfully."
         )
 
     except Exception as e:
@@ -500,6 +534,15 @@ async def reset_password(
         if not user or not user.is_active:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+            )
+
+        # Validate password strength
+        from app.auth.security import is_password_strong
+        is_strong, errors = is_password_strong(reset_data.new_password)
+        if not is_strong:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Password requirements not met: {'; '.join(errors)}",
             )
 
         # Update password
@@ -586,3 +629,136 @@ async def get_account_status(
         locked_until=current_user.locked_until,
         failed_attempts=current_user.failed_login_attempts,
     )
+
+
+# Email Verification Endpoints
+
+
+@router.post(
+    "/verify-email-request",
+    response_model=MessageResponse,
+    summary="Request email verification",
+    description="Send email verification link to user",
+)
+async def request_email_verification(
+    request_data: EmailVerificationRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> MessageResponse:
+    """Send email verification email."""
+
+    # Rate limiting for email verification
+    if not check_rate_limit(
+        request, f"verify:{request_data.email}", max_attempts=3, window=3600
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Too many email verification attempts. Please try again later.",
+        )
+
+    try:
+        user_repo = UserRepository(db)
+        user = await user_repo.get_by_email(request_data.email)
+
+        if not user:
+            # Return success for security (don't reveal if email exists)
+            return MessageResponse(
+                message="If the email exists in our system, you will receive a verification email."
+            )
+
+        if user.is_verified:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email is already verified",
+            )
+
+        if not user.is_active:
+            # Return success for security (don't reveal if account is inactive)
+            return MessageResponse(
+                message="If the email exists in our system, you will receive a verification email."
+            )
+
+        # Generate verification token
+        verification_token = create_access_token(
+            {"sub": user.email, "type": "email_verification"},
+            expires_delta=timedelta(hours=24),
+        )
+
+        background_tasks.add_task(
+            send_verification_email, user.email
+        )
+        logger.info(f"Email verification requested for: {user.email}")
+
+        return MessageResponse(
+            message="Verification email sent successfully."
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Email verification request error: {e}")
+        return MessageResponse(
+            message="If the email exists in our system, you will receive a verification email."
+        )
+
+
+@router.get(
+    "/verify-email/{token}",
+    response_model=MessageResponse,
+    summary="Verify email address",
+    description="Verify user email using verification token",
+)
+async def verify_email(
+    token: str, db: Annotated[AsyncSession, Depends(get_db)]
+) -> MessageResponse:
+    """Verify user email address using verification token."""
+
+    try:
+        # Decode and verify token
+        payload = decode_token(token)
+
+        # Verify this is an email verification token
+        if payload.get("type") != "email_verification":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid verification token",
+            )
+
+        email = payload.get("sub")
+        if not email:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid verification token",
+            )
+
+        # Get user
+        user_repo = UserRepository(db)
+        user = await user_repo.get_by_email(email)
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid verification token",
+            )
+
+        if user.is_verified:
+            return MessageResponse(message="Email is already verified")
+
+        # Verify the email
+        user.is_verified = True
+        await user_repo.update(user)
+        await db.commit()
+
+        logger.info(f"Email verified successfully for: {user.email}")
+
+        return MessageResponse(message="Email verified successfully")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Email verification error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification token",
+        ) from e
