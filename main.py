@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime
 
 import redis.asyncio as aioredis
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 
@@ -177,7 +177,7 @@ def setup_exception_handlers(app: FastAPI) -> None:
     """
 
     @app.exception_handler(HTTPException)
-    async def http_exception_handler(request, exc: HTTPException):
+    async def http_exception_handler(request: Request, exc: HTTPException):
         """Handle HTTP exceptions."""
         log_error(exc, {"url": str(request.url), "method": request.method})
         return JSONResponse(
@@ -192,7 +192,7 @@ def setup_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(Exception)
-    async def general_exception_handler(request, exc: Exception):
+    async def general_exception_handler(request: Request, exc: Exception):
         """Handle general exceptions."""
         log_error(exc, {"url": str(request.url), "method": request.method})
         return JSONResponse(

@@ -218,8 +218,8 @@ async def register_user(
     description="Authenticate user with username/email and password",
 )
 async def login_user(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    request: Request | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> Token:
     """Authenticate user and return JWT tokens."""
