@@ -152,6 +152,8 @@ async def test_session(test_db_engine) -> AsyncGenerator[AsyncSession, None]:
         transaction = await session.begin()
 
         try:
+            # Critical: Ensure we flush any initial operations to establish the transaction
+            await session.execute(text("SELECT 1"))
             yield session
             # Don't commit in tests - let the test cleanup handle rollback
         except Exception:
@@ -203,31 +205,14 @@ def mock_redis() -> MagicMock:
 
 
 @pytest_asyncio.fixture
-async def app(test_db_engine, mock_redis) -> FastAPI:
+async def app(test_session, mock_redis) -> FastAPI:
     """Create FastAPI application instance for testing."""
     app = create_application()
 
-    # Create a test session factory
-    from sqlalchemy.ext.asyncio import AsyncSession
-    from sqlalchemy.orm import sessionmaker
-
-    test_session_factory = sessionmaker(
-        test_db_engine, class_=AsyncSession, expire_on_commit=False
-    )
-
-    # Override dependencies
+    # Override dependencies to use the same test session
     async def override_get_db():
-        async with test_session_factory() as session:
-            try:
-                yield session
-                # In tests, don't auto-commit - let the test control transactions
-            except Exception:
-                # Rollback on any exception to maintain consistency
-                if session.in_transaction():
-                    await session.rollback()
-                raise
-            finally:
-                await session.close()
+        # Use the same test session that's already set up with transaction isolation
+        yield test_session
 
     app.dependency_overrides[get_db] = override_get_db
     app.state.redis = mock_redis
@@ -266,14 +251,16 @@ def user_data() -> dict:
     """Basic user data for testing with unique identifiers."""
     import time
     import uuid
+    import random
 
-    # Generate unique identifiers to prevent conflicts between tests
+    # Generate highly unique identifiers to prevent conflicts between tests
     unique_id = str(uuid.uuid4())[:8]
-    timestamp = str(int(time.time()))[-6:]  # Last 6 digits of timestamp
+    timestamp = str(int(time.time() * 1000000))[-8:]  # Microsecond precision
+    random_suffix = str(random.randint(1000, 9999))
 
     return {
-        "email": f"test_{unique_id}_{timestamp}@example.com",
-        "username": f"testuser_{unique_id}",
+        "email": f"test_{unique_id}_{timestamp}_{random_suffix}@example.com",
+        "username": f"testuser_{unique_id}_{timestamp}",
         "password": "SecurePassword123!",
         "full_name": f"Test User {unique_id}",
     }
