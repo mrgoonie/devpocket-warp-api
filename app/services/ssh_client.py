@@ -5,6 +5,7 @@ Handles SSH connections, key management, and connection testing.
 """
 
 import asyncio
+import contextlib
 import io
 import socket
 from typing import Any
@@ -181,10 +182,8 @@ class SSHClientService:
             result["details"]["error"] = str(e)
 
         finally:
-            try:
+            with contextlib.suppress(Exception):
                 client.close()
-            except Exception:
-                pass  # Ignore cleanup errors
 
         return result
 

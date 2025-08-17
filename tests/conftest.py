@@ -27,7 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine  # noqa: E4
 from sqlalchemy.orm import sessionmaker  # noqa: E402
 from sqlalchemy.pool import StaticPool  # noqa: E402
 
-from app.auth.security import (
+from app.auth.security import (  # noqa: E402
     create_access_token,
     set_redis_client,
 )

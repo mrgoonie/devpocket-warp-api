@@ -130,10 +130,8 @@ class PTYHandler:
             try:
                 os.kill(self.shell_pid, signal.SIGTERM)
                 # Wait for process to terminate
-                try:
+                with contextlib.suppress(ChildProcessError):
                     os.waitpid(self.shell_pid, 0)
-                except ChildProcessError:
-                    pass  # Process already terminated
             except ProcessLookupError:
                 pass  # Process doesn't exist
             self.shell_pid = None

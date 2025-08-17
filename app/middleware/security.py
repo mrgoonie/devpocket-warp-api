@@ -167,20 +167,22 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             response: FastAPI response object
         """
         # Add CORS headers if not already present (handled by CORS middleware)
-        if "Access-Control-Allow-Origin" not in response.headers:
+        if (
+            "Access-Control-Allow-Origin" not in response.headers
+            and request.url.path.startswith("/api/")
+        ):
             # For API endpoints, we might want specific CORS handling
-            if request.url.path.startswith("/api/"):
-                response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Origin"] = "*"
 
         # Add cache control headers for API responses
-        if request.url.path.startswith("/api/"):
-            if "Cache-Control" not in response.headers:
-                # API responses should not be cached by default
-                response.headers[
-                    "Cache-Control"
-                ] = "no-cache, no-store, must-revalidate"
-                response.headers["Pragma"] = "no-cache"
-                response.headers["Expires"] = "0"
+        if (
+            request.url.path.startswith("/api/")
+            and "Cache-Control" not in response.headers
+        ):
+            # API responses should not be cached by default
+            response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+            response.headers["Pragma"] = "no-cache"
+            response.headers["Expires"] = "0"
 
         # Add security headers for authentication endpoints
         if request.url.path.startswith("/api/auth/"):

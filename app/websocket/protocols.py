@@ -4,7 +4,7 @@ WebSocket message protocols and data structures.
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, ClassVar, Union, cast
+from typing import Any, ClassVar, cast
 
 from pydantic import BaseModel, Field
 
@@ -210,17 +210,17 @@ class HeartbeatMessage(TerminalMessage):
 
 
 # Type alias for any parsed message
-ParsedMessage = Union[
-    InputMessage,
-    OutputMessage,
-    ResizeMessage,
-    SignalMessage,
-    ConnectMessage,
-    StatusMessage,
-    ErrorMessage,
-    HeartbeatMessage,
-    TerminalMessage,
-]
+ParsedMessage = (
+    InputMessage
+    | OutputMessage
+    | ResizeMessage
+    | SignalMessage
+    | ConnectMessage
+    | StatusMessage
+    | ErrorMessage
+    | HeartbeatMessage
+    | TerminalMessage
+)
 
 
 def parse_message(data: dict[str, Any]) -> ParsedMessage:

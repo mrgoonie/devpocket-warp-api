@@ -43,6 +43,7 @@ class SessionService:
         self.session_repo = SessionRepository(session)
         self.ssh_profile_repo = SSHProfileRepository(session)
         self._active_sessions: dict[str, dict[str, Any]] = {}
+        self._background_tasks: set = set()
 
     async def create_session(
         self, user: User, session_data: SessionCreate
@@ -617,7 +618,10 @@ class SessionService:
         }
 
         # Start session initialization task
-        asyncio.create_task(self._start_session_process(session))
+        task = asyncio.create_task(self._start_session_process(session))
+        # Store task reference to prevent garbage collection
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_tasks.discard)
 
     async def _start_session_process(self, session: Session) -> None:
         """Start the actual terminal session process."""

@@ -4,6 +4,7 @@ WebSocket router for DevPocket API.
 Handles WebSocket endpoint setup, authentication, and message routing.
 """
 
+import contextlib
 import json
 
 from fastapi import (
@@ -198,13 +199,11 @@ async def terminal_websocket(
 
     except Exception as e:
         logger.error(f"WebSocket connection error: {e}")
-        try:
+        with contextlib.suppress(Exception):
             await websocket.close(
                 code=status.WS_1011_INTERNAL_ERROR,
                 reason="Internal server error",
             )
-        except Exception:
-            pass  # Connection might already be closed
 
     finally:
         # Clean up connection

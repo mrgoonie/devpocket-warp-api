@@ -518,7 +518,7 @@ async def get_ai_service_status(
 ) -> dict:
     """Get current AI service operational status."""
     try:
-        AIService(db)
+        AIService(_db)
 
         return {
             "operational": True,
