@@ -198,9 +198,9 @@ class TestAIService:
     """Test AI service layer functionality."""
 
     @pytest.fixture
-    def ai_service(self):
+    def ai_service(self, test_session):
         """Create AI service instance."""
-        return AIService()
+        return AIService(session=test_session)
 
     @pytest.fixture
     def mock_openrouter_service(self):

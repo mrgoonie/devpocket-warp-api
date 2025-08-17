@@ -50,124 +50,142 @@ class TestTerminalWebSocket:
         return websocket
 
     @pytest.fixture
+    def mock_connection(self):
+        """Mock WebSocket connection."""
+        connection = AsyncMock()
+        connection.send_message = AsyncMock()
+        connection.user_id = "test-user-456"
+        connection.device_id = "test-device-123"
+        return connection
+
+    @pytest.fixture
     def mock_pty_handler(self):
         """Mock PTY handler."""
         handler = AsyncMock(spec=PTYHandler)
         handler.start = AsyncMock()
-        handler.write = AsyncMock()
-        handler.resize = AsyncMock()
-        handler.close = AsyncMock()
-        handler.is_alive = True
+        handler.write_input = AsyncMock()
+        handler.resize_terminal = AsyncMock()
+        handler.stop = AsyncMock()
+        handler.is_running = True
         return handler
 
     @pytest.fixture
-    def terminal_websocket(self, mock_websocket, mock_pty_handler):
+    def terminal_websocket(self, mock_connection, test_session):
         """Create terminal WebSocket instance."""
+        import uuid
         return TerminalWebSocket(
-            websocket=mock_websocket,
-            session_id="test-session-123",
-            user_id="test-user-456",
+            session_id=str(uuid.uuid4()),
+            connection=mock_connection,
+            ssh_profile_id=None,
+            db=test_session,
         )
 
     @pytest.mark.asyncio
-    async def test_websocket_connection_success(
-        self, terminal_websocket, mock_websocket
-    ):
-        """Test successful WebSocket connection."""
-        # Arrange
-        mock_websocket.accept = AsyncMock()
+    async def test_terminal_session_start_success(self, terminal_websocket):
+        """Test successful terminal session start with mock session repo."""
+        # Mock the session repository to return None (triggering PTY path)
+        with (
+            patch.object(terminal_websocket, 'db', None),  # Disable DB lookup
+            patch("app.websocket.terminal.PTYHandler") as mock_pty_class,
+        ):
+            mock_pty_handler = AsyncMock()
+            mock_pty_handler.start.return_value = True
+            mock_pty_class.return_value = mock_pty_handler
 
-        # Act
-        await terminal_websocket.connect()
+            # Act
+            result = await terminal_websocket.start()
 
-        # Assert
-        mock_websocket.accept.assert_called_once()
-        assert terminal_websocket.is_connected
-
-    @pytest.mark.asyncio
-    async def test_websocket_disconnect(self, terminal_websocket, mock_websocket):
-        """Test WebSocket disconnection."""
-        # Arrange
-        terminal_websocket.is_connected = True
-        mock_websocket.close = AsyncMock()
-
-        # Act
-        await terminal_websocket.disconnect()
-
-        # Assert
-        mock_websocket.close.assert_called_once()
-        assert not terminal_websocket.is_connected
+            # Assert
+            assert result is True
+            assert terminal_websocket.is_running
 
     @pytest.mark.asyncio
-    async def test_send_terminal_output(self, terminal_websocket, mock_websocket):
-        """Test sending terminal output to WebSocket."""
+    async def test_terminal_session_stop(self, terminal_websocket):
+        """Test terminal session stop."""
+        # Arrange - set up running session
+        terminal_websocket._running = True
+        mock_pty_handler = AsyncMock()
+        terminal_websocket.pty_handler = mock_pty_handler
+
+        # Act
+        await terminal_websocket.stop()
+
+        # Assert
+        mock_pty_handler.stop.assert_called_once()
+        assert not terminal_websocket.is_running
+
+    @pytest.mark.asyncio
+    async def test_handle_terminal_input(self, terminal_websocket):
+        """Test handling terminal input."""
         # Arrange
-        terminal_websocket.is_connected = True
+        terminal_websocket._running = True
+        mock_pty_handler = AsyncMock()
+        mock_pty_handler.write_input.return_value = True
+        terminal_websocket.pty_handler = mock_pty_handler
+        input_data = "ls -la\n"
+
+        # Act
+        await terminal_websocket.handle_input(input_data)
+
+        # Assert
+        mock_pty_handler.write_input.assert_called_once_with(input_data)
+
+    @pytest.mark.asyncio
+    async def test_handle_terminal_resize(self, terminal_websocket):
+        """Test handling terminal resize."""
+        # Arrange
+        terminal_websocket._running = True
+        mock_pty_handler = AsyncMock()
+        mock_pty_handler.resize_terminal.return_value = True
+        terminal_websocket.pty_handler = mock_pty_handler
+
+        # Act
+        await terminal_websocket.handle_resize(120, 30)
+
+        # Assert
+        mock_pty_handler.resize_terminal.assert_called_once_with(120, 30)
+        assert terminal_websocket.cols == 120
+        assert terminal_websocket.rows == 30
+
+    @pytest.mark.asyncio
+    async def test_handle_signal(self, terminal_websocket):
+        """Test handling signal."""
+        # Arrange
+        terminal_websocket._running = True
+        mock_pty_handler = AsyncMock()
+        mock_pty_handler.send_signal.return_value = True
+        terminal_websocket.pty_handler = mock_pty_handler
+
+        # Act
+        await terminal_websocket.handle_signal("SIGINT")
+
+        # Assert
+        mock_pty_handler.send_signal.assert_called_once_with("SIGINT")
+
+    @pytest.mark.asyncio
+    async def test_output_callback(self, terminal_websocket, mock_connection):
+        """Test output callback sends message to connection."""
+        # Arrange
         output_data = "Hello from terminal\n"
 
         # Act
-        await terminal_websocket.send_output(output_data)
+        await terminal_websocket._handle_output(output_data)
 
         # Assert
-        mock_websocket.send_text.assert_called_once_with(
-            json.dumps({"type": "output", "data": output_data})
-        )
+        mock_connection.send_message.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_send_terminal_error(self, terminal_websocket, mock_websocket):
-        """Test sending terminal error to WebSocket."""
-        # Arrange
-        terminal_websocket.is_connected = True
-        error_data = "Command not found\n"
-
+    async def test_session_status(self, terminal_websocket):
+        """Test getting session status."""
         # Act
-        await terminal_websocket.send_error(error_data)
+        status = terminal_websocket.get_status()
 
         # Assert
-        mock_websocket.send_text.assert_called_once_with(
-            json.dumps({"type": "error", "data": error_data})
-        )
-
-    @pytest.mark.asyncio
-    async def test_handle_terminal_input(self, terminal_websocket, mock_pty_handler):
-        """Test handling terminal input from WebSocket."""
-        # Arrange
-        terminal_websocket.pty_handler = mock_pty_handler
-        input_data = "ls -la\n"
-        message = {"type": "input", "data": input_data}
-
-        # Act
-        await terminal_websocket.handle_message(json.dumps(message))
-
-        # Assert
-        mock_pty_handler.write.assert_called_once_with(input_data)
-
-    @pytest.mark.asyncio
-    async def test_handle_terminal_resize(self, terminal_websocket, mock_pty_handler):
-        """Test handling terminal resize from WebSocket."""
-        # Arrange
-        terminal_websocket.pty_handler = mock_pty_handler
-        resize_data = {"cols": 120, "rows": 30}
-        message = {"type": "resize", "data": resize_data}
-
-        # Act
-        await terminal_websocket.handle_message(json.dumps(message))
-
-        # Assert
-        mock_pty_handler.resize.assert_called_once_with(120, 30)
-
-    @pytest.mark.asyncio
-    async def test_websocket_disconnect_exception(
-        self, terminal_websocket, mock_websocket
-    ):
-        """Test handling WebSocket disconnect exception."""
-        # Arrange
-        mock_websocket.send_text = AsyncMock(side_effect=WebSocketDisconnect)
-        terminal_websocket.is_connected = True
-
-        # Act & Assert - should not raise exception
-        await terminal_websocket.send_output("test output")
-        assert not terminal_websocket.is_connected
+        assert "session_id" in status
+        assert "session_type" in status
+        assert "running" in status
+        assert "terminal_size" in status
+        assert status["session_id"] == "test-session-123"
 
 
 class TestConnectionManager:
@@ -246,11 +264,11 @@ class TestPTYHandler:
     @pytest.fixture
     def pty_handler(self):
         """Create PTY handler instance."""
+        output_callback = AsyncMock()
         return PTYHandler(
-            command="/bin/bash",
-            cols=80,
+            output_callback=output_callback,
             rows=24,
-            env={"TERM": "xterm-256color"},
+            cols=80,
         )
 
     @pytest.mark.asyncio
@@ -261,56 +279,68 @@ class TestPTYHandler:
             patch("pty.openpty") as mock_openpty,
             patch("os.fork") as mock_fork,
             patch("os.execve"),
+            patch("asyncio.create_task") as mock_task,
         ):
             mock_openpty.return_value = (3, 4)  # master_fd, slave_fd
             mock_fork.return_value = 1234  # child pid
+            mock_task.return_value = AsyncMock()
 
             # Act
-            await pty_handler.start()
+            result = await pty_handler.start()
 
             # Assert
+            assert result is True
             mock_openpty.assert_called_once()
             mock_fork.assert_called_once()
-            assert pty_handler.is_alive
+            assert pty_handler.is_running
 
     @pytest.mark.asyncio
-    async def test_pty_write(self, pty_handler):
-        """Test writing to PTY."""
+    async def test_pty_write_input(self, pty_handler):
+        """Test writing input to PTY."""
         # Arrange
         pty_handler.master_fd = 3
-        pty_handler.is_alive = True
+        pty_handler._running = True
 
         with patch("os.write") as mock_write:
+            mock_write.return_value = 13  # bytes written
+            
             # Act
-            await pty_handler.write("test command\n")
+            result = await pty_handler.write_input("test command\n")
 
             # Assert
+            assert result is True
             mock_write.assert_called_once_with(3, b"test command\n")
 
     @pytest.mark.asyncio
-    async def test_pty_resize(self, pty_handler):
-        """Test resizing PTY."""
+    async def test_pty_resize_terminal(self, pty_handler):
+        """Test resizing PTY terminal."""
         # Arrange
         pty_handler.master_fd = 3
-        pty_handler.child_pid = 1234
-        pty_handler.is_alive = True
+        pty_handler.shell_pid = 1234
+        pty_handler._running = True
 
-        with patch("fcntl.ioctl") as mock_ioctl:
+        with (
+            patch("fcntl.ioctl") as mock_ioctl,
+            patch("os.kill") as mock_kill,
+        ):
             # Act
-            await pty_handler.resize(120, 30)
+            result = pty_handler.resize_terminal(120, 30)
 
             # Assert
+            assert result is True
             mock_ioctl.assert_called_once()
+            mock_kill.assert_called_once()
             assert pty_handler.cols == 120
             assert pty_handler.rows == 30
 
     @pytest.mark.asyncio
-    async def test_pty_close(self, pty_handler):
-        """Test closing PTY."""
+    async def test_pty_stop(self, pty_handler):
+        """Test stopping PTY."""
         # Arrange
         pty_handler.master_fd = 3
-        pty_handler.child_pid = 1234
-        pty_handler.is_alive = True
+        pty_handler.shell_pid = 1234
+        pty_handler._running = True
+        pty_handler._output_task = AsyncMock()
 
         with (
             patch("os.close") as mock_close,
@@ -318,115 +348,153 @@ class TestPTYHandler:
             patch("os.waitpid"),
         ):
             # Act
-            await pty_handler.close()
+            await pty_handler.stop()
 
             # Assert
             mock_close.assert_called_once_with(3)
             mock_kill.assert_called_once()
-            assert not pty_handler.is_alive
+            assert not pty_handler.is_running
+
+    @pytest.mark.asyncio
+    async def test_pty_send_signal(self, pty_handler):
+        """Test sending signal to PTY process."""
+        # Arrange
+        pty_handler.shell_pid = 1234
+
+        with patch("os.kill") as mock_kill:
+            # Act
+            result = pty_handler.send_signal("SIGINT")
+
+            # Assert
+            assert result is True
+            mock_kill.assert_called_once()
+
+    def test_pty_get_terminal_size(self, pty_handler):
+        """Test getting terminal size."""
+        # Act
+        size = pty_handler.get_terminal_size()
+
+        # Assert
+        assert size == (80, 24)  # (cols, rows)
 
 
 class TestTerminalService:
     """Test terminal service functionality."""
 
     @pytest.fixture
-    def terminal_service(self):
+    def terminal_service(self, test_session):
         """Create terminal service instance."""
-        return TerminalService()
+        return TerminalService(db=test_session)
 
     @pytest.mark.asyncio
-    async def test_execute_command_success(self, terminal_service):
-        """Test successful command execution."""
+    async def test_get_active_sessions(self, terminal_service, verified_user):
+        """Test getting active sessions for a user."""
         # Arrange
-        command = "echo 'Hello World'"
+        user_id = str(verified_user.id)
 
-        with patch("asyncio.create_subprocess_shell") as mock_subprocess:
-            mock_process = AsyncMock()
-            mock_process.communicate.return_value = (b"Hello World\n", b"")
-            mock_process.returncode = 0
-            mock_subprocess.return_value = mock_process
+        # Mock the repository
+        with patch.object(terminal_service.session_repo, "get_user_active_sessions") as mock_get:
+            mock_get.return_value = []
 
             # Act
-            result = await terminal_service.execute_command(command)
+            result = await terminal_service.get_active_sessions(user_id)
 
             # Assert
-            assert result["exit_code"] == 0
-            assert result["output"] == "Hello World\n"
-            assert result["error"] == ""
+            assert isinstance(result, list)
+            mock_get.assert_called_once_with(user_id)
 
     @pytest.mark.asyncio
-    async def test_execute_command_error(self, terminal_service):
-        """Test command execution with error."""
+    async def test_get_session_details(self, terminal_service, verified_user):
+        """Test getting session details."""
         # Arrange
-        command = "invalid_command"
+        user_id = str(verified_user.id)
+        session_id = "test-session-123"
 
-        with patch("asyncio.create_subprocess_shell") as mock_subprocess:
-            mock_process = AsyncMock()
-            mock_process.communicate.return_value = (
-                b"",
-                b"command not found\n",
-            )
-            mock_process.returncode = 127
-            mock_subprocess.return_value = mock_process
+        # Mock the repository
+        with patch.object(terminal_service.session_repo, "get") as mock_get:
+            mock_get.return_value = None
 
             # Act
-            result = await terminal_service.execute_command(command)
+            result = await terminal_service.get_session_details(session_id, user_id)
 
             # Assert
-            assert result["exit_code"] == 127
-            assert result["output"] == ""
-            assert result["error"] == "command not found\n"
+            assert result is None
+            mock_get.assert_called_once_with(session_id)
 
     @pytest.mark.asyncio
-    async def test_execute_command_timeout(self, terminal_service):
-        """Test command execution timeout."""
+    async def test_terminate_session(self, terminal_service, verified_user):
+        """Test terminating a session."""
         # Arrange
-        command = "sleep 10"
+        user_id = str(verified_user.id)
+        session_id = "test-session-123"
 
-        with patch("asyncio.create_subprocess_shell") as mock_subprocess:
-            mock_process = AsyncMock()
-            mock_process.communicate.side_effect = asyncio.TimeoutError
-            mock_subprocess.return_value = mock_process
+        # Mock the repository
+        with patch.object(terminal_service.session_repo, "get") as mock_get:
+            mock_get.return_value = None
 
             # Act
-            result = await terminal_service.execute_command(command, timeout=1)
+            result = await terminal_service.terminate_session(session_id, user_id)
 
             # Assert
-            assert result["exit_code"] == -1
-            assert "timeout" in result["error"].lower()
+            assert result is False
+            mock_get.assert_called_once_with(session_id)
 
     @pytest.mark.asyncio
-    async def test_validate_command_safe(self, terminal_service):
-        """Test validating safe commands."""
+    async def test_get_session_history(self, terminal_service, verified_user):
+        """Test getting session history."""
         # Arrange
-        safe_commands = [
-            "ls -la",
-            "grep pattern file.txt",
-            "cat /etc/passwd",
-            "ps aux",
-        ]
+        user_id = str(verified_user.id)
 
-        # Act & Assert
-        for command in safe_commands:
-            is_safe = terminal_service.validate_command(command)
-            assert is_safe
+        # Mock the repository methods
+        with (
+            patch.object(terminal_service.session_repo, "get_user_sessions") as mock_get_sessions,
+            patch.object(terminal_service.session_repo, "get_user_session_count") as mock_get_count,
+        ):
+            mock_get_sessions.return_value = []
+            mock_get_count.return_value = 0
+
+            # Act
+            result = await terminal_service.get_session_history(user_id)
+
+            # Assert
+            assert "sessions" in result
+            assert "pagination" in result
+            assert result["sessions"] == []
+            mock_get_sessions.assert_called_once()
+            mock_get_count.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_validate_command_dangerous(self, terminal_service):
-        """Test validating dangerous commands."""
-        # Arrange
-        dangerous_commands = [
-            "rm -rf /",
-            "sudo rm -rf /var",
-            ":(){ :|:& };:",  # Fork bomb
-            "dd if=/dev/zero of=/dev/sda",
-            "mkfs.ext4 /dev/sda1",
-        ]
+    async def test_get_connection_stats(self, terminal_service):
+        """Test getting connection statistics."""
+        # Mock the connection manager
+        with patch("app.services.terminal_service.connection_manager") as mock_manager:
+            mock_manager.get_connection_count.return_value = 5
+            mock_manager.get_session_count.return_value = 10
+            mock_manager.connections.items.return_value = []
 
-        # Act & Assert
-        for command in dangerous_commands:
-            is_safe = terminal_service.validate_command(command)
-            assert not is_safe
+            # Act
+            result = await terminal_service.get_connection_stats()
+
+            # Assert
+            assert "total_connections" in result
+            assert "total_sessions" in result
+            assert "connection_details" in result
+
+    def test_get_user_connection_count(self, terminal_service, verified_user):
+        """Test getting user connection count."""
+        # Arrange
+        user_id = str(verified_user.id)
+
+        # Mock the connection manager
+        with patch("app.services.terminal_service.connection_manager") as mock_manager:
+            mock_manager.get_user_connection_count.return_value = 3
+
+            # Act
+            result = terminal_service.get_user_connection_count(user_id)
+
+            # Assert
+            assert result == 3
+            mock_manager.get_user_connection_count.assert_called_once_with(user_id)
 
 
 class TestWebSocketEndpoints:

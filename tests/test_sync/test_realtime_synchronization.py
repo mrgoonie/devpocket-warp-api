@@ -45,9 +45,9 @@ class TestSyncService:
     """Test synchronization service functionality."""
 
     @pytest.fixture
-    def sync_service(self):
+    def sync_service(self, test_session):
         """Create sync service instance."""
-        return SyncService()
+        return SyncService(session=test_session)
 
     @pytest.fixture
     def mock_redis_client(self):

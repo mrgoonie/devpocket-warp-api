@@ -78,10 +78,10 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def _make_jwt_serializable(data: dict[str, Any]) -> dict[str, Any]:
     """
     Convert complex data types to JSON-serializable formats for JWT encoding.
-    
+
     Args:
         data: Dictionary that may contain non-serializable objects
-        
+
     Returns:
         Dictionary with all values converted to JSON-serializable types
     """
