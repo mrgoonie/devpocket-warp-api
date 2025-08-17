@@ -135,9 +135,9 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ## JWT Token Management
 
-### Token Structure
+### Enhanced Token Structure
 
-DevPocket JWT tokens contain the following claims:
+DevPocket JWT tokens have been enhanced to properly handle UUID and datetime serialization. The tokens contain the following claims:
 
 ```json
 {
@@ -147,9 +147,19 @@ DevPocket JWT tokens contain the following claims:
   "subscription_tier": "pro",
   "iat": 1672531200,
   "exp": 1672534800,
-  "type": "access"
+  "type": "access",
+  "user_id": "123e4567-e89b-12d3-a456-426614174000",
+  "device_id": "device-abc123"
 }
 ```
+
+### Token Serialization Improvements
+
+Recent infrastructure improvements include:
+- **UUID Handling**: Proper serialization of UUID objects in JWT tokens
+- **Datetime Serialization**: Enhanced handling of datetime objects for token expiration
+- **Type Safety**: Improved type validation for token claims
+- **Error Handling**: Better error messages for token validation failures
 
 ### Token Types
 
@@ -533,6 +543,8 @@ Content-Type: application/json
 3. **Password Requirements**: 8+ characters, mixed case, numbers, symbols
 4. **Token Blacklisting**: Logout immediately blacklists tokens
 5. **HTTPS Only**: All authentication endpoints require HTTPS
+6. **Enhanced JWT Security**: Improved token serialization with proper UUID and datetime handling
+7. **Database Session Management**: Robust transaction handling and connection lifecycle management
 
 ### Password Security
 

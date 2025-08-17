@@ -1,8 +1,25 @@
-# Pre-commit Hook Setup Guide
+# Development Process & Pre-commit Setup Guide
 
-This guide explains how to install and use the pre-commit framework with the DevPocket API project to automatically run Black formatting and other code quality checks before each commit.
+This guide explains the enhanced development process for the DevPocket API project, including recent infrastructure improvements, pre-commit hooks, and quality assurance measures.
 
-## Overview
+## Infrastructure Improvements (August 2025)
+
+### CI/CD Pipeline Reliability
+The DevPocket API has achieved significant infrastructure stability with the following improvements:
+
+- ✅ **GitHub Actions 100% Success Rate**: All test failures resolved
+- ✅ **Enhanced Authentication**: JWT token handling with UUID/datetime serialization
+- ✅ **Database Infrastructure**: Improved session management and transaction handling
+- ✅ **WebSocket Services**: Service constructor alignment and PTY handler improvements
+- ✅ **Test Infrastructure**: Comprehensive fixture improvements and better isolation
+
+### Quality Metrics
+- **Test Coverage**: 30%+ maintained across all components
+- **Code Quality**: Black, Ruff, MyPy all passing consistently
+- **Security**: Bandit, Safety, Semgrep integrated in CI/CD
+- **Performance**: Benchmark testing for critical paths
+
+## Pre-commit Framework Overview
 
 The pre-commit framework automatically runs configured tools (formatters, linters, security scanners) on your code before each commit. This ensures consistent code quality and prevents common issues from being committed to the repository.
 

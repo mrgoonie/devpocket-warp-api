@@ -4,6 +4,12 @@
 
 The DevPocket API provides real-time terminal communication through WebSocket connections. This enables interactive terminal sessions, SSH connections with PTY support, and seamless command execution across devices.
 
+**Recent Infrastructure Improvements (August 2025)**:
+- Enhanced WebSocket service constructor alignment with test infrastructure
+- Improved PTY handler configuration and initialization
+- Better service instantiation and connection management
+- Robust error handling and recovery mechanisms
+
 ## Connection Establishment
 
 ### Endpoint
@@ -490,7 +496,7 @@ graph TD
 
 ### 3. Reconnection Strategy
 
-The client should implement automatic reconnection with exponential backoff:
+The client should implement automatic reconnection with exponential backoff. Recent service improvements provide better reliability, but reconnection logic remains important for network resilience:
 
 ```javascript
 class WebSocketManager {
