@@ -69,6 +69,8 @@ Run black, ruff, mypy with proper exit codes:
 ./scripts/format_code.sh --stats-only  # Show code statistics only
 ```
 
+**Note**: For automatic formatting on commit, see [Pre-commit Hook Setup](../docs/pre-commit-setup.md)
+
 ### Python Scripts (Legacy)
 
 #### Development Script (`dev.py`)
@@ -263,6 +265,8 @@ Required environment variables (see `.env.example`):
 - **Cross-Platform**: Works on Linux, macOS, and WSL
 
 ### Development Workflow Integration
+
+#### Manual Workflow (Traditional)
 ```bash
 # Typical development workflow
 ./scripts/format_code.sh -c        # Check code quality
@@ -271,6 +275,21 @@ Required environment variables (see `.env.example`):
 ./scripts/run_tests.sh             # Run full test suite
 git add . && git commit -m "..."   # Commit changes
 ```
+
+#### Automated Workflow (Pre-commit Hooks)
+```bash
+# One-time setup (per developer)
+pip install -r requirements-dev.txt
+pre-commit install
+
+# Development workflow with pre-commit
+./scripts/run_tests.sh -t unit     # Run unit tests
+./scripts/db_migrate.sh            # Apply any new migrations
+./scripts/run_tests.sh             # Run full test suite
+git add . && git commit -m "..."   # Hooks run automatically!
+```
+
+**Recommended**: Use pre-commit hooks for automatic formatting on commit. See [Pre-commit Setup Guide](../docs/pre-commit-setup.md) for detailed installation and configuration instructions.
 
 ### CI/CD Integration
 The shell scripts are designed for easy integration with CI/CD pipelines:
