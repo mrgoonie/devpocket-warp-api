@@ -38,7 +38,7 @@ class TestRegistrationEndpoint:
         assert data["token_type"] == "bearer"
         assert "expires_in" in data
         assert "user" in data
-        
+
         # Check user data within token response
         user = data["user"]
         assert user["email"] == user_data["email"]
@@ -414,9 +414,7 @@ class TestPasswordResetEndpoints:
 
         reset_data = {"email": user.email}
 
-        response = await async_client.post(
-            "/api/auth/forgot-password", json=reset_data
-        )
+        response = await async_client.post("/api/auth/forgot-password", json=reset_data)
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -430,9 +428,7 @@ class TestPasswordResetEndpoints:
         """Test password reset request for non-existent email."""
         reset_data = {"email": "nonexistent@example.com"}
 
-        response = await async_client.post(
-            "/api/auth/forgot-password", json=reset_data
-        )
+        response = await async_client.post("/api/auth/forgot-password", json=reset_data)
 
         # Should return success to prevent email enumeration
         assert response.status_code == status.HTTP_200_OK
@@ -452,9 +448,7 @@ class TestPasswordResetEndpoints:
         new_password = "NewSecurePass123!"
         reset_data = {"token": reset_token, "new_password": new_password}
 
-        response = await async_client.post(
-            "/api/auth/reset-password", json=reset_data
-        )
+        response = await async_client.post("/api/auth/reset-password", json=reset_data)
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -468,9 +462,7 @@ class TestPasswordResetEndpoints:
             "new_password": "NewSecurePass123!",
         }
 
-        response = await async_client.post(
-            "/api/auth/reset-password", json=reset_data
-        )
+        response = await async_client.post("/api/auth/reset-password", json=reset_data)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         data = response.json()
@@ -494,9 +486,7 @@ class TestPasswordResetEndpoints:
             "new_password": "weak",  # Weak password
         }
 
-        response = await async_client.post(
-            "/api/auth/reset-password", json=reset_data
-        )
+        response = await async_client.post("/api/auth/reset-password", json=reset_data)
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         data = response.json()

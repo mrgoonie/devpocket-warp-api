@@ -8,12 +8,9 @@ Tests WebSocket terminal functionality including:
 - Error handling and disconnection scenarios
 """
 
-import asyncio
-import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from fastapi import WebSocketDisconnect
 
 # Conditional imports to handle missing classes
 try:
@@ -73,6 +70,7 @@ class TestTerminalWebSocket:
     def terminal_websocket(self, mock_connection, test_session):
         """Create terminal WebSocket instance."""
         import uuid
+
         return TerminalWebSocket(
             session_id=str(uuid.uuid4()),
             connection=mock_connection,
@@ -85,7 +83,7 @@ class TestTerminalWebSocket:
         """Test successful terminal session start with mock session repo."""
         # Mock the session repository to return None (triggering PTY path)
         with (
-            patch.object(terminal_websocket, 'db', None),  # Disable DB lookup
+            patch.object(terminal_websocket, "db", None),  # Disable DB lookup
             patch("app.websocket.terminal.PTYHandler") as mock_pty_class,
         ):
             mock_pty_handler = AsyncMock()
@@ -303,7 +301,7 @@ class TestPTYHandler:
 
         with patch("os.write") as mock_write:
             mock_write.return_value = 13  # bytes written
-            
+
             # Act
             result = await pty_handler.write_input("test command\n")
 
@@ -393,7 +391,9 @@ class TestTerminalService:
         user_id = str(verified_user.id)
 
         # Mock the repository
-        with patch.object(terminal_service.session_repo, "get_user_active_sessions") as mock_get:
+        with patch.object(
+            terminal_service.session_repo, "get_user_active_sessions"
+        ) as mock_get:
             mock_get.return_value = []
 
             # Act
@@ -447,8 +447,12 @@ class TestTerminalService:
 
         # Mock the repository methods
         with (
-            patch.object(terminal_service.session_repo, "get_user_sessions") as mock_get_sessions,
-            patch.object(terminal_service.session_repo, "get_user_session_count") as mock_get_count,
+            patch.object(
+                terminal_service.session_repo, "get_user_sessions"
+            ) as mock_get_sessions,
+            patch.object(
+                terminal_service.session_repo, "get_user_session_count"
+            ) as mock_get_count,
         ):
             mock_get_sessions.return_value = []
             mock_get_count.return_value = 0

@@ -74,10 +74,11 @@ async def _cleanup_test_data(engine):
                 await conn.execute(
                     text(f"TRUNCATE TABLE {table_list} RESTART IDENTITY CASCADE")
                 )
-                
+
                 # Reset sequences for primary keys - simplified approach
-                await conn.execute(text(
-                    """
+                await conn.execute(
+                    text(
+                        """
                     DO $$
                     DECLARE
                         seq_record RECORD;
@@ -92,7 +93,8 @@ async def _cleanup_test_data(engine):
                     END
                     $$;
                     """
-                ))
+                    )
+                )
     except Exception as e:
         # Log error but don't fail - cleanup is best effort
         print(f"Warning: Test data cleanup failed: {e}")
@@ -262,13 +264,13 @@ async def user_repository(test_session) -> UserRepository:
 @pytest.fixture
 def user_data() -> dict:
     """Basic user data for testing with unique identifiers."""
-    import uuid
     import time
-    
+    import uuid
+
     # Generate unique identifiers to prevent conflicts between tests
     unique_id = str(uuid.uuid4())[:8]
     timestamp = str(int(time.time()))[-6:]  # Last 6 digits of timestamp
-    
+
     return {
         "email": f"test_{unique_id}_{timestamp}@example.com",
         "username": f"testuser_{unique_id}",
