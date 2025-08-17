@@ -469,7 +469,9 @@ class CommandAlert(BaseModel):
 class BulkCommandOperation(BaseModel):
     """Schema for bulk command operations."""
 
-    command_ids: Annotated[List[str], Field(min_length=1, max_length=1000, description="Command IDs")]
+    command_ids: Annotated[
+        List[str], Field(min_length=1, max_length=1000, description="Command IDs")
+    ]
     operation: str = Field(..., description="Operation: delete, archive, export")
     parameters: Optional[Dict[str, Any]] = Field(
         None, description="Operation parameters"

@@ -537,7 +537,10 @@ class BatchAIRequest(BaseModel):
     """Schema for batch AI processing request."""
 
     api_key: str = Field(..., min_length=10, description="User's OpenRouter API key")
-    requests: Annotated[List[Dict[str, Any]], Field(min_length=1, max_length=10, description="Batch requests")]
+    requests: Annotated[
+        List[Dict[str, Any]],
+        Field(min_length=1, max_length=10, description="Batch requests"),
+    ]
     service_type: AIServiceType = Field(..., description="Type of AI service")
     model: Optional[AIModel] = Field(
         default=None, description="Model to use for all requests"

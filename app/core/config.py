@@ -259,10 +259,16 @@ class Settings(BaseSettings):
     def cors(self) -> CORSSettings:
         """Get CORS settings."""
         return CORSSettings(
-            origins=self.cors_origins if isinstance(self.cors_origins, list) else [self.cors_origins],
+            origins=self.cors_origins
+            if isinstance(self.cors_origins, list)
+            else [self.cors_origins],
             allow_credentials=self.cors_allow_credentials,
-            allow_methods=self.cors_allow_methods if isinstance(self.cors_allow_methods, list) else [self.cors_allow_methods],
-            allow_headers=self.cors_allow_headers if isinstance(self.cors_allow_headers, list) else [self.cors_allow_headers],
+            allow_methods=self.cors_allow_methods
+            if isinstance(self.cors_allow_methods, list)
+            else [self.cors_allow_methods],
+            allow_headers=self.cors_allow_headers
+            if isinstance(self.cors_allow_headers, list)
+            else [self.cors_allow_headers],
         )
 
     @property

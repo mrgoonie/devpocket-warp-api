@@ -108,11 +108,13 @@ class ConnectMessage(TerminalMessage):
     type: MessageType = MessageType.CONNECT
     data: Dict[str, Any] = Field(
         description="Connection parameters",
-        examples=[{
-            "session_type": "ssh",
-            "ssh_profile_id": "uuid",
-            "terminal_size": {"rows": 24, "cols": 80},
-        }],
+        examples=[
+            {
+                "session_type": "ssh",
+                "ssh_profile_id": "uuid",
+                "terminal_size": {"rows": 24, "cols": 80},
+            }
+        ],
     )
 
     @property
@@ -138,11 +140,13 @@ class StatusMessage(TerminalMessage):
     session_id: str
     data: Dict[str, Any] = Field(
         description="Status information",
-        examples=[{
-            "status": "connected",
-            "message": "SSH connection established",
-            "server_info": {"version": "OpenSSH_8.0"},
-        }],
+        examples=[
+            {
+                "status": "connected",
+                "message": "SSH connection established",
+                "server_info": {"version": "OpenSSH_8.0"},
+            }
+        ],
     )
 
     @property
@@ -167,11 +171,13 @@ class ErrorMessage(TerminalMessage):
     type: MessageType = MessageType.ERROR
     data: Dict[str, Any] = Field(
         description="Error information",
-        examples=[{
-            "error": "connection_failed",
-            "message": "SSH connection failed",
-            "details": {"host": "example.com", "port": 22},
-        }],
+        examples=[
+            {
+                "error": "connection_failed",
+                "message": "SSH connection failed",
+                "details": {"host": "example.com", "port": 22},
+            }
+        ],
     )
 
     @property

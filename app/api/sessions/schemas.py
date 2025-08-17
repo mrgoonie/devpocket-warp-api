@@ -398,7 +398,9 @@ class SessionRecording(BaseModel):
 class BatchSessionOperation(BaseModel):
     """Schema for batch session operations."""
 
-    session_ids: Annotated[List[str], Field(min_length=1, max_length=50, description="Session IDs")]
+    session_ids: Annotated[
+        List[str], Field(min_length=1, max_length=50, description="Session IDs")
+    ]
     operation: str = Field(..., description="Operation: terminate, delete, archive")
     force: bool = Field(default=False, description="Force operation")
 
