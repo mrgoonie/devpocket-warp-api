@@ -6,7 +6,7 @@ Contains business logic for command history, analytics, search, and related oper
 
 import re
 from datetime import datetime, timedelta, timezone
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Optional, List, Dict, Any, Tuple, cast
 from collections import Counter, defaultdict
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
@@ -96,22 +96,28 @@ class CommandService:
         try:
             # Get commands with session information
             commands = await self.command_repo.get_user_commands_with_session(
-                user.id, session_id=session_id, offset=offset, limit=limit
+                user.id, offset=offset, limit=limit
             )
 
             # Convert to history entries
             entries = []
             for cmd in commands:
+                # Skip commands without required fields
+                if not cmd.executed_at or cmd.duration_ms is None:
+                    continue
+
                 entry = CommandHistoryEntry(
-                    id=cmd.id,
+                    id=str(cmd.id),
                     command=cmd.command,
                     working_directory=cmd.working_directory or "/",
                     status=CommandStatus(cmd.status),
                     exit_code=cmd.exit_code,
                     executed_at=cmd.executed_at,
                     duration_ms=cmd.duration_ms,
-                    session_id=cmd.session_id,
-                    session_name=cmd.session.name if cmd.session else "Unknown",
+                    session_id=str(cmd.session_id),
+                    session_name=cmd.session.name
+                    if cmd.session and cmd.session.name
+                    else "Unknown",
                     session_type=cmd.session.session_type if cmd.session else "unknown",
                     command_type=CommandType(cmd.command_type or "unknown"),
                     is_dangerous=cmd.is_dangerous or False,
@@ -126,9 +132,7 @@ class CommandService:
                 entries.append(entry)
 
             # Get total count
-            total = await self.command_repo.count_user_commands(
-                user.id, session_id=session_id
-            )
+            total = await self.command_repo.count_user_commands(user.id)
 
             return CommandHistoryResponse(
                 entries=entries,
@@ -363,13 +367,25 @@ class CommandService:
             month_ago = now - timedelta(days=30)
 
             commands_today = len(
-                [cmd for cmd in all_commands if cmd.executed_at.date() == today]
+                [
+                    cmd
+                    for cmd in all_commands
+                    if cmd.executed_at and cmd.executed_at.date() == today
+                ]
             )
             commands_this_week = len(
-                [cmd for cmd in all_commands if cmd.executed_at >= week_ago]
+                [
+                    cmd
+                    for cmd in all_commands
+                    if cmd.executed_at and cmd.executed_at >= week_ago
+                ]
             )
             commands_this_month = len(
-                [cmd for cmd in all_commands if cmd.executed_at >= month_ago]
+                [
+                    cmd
+                    for cmd in all_commands
+                    if cmd.executed_at and cmd.executed_at >= month_ago
+                ]
             )
 
             # Most used commands
@@ -392,7 +408,9 @@ class CommandService:
                     "command": cmd.command,
                     "duration_ms": cmd.duration_ms,
                     "duration_seconds": round((cmd.duration_ms or 0) / 1000, 2),
-                    "executed_at": cmd.executed_at.isoformat(),
+                    "executed_at": cmd.executed_at.isoformat()
+                    if cmd.executed_at
+                    else "",
                 }
                 for cmd in sorted_by_duration[:10]
             ]
@@ -597,7 +615,9 @@ class CommandService:
                 [
                     cmd
                     for cmd in recent_commands
-                    if cmd.executed_at.date() == today and cmd.status == "completed"
+                    if cmd.executed_at
+                    and cmd.executed_at.date() == today
+                    and cmd.status == "completed"
                 ]
             )
 
@@ -605,7 +625,9 @@ class CommandService:
                 [
                     cmd
                     for cmd in recent_commands
-                    if cmd.executed_at.date() == today and cmd.status == "failed"
+                    if cmd.executed_at
+                    and cmd.executed_at.date() == today
+                    and cmd.status == "failed"
                 ]
             )
 
@@ -616,7 +638,11 @@ class CommandService:
                 if cmd.status == "completed" and cmd.duration_ms
             ]
             avg_response_time = (
-                sum(cmd.duration_ms for cmd in completed_commands)
+                sum(
+                    cmd.duration_ms
+                    for cmd in completed_commands
+                    if cmd.duration_ms is not None
+                )
                 / len(completed_commands)
                 if completed_commands
                 else 0
@@ -624,13 +650,19 @@ class CommandService:
 
             # Success rate for last 24 hours
             total_24h = len(
-                [cmd for cmd in recent_commands if cmd.executed_at >= yesterday]
+                [
+                    cmd
+                    for cmd in recent_commands
+                    if cmd.executed_at and cmd.executed_at >= yesterday
+                ]
             )
             successful_24h = len(
                 [
                     cmd
                     for cmd in recent_commands
-                    if cmd.executed_at >= yesterday and cmd.exit_code == 0
+                    if cmd.executed_at
+                    and cmd.executed_at >= yesterday
+                    and cmd.exit_code == 0
                 ]
             )
             success_rate_24h = (
@@ -641,20 +673,20 @@ class CommandService:
             error_commands = [
                 cmd for cmd in recent_commands if cmd.exit_code != 0 and cmd.stderr
             ]
-            error_counter = Counter()
+            error_counter: Counter[str] = Counter()
             for cmd in error_commands:
                 # Simple error classification
-                if "permission denied" in cmd.stderr.lower():
+                if cmd.stderr and "permission denied" in cmd.stderr.lower():
                     error_counter["permission_denied"] += 1
-                elif "not found" in cmd.stderr.lower():
+                elif cmd.stderr and "not found" in cmd.stderr.lower():
                     error_counter["not_found"] += 1
-                elif "timeout" in cmd.stderr.lower():
+                elif cmd.stderr and "timeout" in cmd.stderr.lower():
                     error_counter["timeout"] += 1
                 else:
                     error_counter["other"] += 1
 
             top_errors = [
-                {"error_type": error_type, "count": count}
+                {"error_type": str(error_type), "count": count}
                 for error_type, count in error_counter.most_common(5)
             ]
 
@@ -667,7 +699,7 @@ class CommandService:
                 success_rate_24h=round(success_rate_24h, 2),
                 total_cpu_time_ms=sum(cmd.duration_ms or 0 for cmd in recent_commands),
                 peak_memory_usage_mb=None,  # Would need system monitoring
-                top_error_types=top_errors,
+                top_error_types=cast(List[Dict[str, int]], top_errors),
                 timestamp=now,
             )
 
@@ -699,7 +731,7 @@ class CommandService:
         self, commands: List[Command], min_usage: int
     ) -> Dict[str, Dict[str, Any]]:
         """Analyze commands to find patterns and templates."""
-        pattern_data = defaultdict(
+        pattern_data: defaultdict[str, Dict[str, Any]] = defaultdict(
             lambda: {
                 "count": 0,
                 "variations": [],
@@ -723,7 +755,9 @@ class CommandService:
             if cmd.duration_ms:
                 data["durations"].append(cmd.duration_ms)
 
-            if not data["last_used"] or cmd.executed_at > data["last_used"]:
+            if cmd.executed_at and (
+                not data["last_used"] or cmd.executed_at > data["last_used"]
+            ):
                 data["last_used"] = cmd.executed_at
 
         # Calculate derived metrics

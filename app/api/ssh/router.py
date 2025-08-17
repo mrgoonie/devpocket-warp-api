@@ -352,6 +352,8 @@ async def test_profile_connection(
     # Create test request for the profile
     test_request = SSHConnectionTestRequest(
         profile_id=profile_id,
+        host=None,  # Will be loaded from profile
+        username=None,  # Will be loaded from profile
         ssh_key_id=ssh_key_id,
         password=password,
         connect_timeout=timeout,

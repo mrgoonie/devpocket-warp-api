@@ -5,7 +5,7 @@ Handles all command-related endpoints including history, analytics,
 search operations, and command insights.
 """
 
-from typing import Annotated, List, Optional
+from typing import Annotated, List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -332,6 +332,11 @@ async def export_commands(
 
         # Get commands based on export criteria
         search_request = CommandSearchRequest(
+            query=None,
+            command_type=None,
+            min_duration_ms=None,
+            max_duration_ms=None,
+            working_directory=None,
             session_id=None,
             executed_after=export_request.date_from,
             executed_before=export_request.date_to,
@@ -451,7 +456,7 @@ async def get_performance_insights(
         metrics = await service.get_command_metrics(current_user)
 
         # Analyze performance
-        insights = {
+        insights: Dict[str, Any] = {
             "execution_performance": {
                 "average_duration_ms": stats.average_duration_ms,
                 "median_duration_ms": stats.median_duration_ms,
@@ -471,7 +476,7 @@ async def get_performance_insights(
                 ),
                 "error_distribution": metrics.top_error_types,
             },
-            "efficiency_recommendations": [],
+            "efficiency_recommendations": [],  # List[Dict[str, Any]]
             "resource_usage": {
                 "commands_per_session_avg": round(
                     stats.total_commands / max(len(set()), 1), 2

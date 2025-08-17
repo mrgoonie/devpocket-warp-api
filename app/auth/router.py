@@ -6,7 +6,7 @@ login, token management, and password operations.
 """
 
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Dict, Any, Optional
 from fastapi import (
     APIRouter,
     Depends,
@@ -61,7 +61,7 @@ router = APIRouter(
 
 
 # Rate limiting storage (in production, use Redis)
-_rate_limit_storage = {}
+_rate_limit_storage: Dict[str, Any] = {}
 
 
 def check_rate_limit(
@@ -219,13 +219,13 @@ async def register_user(
 )
 async def login_user(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    request: Request = None,
+    request: Optional[Request] = None,
     db: AsyncSession = Depends(get_db),
 ) -> Token:
     """Authenticate user and return JWT tokens."""
 
     # Rate limiting for login attempts
-    if not check_rate_limit(
+    if request and not check_rate_limit(
         request, f"login:{form_data.username}", max_attempts=5, window=900
     ):
         raise HTTPException(

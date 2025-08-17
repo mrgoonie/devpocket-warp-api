@@ -5,7 +5,7 @@ Provides high-level terminal operations and session management
 for use by other application services.
 """
 
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, cast
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import logger
@@ -66,11 +66,12 @@ class TerminalService:
 
                 # Add SSH information if applicable
                 if session.is_ssh_session():
-                    session_info["ssh_info"] = {
+                    ssh_info: Dict[str, str | int | None] = {
                         "host": session.ssh_host,
                         "port": session.ssh_port,
                         "username": session.ssh_username,
                     }
+                    session_info["ssh_info"] = cast(Any, ssh_info)
 
                 session_list.append(session_info)
 
@@ -142,11 +143,12 @@ class TerminalService:
 
             # Add SSH information if applicable
             if session.is_ssh_session():
-                session_details["ssh_info"] = {
+                ssh_info: Dict[str, str | int | None] = {
                     "host": session.ssh_host,
                     "port": session.ssh_port,
                     "username": session.ssh_username,
                 }
+                session_details["ssh_info"] = cast(Any, ssh_info)
 
             return session_details
 
@@ -192,7 +194,7 @@ class TerminalService:
             # Update session in database
             session.end_session()
             await self.session_repo.update(
-                session_id, {"is_active": False, "ended_at": session.ended_at}
+                session_id, is_active=False, ended_at=session.ended_at
             )
             await self.db.commit()
 
@@ -259,11 +261,12 @@ class TerminalService:
 
                 # Add SSH info if applicable
                 if session.is_ssh_session():
-                    session_info["ssh_info"] = {
+                    ssh_info: Dict[str, Any] = {
                         "host": session.ssh_host,
                         "port": session.ssh_port,
                         "username": session.ssh_username,
                     }
+                    session_info["ssh_info"] = cast(Any, ssh_info)
 
                 session_list.append(session_info)
 
@@ -297,7 +300,7 @@ class TerminalService:
             Dictionary with connection statistics
         """
         try:
-            stats = {
+            stats: Dict[str, Any] = {
                 "total_connections": connection_manager.get_connection_count(),
                 "total_sessions": connection_manager.get_session_count(),
                 "connection_details": [],

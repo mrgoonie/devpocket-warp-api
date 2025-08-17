@@ -274,7 +274,7 @@ async def get_ai_settings(
     # This would typically load from user settings in database
     # For now, return default settings
     return AISettingsResponse(
-        user_id=current_user.id,
+        user_id=str(current_user.id),
         preferred_models={
             "command_suggestion": "google/gemini-2.5-flash",
             "command_explanation": "google/gemini-2.5-flash",
@@ -302,7 +302,7 @@ async def update_ai_settings(
     logger.info(f"AI settings updated for user {current_user.username}")
 
     return AISettingsResponse(
-        user_id=current_user.id,
+        user_id=str(current_user.id),
         preferred_models=settings.preferred_models,
         default_model=settings.default_model,
         max_suggestions=settings.max_suggestions,
@@ -375,6 +375,8 @@ async def quick_suggest(
         suggestion_request = CommandSuggestionRequest(
             api_key=api_key,
             description=query,
+            working_directory=None,
+            previous_commands=None,
             max_suggestions=3,
             include_explanations=True,
         )

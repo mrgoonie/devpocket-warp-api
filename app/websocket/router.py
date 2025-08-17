@@ -15,6 +15,7 @@ from fastapi import (
     status,
 )
 from jose import jwt
+from jose.exceptions import JWTError
 
 from app.core.logging import logger
 from app.auth.security import decode_token
@@ -50,7 +51,7 @@ async def authenticate_websocket(
 
         return payload
 
-    except jwt.JWTError:
+    except JWTError:
         return None
     except Exception as e:
         logger.error(f"WebSocket authentication error: {e}")
@@ -62,7 +63,7 @@ async def terminal_websocket(
     websocket: WebSocket,
     token: Optional[str] = Query(None, description="JWT authentication token"),
     device_id: Optional[str] = Query(None, description="Device identifier"),
-):
+) -> None:
     """
     WebSocket endpoint for real-time terminal communication.
 
@@ -213,7 +214,7 @@ async def terminal_websocket(
 
 
 @websocket_router.get("/stats")
-async def websocket_stats():
+async def websocket_stats() -> dict:
     """
     Get WebSocket connection statistics.
 

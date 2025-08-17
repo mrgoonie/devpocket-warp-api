@@ -40,7 +40,7 @@ class AIError:
 class OpenRouterService:
     """Service for OpenRouter API integration."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.base_url = "https://openrouter.ai/api/v1"
         self.timeout = 30.0
         self.max_retries = 2

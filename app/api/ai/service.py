@@ -74,6 +74,9 @@ class AIService:
             logger.error(f"API key validation error: {e}")
             return APIKeyValidationResponse(
                 valid=False,
+                account_info=None,
+                models_available=None,
+                recommended_models=None,
                 error=f"Validation failed: {str(e)}",
                 timestamp=datetime.now(timezone.utc),
             )
@@ -141,6 +144,7 @@ class AIService:
                 context_used=context,
                 model_used=ai_response.model,
                 response_time_ms=ai_response.response_time_ms,
+                processing_notes=None,
                 tokens_used=ai_response.usage,
                 confidence_score=self._calculate_confidence_score(suggestions),
                 timestamp=ai_response.timestamp,
@@ -466,6 +470,7 @@ class AIService:
             api_key=api_key,
             description=req_data.get("description", ""),
             working_directory=req_data.get("working_directory"),
+            previous_commands=req_data.get("previous_commands"),
             operating_system=req_data.get("operating_system"),
             shell_type=req_data.get("shell_type"),
             user_level=req_data.get("user_level"),
@@ -493,7 +498,7 @@ class AIService:
             command=req_data.get("command", ""),
             working_directory=req_data.get("working_directory"),
             user_level=req_data.get("user_level"),
-            detail_level=req_data.get("detail_level"),
+            detail_level=req_data.get("detail_level", "basic"),
             include_examples=req_data.get("include_examples", True),
             include_alternatives=req_data.get("include_alternatives", True),
             model=req_data.get("model"),
@@ -553,7 +558,7 @@ class AIService:
             if datetime.now(timezone.utc) - cached_data["timestamp"] < timedelta(
                 seconds=self._cache_ttl
             ):
-                return cached_data["response"]
+                return cached_data["response"]  # type: ignore
             else:
                 # Remove expired cache
                 del self._response_cache[cache_key]
