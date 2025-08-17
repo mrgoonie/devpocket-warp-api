@@ -6,9 +6,12 @@ and password management with comprehensive validation.
 """
 
 from datetime import datetime
-from typing import ClassVar
+from typing import TYPE_CHECKING, ClassVar
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 
 def is_password_strong(password: str) -> tuple[bool, list[str]]:
