@@ -241,8 +241,10 @@ class TestPTYHandler:
     async def test_pty_start(self, pty_handler):
         """Test starting PTY process."""
         # Arrange
-        with patch("pty.openpty") as mock_openpty, patch("os.fork") as mock_fork, patch(
-            "os.execve"
+        with (
+            patch("pty.openpty") as mock_openpty,
+            patch("os.fork") as mock_fork,
+            patch("os.execve"),
         ):
             mock_openpty.return_value = (3, 4)  # master_fd, slave_fd
             mock_fork.return_value = 1234  # child pid
@@ -294,8 +296,10 @@ class TestPTYHandler:
         pty_handler.child_pid = 1234
         pty_handler.is_alive = True
 
-        with patch("os.close") as mock_close, patch("os.kill") as mock_kill, patch(
-            "os.waitpid"
+        with (
+            patch("os.close") as mock_close,
+            patch("os.kill") as mock_kill,
+            patch("os.waitpid"),
         ):
             # Act
             await pty_handler.close()

@@ -328,9 +328,11 @@ class SessionRepository(BaseRepository[Session]):
             select(func.count(Session.id)).where(
                 and_(
                     Session.is_active is True,
-                    Session.user_id == user_id
-                    if user_id
-                    else Session.user_id.is_not(None),
+                    (
+                        Session.user_id == user_id
+                        if user_id
+                        else Session.user_id.is_not(None)
+                    ),
                 )
             )
         )
@@ -340,9 +342,11 @@ class SessionRepository(BaseRepository[Session]):
             select(func.count(Session.id)).where(
                 and_(
                     Session.ssh_host.is_not(None),
-                    Session.user_id == user_id
-                    if user_id
-                    else Session.user_id.is_not(None),
+                    (
+                        Session.user_id == user_id
+                        if user_id
+                        else Session.user_id.is_not(None)
+                    ),
                 )
             )
         )

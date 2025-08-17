@@ -101,9 +101,7 @@ class EndedSessionFactory(SessionFactory):
     """Factory for ended Session."""
 
     is_active = False
-    ended_at = factory.LazyFunction(
-        lambda: datetime.now(UTC) - timedelta(hours=1)
-    )
+    ended_at = factory.LazyFunction(lambda: datetime.now(UTC) - timedelta(hours=1))
 
 
 class SSHSessionFactory(SessionFactory):

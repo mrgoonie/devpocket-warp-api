@@ -97,12 +97,16 @@ class SessionService:
                 ssh_profile_id=session_data.ssh_profile_id,
                 status="pending",
                 mode=session_data.mode.value,
-                terminal_cols=session_data.terminal_size.get("cols", 80)
-                if session_data.terminal_size
-                else 80,
-                terminal_rows=session_data.terminal_size.get("rows", 24)
-                if session_data.terminal_size
-                else 24,
+                terminal_cols=(
+                    session_data.terminal_size.get("cols", 80)
+                    if session_data.terminal_size
+                    else 80
+                ),
+                terminal_rows=(
+                    session_data.terminal_size.get("rows", 24)
+                    if session_data.terminal_size
+                    else 24
+                ),
                 environment=session_data.environment or {},
                 working_directory=session_data.working_directory,
                 idle_timeout=session_data.idle_timeout,

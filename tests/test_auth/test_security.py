@@ -367,8 +367,7 @@ class TestPasswordReset:
             "sub": email,
             "type": "password_reset",
             "reset_id": "test123",
-            "exp": datetime.now(UTC)
-            + timedelta(seconds=-1),  # Already expired
+            "exp": datetime.now(UTC) + timedelta(seconds=-1),  # Already expired
             "iat": datetime.now(UTC),
         }
 

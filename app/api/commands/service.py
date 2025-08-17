@@ -117,9 +117,11 @@ class CommandService:
                     executed_at=cmd.executed_at,
                     duration_ms=cmd.duration_ms,
                     session_id=str(cmd.session_id),
-                    session_name=cmd.session.name
-                    if cmd.session and cmd.session.name
-                    else "Unknown",
+                    session_name=(
+                        cmd.session.name
+                        if cmd.session and cmd.session.name
+                        else "Unknown"
+                    ),
                     session_type=cmd.session.session_type if cmd.session else "unknown",
                     command_type=CommandType(cmd.command_type or "unknown"),
                     is_dangerous=cmd.is_dangerous or False,
@@ -219,13 +221,13 @@ class CommandService:
                     command_type=CommandType(cmd.command_type or "unknown"),
                     is_dangerous=cmd.is_dangerous or False,
                     pid=cmd.pid,
-                    signal=int(cmd.signal)
-                    if cmd.signal and cmd.signal.isdigit()
-                    else None,
+                    signal=(
+                        int(cmd.signal) if cmd.signal and cmd.signal.isdigit() else None
+                    ),
                     sequence_number=cmd.sequence_number or 0,
-                    parent_command_id=str(cmd.parent_command_id)
-                    if cmd.parent_command_id
-                    else None,
+                    parent_command_id=(
+                        str(cmd.parent_command_id) if cmd.parent_command_id else None
+                    ),
                 )
                 command_responses.append(response)
 
@@ -271,13 +273,17 @@ class CommandService:
                 command_type=CommandType(command.command_type or "unknown"),
                 is_dangerous=command.is_dangerous or False,
                 pid=command.pid,
-                signal=int(command.signal)
-                if command.signal and command.signal.isdigit()
-                else None,
+                signal=(
+                    int(command.signal)
+                    if command.signal and command.signal.isdigit()
+                    else None
+                ),
                 sequence_number=command.sequence_number or 0,
-                parent_command_id=str(command.parent_command_id)
-                if command.parent_command_id
-                else None,
+                parent_command_id=(
+                    str(command.parent_command_id)
+                    if command.parent_command_id
+                    else None
+                ),
             )
 
         except HTTPException:
@@ -410,9 +416,9 @@ class CommandService:
                     "command": cmd.command,
                     "duration_ms": cmd.duration_ms,
                     "duration_seconds": round((cmd.duration_ms or 0) / 1000, 2),
-                    "executed_at": cmd.executed_at.isoformat()
-                    if cmd.executed_at
-                    else "",
+                    "executed_at": (
+                        cmd.executed_at.isoformat() if cmd.executed_at else ""
+                    ),
                 }
                 for cmd in sorted_by_duration[:10]
             ]

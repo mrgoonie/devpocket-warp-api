@@ -50,9 +50,11 @@ def mock_env() -> Generator[dict[str, str], None, None]:
 @pytest.fixture
 def mock_subprocess():
     """Mock subprocess calls for testing."""
-    with patch("subprocess.run") as mock_run, patch(
-        "subprocess.Popen"
-    ) as mock_popen, patch("subprocess.check_output") as mock_output:
+    with (
+        patch("subprocess.run") as mock_run,
+        patch("subprocess.Popen") as mock_popen,
+        patch("subprocess.check_output") as mock_output,
+    ):
         # Default successful return
         mock_run.return_value = MagicMock(returncode=0, stdout="", stderr="")
         mock_output.return_value = b"test output"

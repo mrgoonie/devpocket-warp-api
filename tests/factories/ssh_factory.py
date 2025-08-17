@@ -57,9 +57,7 @@ class SSHProfileFactory(factory.Factory):
     is_active = True
 
     # Connection statistics
-    last_used_at = factory.LazyFunction(
-        lambda: datetime.now(UTC) - timedelta(days=1)
-    )
+    last_used_at = factory.LazyFunction(lambda: datetime.now(UTC) - timedelta(days=1))
     connection_count = fuzzy.FuzzyInteger(0, 100)
     successful_connections = factory.LazyAttribute(
         lambda obj: int(obj.connection_count * 0.8)  # 80% success rate
@@ -160,9 +158,7 @@ class SSHKeyFactory(factory.Factory):
     is_active = True
 
     # Usage tracking
-    last_used_at = factory.LazyFunction(
-        lambda: datetime.now(UTC) - timedelta(hours=6)
-    )
+    last_used_at = factory.LazyFunction(lambda: datetime.now(UTC) - timedelta(hours=6))
     usage_count = fuzzy.FuzzyInteger(0, 50)
 
 

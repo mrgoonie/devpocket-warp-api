@@ -42,9 +42,7 @@ class SyncDataFactory(factory.Factory):
     resolved_at = None
 
     # Sync timestamps
-    synced_at = factory.LazyFunction(
-        lambda: datetime.now(UTC) - timedelta(hours=1)
-    )
+    synced_at = factory.LazyFunction(lambda: datetime.now(UTC) - timedelta(hours=1))
     last_modified_at = factory.LazyFunction(
         lambda: datetime.now(UTC) - timedelta(minutes=30)
     )
@@ -162,18 +160,14 @@ class ConflictedSyncDataFactory(SyncDataFactory):
 class ResolvedConflictSyncDataFactory(ConflictedSyncDataFactory):
     """Factory for resolved conflict sync data."""
 
-    resolved_at = factory.LazyFunction(
-        lambda: datetime.now(UTC) - timedelta(hours=1)
-    )
+    resolved_at = factory.LazyFunction(lambda: datetime.now(UTC) - timedelta(hours=1))
     conflict_data = None
 
 
 class RecentSyncDataFactory(SyncDataFactory):
     """Factory for recently synced data."""
 
-    synced_at = factory.LazyFunction(
-        lambda: datetime.now(UTC) - timedelta(minutes=5)
-    )
+    synced_at = factory.LazyFunction(lambda: datetime.now(UTC) - timedelta(minutes=5))
     last_modified_at = factory.LazyFunction(
         lambda: datetime.now(UTC) - timedelta(minutes=2)
     )
@@ -182,9 +176,7 @@ class RecentSyncDataFactory(SyncDataFactory):
 class OldSyncDataFactory(SyncDataFactory):
     """Factory for old sync data."""
 
-    synced_at = factory.LazyFunction(
-        lambda: datetime.now(UTC) - timedelta(days=7)
-    )
+    synced_at = factory.LazyFunction(lambda: datetime.now(UTC) - timedelta(days=7))
     last_modified_at = factory.LazyFunction(
         lambda: datetime.now(UTC) - timedelta(days=5)
     )
