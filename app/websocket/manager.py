@@ -299,9 +299,9 @@ class ConnectionManager:
 
                 # Register terminal session
                 connection.add_terminal_session(terminal_session)
-                self.session_connections[
-                    str(db_session.id)
-                ] = connection.connection_id  # Convert UUID to string
+                self.session_connections[str(db_session.id)] = (
+                    connection.connection_id
+                )  # Convert UUID to string
 
                 # Start the terminal session
                 await terminal_session.start()

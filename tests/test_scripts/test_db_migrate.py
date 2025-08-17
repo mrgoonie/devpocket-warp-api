@@ -523,9 +523,10 @@ class TestDbMigrateScript:
     def test_backup_creation_success(self, mock_run, script_runner, mock_env, temp_dir):
         """Test successful backup creation before migration."""
         # Mock pg_dump availability and success
-        with patch("shutil.which", return_value="/usr/bin/pg_dump"), patch(
-            "subprocess.run"
-        ) as mock_run:
+        with (
+            patch("shutil.which", return_value="/usr/bin/pg_dump"),
+            patch("subprocess.run") as mock_run,
+        ):
             mock_run.side_effect = [
                 # db_utils.py test
                 MagicMock(returncode=0),

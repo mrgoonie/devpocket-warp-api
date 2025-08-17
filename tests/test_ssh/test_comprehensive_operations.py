@@ -70,9 +70,10 @@ class TestSSHClient:
             "Authentication failed"
         )
 
-        with patch(
-            "paramiko.SSHClient", return_value=mock_paramiko_client
-        ), pytest.raises(paramiko.AuthenticationException):
+        with (
+            patch("paramiko.SSHClient", return_value=mock_paramiko_client),
+            pytest.raises(paramiko.AuthenticationException),
+        ):
             # Act & Assert
             await ssh_client.connect(ssh_key="invalid_key")
 
@@ -82,9 +83,10 @@ class TestSSHClient:
         # Arrange
         mock_paramiko_client.connect.side_effect = TimeoutError("Connection timed out")
 
-        with patch(
-            "paramiko.SSHClient", return_value=mock_paramiko_client
-        ), pytest.raises(TimeoutError):
+        with (
+            patch("paramiko.SSHClient", return_value=mock_paramiko_client),
+            pytest.raises(TimeoutError),
+        ):
             # Act & Assert
             await ssh_client.connect(timeout=5)
 

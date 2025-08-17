@@ -134,9 +134,9 @@ class SSHClientService:
                     result["message"] = "Connection successful"
                     result["details"]["command_test"] = "passed"
                 else:
-                    result[
-                        "message"
-                    ] = "Connection established but command execution failed"
+                    result["message"] = (
+                        "Connection established but command execution failed"
+                    )
                     result["details"]["command_test"] = "failed"
                     result["details"]["command_output"] = test_output
 
@@ -170,9 +170,9 @@ class SSHClientService:
 
         except ConnectionRefusedError:
             logger.warning(f"Connection refused for {host}:{port}")
-            result[
-                "message"
-            ] = f"Connection refused. Is SSH server running on port {port}?"
+            result["message"] = (
+                f"Connection refused. Is SSH server running on port {port}?"
+            )
             result["details"]["error_type"] = "connection_refused"
 
         except Exception as e:

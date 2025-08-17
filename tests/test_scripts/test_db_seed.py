@@ -496,8 +496,9 @@ class TestDbSeedScript:
         ]
 
         # Mock user confirmation input
-        with patch("builtins.input", return_value="y"), patch.dict(
-            os.environ, mock_env
+        with (
+            patch("builtins.input", return_value="y"),
+            patch.dict(os.environ, mock_env),
         ):
             result = script_runner.run_script("db_seed.sh", ["--clean", "users", "10"])
 
@@ -570,8 +571,9 @@ class TestDbSeedScript:
         ]
 
         # Mock user confirmation input
-        with patch("builtins.input", return_value="y"), patch.dict(
-            os.environ, mock_env
+        with (
+            patch("builtins.input", return_value="y"),
+            patch.dict(os.environ, mock_env),
         ):
             result = script_runner.run_script("db_seed.sh", ["--reset", "all", "5"])
 
@@ -670,8 +672,9 @@ class TestDbSeedScript:
         ]
 
         # Mock user cancellation
-        with patch("builtins.input", return_value="n"), patch.dict(
-            os.environ, mock_env
+        with (
+            patch("builtins.input", return_value="n"),
+            patch.dict(os.environ, mock_env),
         ):
             result = script_runner.run_script("db_seed.sh", ["--clean", "users", "10"])
 
@@ -691,8 +694,9 @@ class TestDbSeedScript:
         ]
 
         # Mock user cancellation
-        with patch("builtins.input", return_value="n"), patch.dict(
-            os.environ, mock_env
+        with (
+            patch("builtins.input", return_value="n"),
+            patch.dict(os.environ, mock_env),
         ):
             result = script_runner.run_script("db_seed.sh", ["--reset", "all", "5"])
 

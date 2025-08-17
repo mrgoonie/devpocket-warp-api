@@ -190,9 +190,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
             # Additional security for sensitive endpoints
             if request.url.path in ["/api/auth/login", "/api/auth/register"]:
-                response.headers[
-                    "X-Robots-Tag"
-                ] = "noindex, nofollow, noarchive, nosnippet"
+                response.headers["X-Robots-Tag"] = (
+                    "noindex, nofollow, noarchive, nosnippet"
+                )
 
         # Add API versioning header
         response.headers["X-API-Version"] = settings.app_version

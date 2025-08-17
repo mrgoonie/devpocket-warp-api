@@ -174,8 +174,9 @@ class TestScriptIntegration:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", return_value="/usr/bin/pytest"), patch.dict(
-            os.environ, mock_env
+        with (
+            patch("shutil.which", return_value="/usr/bin/pytest"),
+            patch.dict(os.environ, mock_env),
         ):
             result1 = script_runner.run_script("run_tests.sh", ["-t", "unit"])
 
@@ -192,9 +193,11 @@ class TestScriptIntegration:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch(
-            "os.path.exists", return_value=True
-        ), patch.dict(os.environ, mock_env):
+        with (
+            patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"),
+            patch("os.path.exists", return_value=True),
+            patch.dict(os.environ, mock_env),
+        ):
             result2 = script_runner.run_script("format_code.sh", ["--check"])
 
         assert result2.returncode == 0
@@ -221,9 +224,11 @@ class TestScriptIntegration:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch(
-            "os.path.exists", return_value=True
-        ), patch.dict(os.environ, mock_env):
+        with (
+            patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"),
+            patch("os.path.exists", return_value=True),
+            patch.dict(os.environ, mock_env),
+        ):
             result2 = script_runner.run_script("format_code.sh")
 
         assert result2.returncode == 0
@@ -258,8 +263,9 @@ class TestScriptIntegration:
             with patch("subprocess.run") as mock_run:
                 mock_run.return_value = MagicMock(returncode=0)
 
-                with patch("shutil.which", return_value="/usr/bin/tool"), patch(
-                    "os.path.exists", return_value=True
+                with (
+                    patch("shutil.which", return_value="/usr/bin/tool"),
+                    patch("os.path.exists", return_value=True),
                 ):
                     result = script_runner.run_script(script_name, args or [])
                     results.put((script_name, result.returncode))
@@ -336,8 +342,9 @@ class TestScriptIntegration:
             ]
 
             for script_name, args in scripts_to_test:
-                with patch("shutil.which", return_value="/usr/bin/tool"), patch(
-                    "os.path.exists", return_value=True
+                with (
+                    patch("shutil.which", return_value="/usr/bin/tool"),
+                    patch("os.path.exists", return_value=True),
                 ):
                     result = script_runner.run_script(script_name, args)
 
@@ -372,8 +379,9 @@ class TestScriptIntegration:
         for script_name, args in scripts_to_test:
             start_time = time.time()
 
-            with patch("shutil.which", return_value="/usr/bin/tool"), patch(
-                "os.path.exists", return_value=True
+            with (
+                patch("shutil.which", return_value="/usr/bin/tool"),
+                patch("os.path.exists", return_value=True),
             ):
                 result = script_runner.run_script(script_name, args, timeout=30)
 
@@ -425,8 +433,9 @@ class TestScriptIntegration:
             ]
 
             for script_name, args in success_tests:
-                with patch("shutil.which", return_value="/usr/bin/tool"), patch(
-                    "os.path.exists", return_value=True
+                with (
+                    patch("shutil.which", return_value="/usr/bin/tool"),
+                    patch("os.path.exists", return_value=True),
                 ):
                     result = script_runner.run_script(script_name, args)
                     assert (
