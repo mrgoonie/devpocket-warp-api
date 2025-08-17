@@ -202,7 +202,10 @@ class ResetPassword(BaseModel):
 
     token: str = Field(..., description="Password reset token from email")
     new_password: str = Field(
-        ..., min_length=1, max_length=128, description="New password"  # Allow weak passwords for testing, validation happens in business logic
+        ...,
+        min_length=1,
+        max_length=128,
+        description="New password",  # Allow weak passwords for testing, validation happens in business logic
     )
 
 

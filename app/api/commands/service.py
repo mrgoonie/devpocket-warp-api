@@ -327,7 +327,9 @@ class CommandService:
         try:
             # Get all user commands for analysis
             all_commands = await self.command_repo.get_user_commands(
-                user.id, offset=0, limit=10000  # Reasonable limit for stats
+                user.id,
+                offset=0,
+                limit=10000,  # Reasonable limit for stats
             )
 
             if not all_commands:

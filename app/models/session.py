@@ -62,7 +62,8 @@ class Session(BaseModel):
 
     # Connection information
     ip_address: Mapped[str | None] = mapped_column(
-        String(45), nullable=True  # IPv6 max length
+        String(45),
+        nullable=True,  # IPv6 max length
     )
 
     user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)

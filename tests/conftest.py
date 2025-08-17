@@ -69,11 +69,17 @@ async def _cleanup_test_data(engine):
             tables = [row[0] for row in result.fetchall()]
 
             if tables:
+                # Disable foreign key checks temporarily for faster cleanup
+                await conn.execute(text("SET session_replication_role = replica;"))
+                
                 # Use CASCADE truncation to handle foreign key constraints
                 table_list = ", ".join(tables)
                 await conn.execute(
                     text(f"TRUNCATE TABLE {table_list} RESTART IDENTITY CASCADE")
                 )
+                
+                # Re-enable foreign key checks
+                await conn.execute(text("SET session_replication_role = DEFAULT;"))
 
                 # Reset sequences for primary keys - simplified approach
                 await conn.execute(
@@ -98,6 +104,64 @@ async def _cleanup_test_data(engine):
     except Exception as e:
         # Log error but don't fail - cleanup is best effort
         print(f"Warning: Test data cleanup failed: {e}")
+
+
+async def _clear_test_data_in_session(session):
+    """Clear test data within a session transaction."""
+    try:
+        # Check which tables actually exist first
+        existing_tables_result = await session.execute(
+            text(
+                """
+                SELECT tablename FROM pg_tables 
+                WHERE schemaname = 'public' 
+                AND tablename != 'alembic_version'
+                """
+            )
+        )
+        existing_tables = {row[0] for row in existing_tables_result.fetchall()}
+        
+        # Clear data in dependency order (child tables first) - only if they exist
+        tables_to_clear = [
+            "user_settings",
+            "command_history", 
+            "session_commands",
+            "ssh_keys",
+            "ssh_profiles",
+            "sessions",
+            "sync_data",
+            "users"
+        ]
+        
+        for table in tables_to_clear:
+            if table in existing_tables:
+                await session.execute(text(f"DELETE FROM {table}"))
+        
+        # Reset sequences to ensure consistent IDs
+        await session.execute(
+            text(
+                """
+            DO $$
+            DECLARE
+                seq_record RECORD;
+            BEGIN
+                FOR seq_record IN
+                    SELECT sequence_name
+                    FROM information_schema.sequences
+                    WHERE sequence_schema = 'public'
+                LOOP
+                    EXECUTE 'SELECT setval(''' || seq_record.sequence_name || ''', 1, false)';
+                END LOOP;
+            END
+            $$;
+            """
+            )
+        )
+        
+        await session.flush()
+    except Exception as e:
+        # Log error but don't fail - cleanup is best effort
+        print(f"Warning: Session data cleanup failed: {e}")
 
 
 @pytest.fixture(scope="session")
@@ -154,7 +218,12 @@ async def test_session(test_db_engine) -> AsyncGenerator[AsyncSession, None]:
         try:
             # Critical: Ensure we flush any initial operations to establish the transaction
             await session.execute(text("SELECT 1"))
+            
+            # Clear any existing test data at the start of each test
+            await _clear_test_data_in_session(session)
+            
             yield session
+            
             # Don't commit in tests - let the test cleanup handle rollback
         except Exception:
             # Rollback on any exception
@@ -189,17 +258,62 @@ async def test_redis() -> AsyncGenerator[aioredis.Redis, None]:
 
 @pytest.fixture
 def mock_redis() -> MagicMock:
-    """Create a mocked Redis client for unit tests."""
+    """Create a mocked Redis client for unit tests with proper isolation."""
     mock_redis = MagicMock()
+    
+    # Create a fresh storage for each test to simulate Redis isolation
+    redis_storage = {}
+    
+    async def mock_get(key):
+        return redis_storage.get(key)
+    
+    async def mock_set(key, value, ex=None, px=None, nx=False, xx=False):
+        if nx and key in redis_storage:
+            return False
+        if xx and key not in redis_storage:
+            return False
+        redis_storage[key] = value
+        return True
+    
+    async def mock_delete(*keys):
+        deleted = 0
+        for key in keys:
+            if key in redis_storage:
+                del redis_storage[key]
+                deleted += 1
+        return deleted
+    
+    async def mock_exists(key):
+        return key in redis_storage
+    
+    async def mock_flushall():
+        redis_storage.clear()
+        return True
+    
+    async def mock_incr(key):
+        current = int(redis_storage.get(key, 0))
+        redis_storage[key] = str(current + 1)
+        return current + 1
+    
+    async def mock_expire(key, seconds):
+        # For testing, we'll just track that expire was called
+        return key in redis_storage
 
-    # Mock common Redis operations
-    mock_redis.get = AsyncMock(return_value=None)
-    mock_redis.set = AsyncMock(return_value=True)
-    mock_redis.delete = AsyncMock(return_value=1)
-    mock_redis.exists = AsyncMock(return_value=False)
+    # Mock common Redis operations with proper state management
+    mock_redis.get = mock_get
+    mock_redis.set = mock_set
+    mock_redis.delete = mock_delete
+    mock_redis.exists = mock_exists
     mock_redis.ping = AsyncMock(return_value=True)
-    mock_redis.flushall = AsyncMock(return_value=True)
+    mock_redis.flushall = mock_flushall
     mock_redis.close = AsyncMock()
+    mock_redis.incr = mock_incr
+    mock_redis.expire = mock_expire
+    
+    # Additional methods that might be used in rate limiting
+    mock_redis.setex = AsyncMock(return_value=True)
+    mock_redis.ttl = AsyncMock(return_value=-1)
+    mock_redis.keys = AsyncMock(return_value=[])
 
     return mock_redis
 
@@ -222,6 +336,16 @@ async def app(test_session, mock_redis) -> FastAPI:
 
     # Set Redis client for WebSocket manager
     connection_manager.redis = mock_redis
+    
+    # Ensure middleware state is clean
+    app.state.test_mode = True
+    
+    # Reset rate limiting middleware state for each test
+    for middleware in app.user_middleware:
+        if hasattr(middleware.cls, '__name__') and 'RateLimitMiddleware' in middleware.cls.__name__:
+            # Reset the rate limit store if it exists
+            if hasattr(middleware.cls, '_store'):
+                middleware.cls._store = None
 
     return app
 
@@ -252,15 +376,17 @@ def user_data() -> dict:
     import time
     import uuid
     import random
+    import threading
 
     # Generate highly unique identifiers to prevent conflicts between tests
     unique_id = str(uuid.uuid4())[:8]
     timestamp = str(int(time.time() * 1000000))[-8:]  # Microsecond precision
-    random_suffix = str(random.randint(1000, 9999))
+    thread_id = str(threading.current_thread().ident)[-4:]  # Thread isolation
+    random_suffix = str(random.randint(10000, 99999))
 
     return {
-        "email": f"test_{unique_id}_{timestamp}_{random_suffix}@example.com",
-        "username": f"testuser_{unique_id}_{timestamp}",
+        "email": f"test_{unique_id}_{timestamp}_{thread_id}_{random_suffix}@example.com",
+        "username": f"test_{unique_id}_{timestamp}"[:30],  # Ensure max 30 chars
         "password": "SecurePassword123!",
         "full_name": f"Test User {unique_id}",
     }
@@ -418,6 +544,32 @@ async def cleanup_test_data(test_session):
         pass
 
 
+# Rate limiting cleanup
+@pytest.fixture(autouse=True)
+def cleanup_rate_limiting():
+    """Reset rate limiting state between tests."""
+    # Clear any rate limiting storage before and after the test
+    try:
+        from app.middleware.rate_limit import rate_limit_store
+        # Clear the global rate limit store before test
+        rate_limit_store._store.clear()
+        rate_limit_store._last_cleanup = 0
+    except Exception:
+        pass
+    
+    yield
+    
+    # Reset rate limit store after test
+    try:
+        from app.middleware.rate_limit import rate_limit_store
+        # Clear the global rate limit store after test
+        rate_limit_store._store.clear()
+        rate_limit_store._last_cleanup = 0
+    except Exception:
+        # Ignore cleanup errors
+        pass
+
+
 # Environment setup
 @pytest.fixture(autouse=True)
 def setup_test_environment(monkeypatch):
@@ -426,6 +578,10 @@ def setup_test_environment(monkeypatch):
     monkeypatch.setenv("TESTING", "true")
     monkeypatch.setenv("DATABASE_URL", TEST_DATABASE_URL)
     monkeypatch.setenv("REDIS_URL", TEST_REDIS_URL)
+    
+    # Reset any global state that might interfere with tests
+    import app.auth.security as auth_security
+    auth_security._redis_client = None  # Reset Redis client
 
 
 # Pytest markers for test categorization

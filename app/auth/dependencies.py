@@ -132,11 +132,12 @@ async def get_current_user(
         # Validate UUID format
         try:
             from uuid import UUID
+
             # Attempt to create UUID to validate format
             UUID(user_id)
         except (ValueError, TypeError):
             logger.warning(f"Invalid UUID format for user ID: {user_id}")
-            raise AuthenticationError("User not found")
+            raise AuthenticationError("User not found") from None
 
         # Get user from database
         user_repo = UserRepository(db)
@@ -306,6 +307,7 @@ async def get_user_from_token(token: str, db: AsyncSession) -> User | None:
         # Validate UUID format
         try:
             from uuid import UUID
+
             # Attempt to create UUID to validate format
             UUID(user_id)
         except (ValueError, TypeError):

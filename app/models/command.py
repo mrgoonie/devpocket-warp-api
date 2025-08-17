@@ -31,7 +31,9 @@ class Command(BaseModel):
 
     # Command details
     command: Mapped[str] = mapped_column(
-        Text, nullable=False, index=True  # For command history searches
+        Text,
+        nullable=False,
+        index=True,  # For command history searches
     )
 
     # Command execution results
@@ -40,7 +42,9 @@ class Command(BaseModel):
     error_output: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     exit_code: Mapped[int | None] = mapped_column(
-        Integer, nullable=True, index=True  # For filtering by success/failure
+        Integer,
+        nullable=True,
+        index=True,  # For filtering by success/failure
     )
 
     # Command status

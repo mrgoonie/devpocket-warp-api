@@ -159,8 +159,8 @@ class TestCurrentUser:
 
         token = create_access_token({"sub": user.id})
 
-        # Mock Redis to return blacklisted
-        mock_redis.get.return_value = "blacklisted"
+        # Use the stateful mock by setting the blacklist value
+        await mock_redis.set(f"blacklist:{token}", "blacklisted")
 
         with pytest.raises(AuthenticationError, match="Token has been revoked"):
             await get_current_user(test_session, token)
@@ -181,12 +181,16 @@ class TestCurrentUser:
     async def test_get_current_user_malformed_token(self, test_session, mock_redis):
         """Test authentication with malformed token payload."""
         set_redis_client(mock_redis)
-        mock_redis.get.return_value = None
 
-        # Create token without required 'sub' field
-        token = create_access_token({"user_id": "123", "sub": ""})
+        # Create a manually crafted invalid token (not through our create_access_token function)
+        from jose import jwt
+        from app.core.config import settings
+        
+        # Create token with invalid sub format (not a valid UUID)
+        payload = {"sub": "invalid-uuid-format", "exp": 9999999999}
+        token = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
 
-        with pytest.raises(AuthenticationError, match="Invalid token format"):
+        with pytest.raises(AuthenticationError, match="User not found"):
             await get_current_user(test_session, token)
 
 

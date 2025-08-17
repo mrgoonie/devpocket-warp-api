@@ -158,6 +158,7 @@ async def register_user(
     try:
         # Validate password strength
         from app.auth.security import is_password_strong
+
         is_strong, errors = is_password_strong(user_data.password)
         if not is_strong:
             raise HTTPException(
@@ -368,13 +369,14 @@ async def refresh_token(
         # Validate UUID format
         try:
             from uuid import UUID
+
             UUID(user_id)
         except (ValueError, TypeError):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token format",
                 headers={"WWW-Authenticate": "Bearer"},
-            )
+            ) from None
 
         # Verify user still exists and is active
         user_repo = UserRepository(db)
@@ -490,15 +492,11 @@ async def forgot_password(
 
         # Always return success for security (don't reveal if email exists)
         if user and user.is_active:
-            reset_token = generate_password_reset_token(user.email)
-            background_tasks.add_task(
-                send_password_reset_email, user.email
-            )
+            generate_password_reset_token(user.email)
+            background_tasks.add_task(send_password_reset_email, user.email)
             logger.info(f"Password reset requested for: {user.email}")
 
-        return MessageResponse(
-            message="Password reset email sent successfully."
-        )
+        return MessageResponse(message="Password reset email sent successfully.")
 
     except Exception as e:
         logger.error(f"Forgot password error: {e}")
@@ -538,6 +536,7 @@ async def reset_password(
 
         # Validate password strength
         from app.auth.security import is_password_strong
+
         is_strong, errors = is_password_strong(reset_data.new_password)
         if not is_strong:
             raise HTTPException(
@@ -680,19 +679,15 @@ async def request_email_verification(
             )
 
         # Generate verification token
-        verification_token = create_access_token(
+        create_access_token(
             {"sub": user.email, "type": "email_verification"},
             expires_delta=timedelta(hours=24),
         )
 
-        background_tasks.add_task(
-            send_verification_email, user.email
-        )
+        background_tasks.add_task(send_verification_email, user.email)
         logger.info(f"Email verification requested for: {user.email}")
 
-        return MessageResponse(
-            message="Verification email sent successfully."
-        )
+        return MessageResponse(message="Verification email sent successfully.")
 
     except HTTPException:
         raise

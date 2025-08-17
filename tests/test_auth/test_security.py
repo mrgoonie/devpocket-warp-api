@@ -261,27 +261,26 @@ class TestTokenBlacklisting:
     async def test_is_token_blacklisted_true(self, mock_redis):
         """Test checking if token is blacklisted (blacklisted)."""
         set_redis_client(mock_redis)
-        mock_redis.get.return_value = "blacklisted"
-
+        
         token = "test.jwt.token"
+        # Use the stateful mock by setting the value first
+        await mock_redis.set(f"blacklist:{token}", "blacklisted")
 
         is_blacklisted = await is_token_blacklisted(token)
 
         assert is_blacklisted is True
-        mock_redis.get.assert_called_once_with(f"blacklist:{token}")
 
     @pytest.mark.asyncio
     async def test_is_token_blacklisted_false(self, mock_redis):
         """Test checking if token is blacklisted (not blacklisted)."""
         set_redis_client(mock_redis)
-        mock_redis.get.return_value = None
-
+        
         token = "test.jwt.token"
+        # Don't set any value, so the token is not blacklisted
 
         is_blacklisted = await is_token_blacklisted(token)
 
         assert is_blacklisted is False
-        mock_redis.get.assert_called_once_with(f"blacklist:{token}")
 
     @pytest.mark.asyncio
     async def test_is_token_blacklisted_redis_error(self, mock_redis):

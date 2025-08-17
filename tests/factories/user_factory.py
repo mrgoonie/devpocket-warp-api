@@ -4,6 +4,8 @@ User and UserSettings factories for testing.
 
 import factory
 import factory.fuzzy
+import uuid
+import time
 from faker import Faker
 
 from app.auth.security import hash_password
@@ -12,15 +14,29 @@ from app.models.user import User, UserRole, UserSettings
 fake = Faker()
 
 
+def _generate_unique_email():
+    """Generate a unique email with timestamp and UUID."""
+    unique_id = str(uuid.uuid4())[:8]
+    timestamp = str(int(time.time() * 1000000))[-8:]  # Microsecond precision
+    return f"test_{unique_id}_{timestamp}@example.com"
+
+
+def _generate_unique_username():
+    """Generate a unique username with timestamp and UUID."""
+    unique_id = str(uuid.uuid4())[:8]
+    timestamp = str(int(time.time() * 1000000))[-8:]  # Microsecond precision
+    return f"user_{unique_id}_{timestamp}"[:30]  # Ensure max 30 chars
+
+
 class UserFactory(factory.Factory):
     """Factory for User model."""
 
     class Meta:
         model = User
 
-    # Basic user information
-    email = factory.Sequence(lambda n: f"user{n}@example.com")
-    username = factory.Sequence(lambda n: f"user{n}")
+    # Basic user information - using unique generators to avoid conflicts
+    email = factory.LazyFunction(_generate_unique_email)
+    username = factory.LazyFunction(_generate_unique_username)
     hashed_password = factory.LazyFunction(lambda: hash_password("TestPassword123!"))
     full_name = factory.LazyAttribute(lambda obj: f"{obj.username.title()} User")
     role = UserRole.USER

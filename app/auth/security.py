@@ -113,10 +113,10 @@ def create_access_token(
     Raises:
         ValueError: If required data is missing
     """
-    if "sub" not in data:
-        raise ValueError("Token data must include 'sub' (subject) field")
-
     to_encode = _make_jwt_serializable(data.copy())
+
+    if "sub" not in to_encode or not to_encode.get("sub"):
+        raise ValueError("Token data must include 'sub' (subject) field")
 
     if expires_delta:
         expire = datetime.now(UTC) + expires_delta
@@ -127,7 +127,9 @@ def create_access_token(
         {
             "exp": int(expire.timestamp()),
             "iat": int(datetime.now(UTC).timestamp()),
-            "type": to_encode.get("type", "access"),  # Allow custom types, default to access
+            "type": to_encode.get(
+                "type", "access"
+            ),  # Allow custom types, default to access
         }
     )
 
@@ -162,7 +164,7 @@ def create_refresh_token(
     Raises:
         ValueError: If required data is missing
     """
-    if not data.get("sub"):
+    if "sub" not in data or not data.get("sub"):
         raise ValueError("Token data must include 'sub' (subject) field")
 
     to_encode = _make_jwt_serializable(data.copy())
