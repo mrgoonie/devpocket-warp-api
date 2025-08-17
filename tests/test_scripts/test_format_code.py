@@ -67,9 +67,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh")
 
         assert result.returncode == 0
@@ -86,9 +84,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh", ["main.py"])
 
         assert result.returncode == 0
@@ -105,9 +101,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh", ["app/core/"])
 
         assert result.returncode == 0
@@ -124,9 +118,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh", ["--check"])
 
         assert result.returncode == 0
@@ -143,9 +135,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh", ["--fix"])
 
         assert result.returncode == 0
@@ -158,9 +148,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0)
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script(
                         "format_code.sh", ["--black-only"]
                     )
@@ -177,9 +165,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh", ["--ruff-only"])
 
         assert result.returncode == 0
@@ -192,9 +178,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0)
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh", ["--mypy-only"])
 
         assert result.returncode == 0
@@ -211,9 +195,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh", ["--no-black"])
 
         assert result.returncode == 0
@@ -228,9 +210,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh", ["--no-ruff"])
 
         assert result.returncode == 0
@@ -245,9 +225,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh", ["--no-mypy"])
 
         assert result.returncode == 0
@@ -264,9 +242,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh", ["--strict"])
 
         assert result.returncode == 0
@@ -283,9 +259,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh", ["--diff"])
 
         assert result.returncode == 0
@@ -307,9 +281,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh", ["--report"])
 
         assert result.returncode == 0
@@ -340,9 +312,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh", ["--stats"])
 
         assert result.returncode == 0
@@ -373,9 +343,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh", ["--check"])
 
         # Should have non-zero exit code due to formatting issues
@@ -393,9 +361,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh")
 
         # Should have non-zero exit code due to linting issues
@@ -413,9 +379,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=1),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh")
 
         # Should have non-zero exit code due to type issues
@@ -433,9 +397,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=1),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh")
 
         # Should combine exit codes (2 | 4 | 8 = 14)
@@ -460,9 +422,7 @@ class TestFormatCodeScript:
                 MagicMock(returncode=0),
             ]
 
-            with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-                with patch("os.path.exists", return_value=True):
-                    with patch.dict(os.environ, mock_env):
+            with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                         result = script_runner.run_script("format_code.sh")
 
         assert result.returncode == 0
@@ -479,9 +439,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh")
 
         assert result.returncode == 0
@@ -502,9 +460,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh")
 
         assert result.returncode == 0
@@ -524,9 +480,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh")
 
         assert result.returncode == 0
@@ -547,9 +501,7 @@ class TestFormatCodeScript:
             MagicMock(returncode=0),
         ]
 
-        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-            with patch("os.path.exists", return_value=True):
-                with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, mock_env):
                     result = script_runner.run_script("format_code.sh")
 
         assert result.returncode == 0
@@ -566,12 +518,11 @@ class TestFormatCodeScript:
                 MagicMock(returncode=0),
             ]
 
-            with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-                with patch(
+            with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch(
                     "os.path.exists",
                     side_effect=lambda path: "app" in str(path),
                 ):
-                    result = script_runner.run_script("format_code.sh", ["app/"])
+                result = script_runner.run_script("format_code.sh", ["app/"])
 
         assert result.returncode == 0
 
@@ -590,8 +541,7 @@ class TestFormatCodeScript:
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
 
-            with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-                with patch("os.path.exists", return_value=True):
+            with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True):
                     result = script_runner.run_script(
                         "format_code.sh", ["--stats-only"]
                     )
@@ -611,9 +561,7 @@ class TestFormatCodeScript:
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
 
-            with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"):
-                with patch("os.path.exists", return_value=True):
-                    with patch.dict(os.environ, custom_env):
+            with patch("shutil.which", side_effect=lambda cmd: f"/usr/bin/{cmd}"), patch("os.path.exists", return_value=True), patch.dict(os.environ, custom_env):
                         result = script_runner.run_script(
                             "format_code.sh", ["--stats-only"]
                         )

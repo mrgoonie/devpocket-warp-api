@@ -302,8 +302,7 @@ class TestScriptVerification:
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
 
-            with patch("shutil.which", return_value="/usr/bin/tool"):
-                with patch("os.path.exists", return_value=True):
+            with patch("shutil.which", return_value="/usr/bin/tool"), patch("os.path.exists", return_value=True):
                     for script_name, args in basic_patterns:
                         # These should either work or fail gracefully
                         script_runner.run_script(script_name, args, timeout=10)

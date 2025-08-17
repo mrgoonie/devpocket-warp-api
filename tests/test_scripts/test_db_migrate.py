@@ -152,8 +152,7 @@ class TestDbMigrateScript:
     @patch("subprocess.run")
     def test_alembic_not_found(self, mock_run, script_runner, mock_env):
         """Test handling when Alembic is not available."""
-        with patch("shutil.which", return_value=None):
-            with patch.dict(os.environ, mock_env):
+        with patch("shutil.which", return_value=None), patch.dict(os.environ, mock_env):
                 result = script_runner.run_script("db_migrate.sh")
 
         assert result.returncode != 0
@@ -524,8 +523,7 @@ class TestDbMigrateScript:
     def test_backup_creation_success(self, mock_run, script_runner, mock_env, temp_dir):
         """Test successful backup creation before migration."""
         # Mock pg_dump availability and success
-        with patch("shutil.which", return_value="/usr/bin/pg_dump"):
-            with patch("subprocess.run") as mock_run:
+        with patch("shutil.which", return_value="/usr/bin/pg_dump"), patch("subprocess.run") as mock_run:
                 mock_run.side_effect = [
                     # db_utils.py test
                     MagicMock(returncode=0),
