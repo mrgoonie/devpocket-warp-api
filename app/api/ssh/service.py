@@ -7,7 +7,7 @@ connection testing, and related operations.
 
 import time
 from datetime import datetime, timezone
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException, status
@@ -222,6 +222,7 @@ class SSHProfileService:
 
         try:
             # Prepare connection parameters
+            profile = None
             if test_request.profile_id:
                 profile = await self.profile_repo.get_by_id(test_request.profile_id)
                 if not profile or profile.user_id != user.id:
@@ -242,9 +243,9 @@ class SSHProfileService:
                         detail="Host and username are required when not using a profile",
                     )
 
-                host = test_request.host
+                host = test_request.host or ""
                 port = test_request.port or 22
-                username = test_request.username
+                username = test_request.username or ""
                 timeout = test_request.connect_timeout
 
             # Get SSH key if specified
@@ -272,7 +273,7 @@ class SSHProfileService:
             )
 
             # Record connection attempt if using a profile
-            if test_request.profile_id:
+            if test_request.profile_id and profile is not None:
                 await self.profile_repo.record_connection_attempt(
                     test_request.profile_id, test_result["success"]
                 )
@@ -368,10 +369,10 @@ class SSHProfileService:
             active_profiles = [p for p in all_profiles if p.is_active]
 
             # Count profiles by status
-            status_counts = {}
+            status_counts: Dict[str, int] = {}
             for profile in all_profiles:
-                status = profile.last_connection_status or "never_connected"
-                status_counts[status] = status_counts.get(status, 0) + 1
+                profile_status = profile.last_connection_status or "never_connected"
+                status_counts[profile_status] = status_counts.get(profile_status, 0) + 1
 
             # Get most used profiles
             most_used = await self.profile_repo.get_most_used_profiles(user.id, limit=5)

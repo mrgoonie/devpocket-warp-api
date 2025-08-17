@@ -44,6 +44,8 @@ class User(BaseModel):
 
     full_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
+    display_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+
     role: Mapped[UserRole] = mapped_column(
         ENUM(UserRole, name="user_role", create_type=False),
         nullable=False,
@@ -90,6 +92,17 @@ class User(BaseModel):
 
     verified_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
 
+    # Alias for backwards compatibility
+    @property
+    def password_hash(self) -> str:
+        """Get password hash (alias for hashed_password)."""
+        return self.hashed_password
+
+    @password_hash.setter
+    def password_hash(self, value: str) -> None:
+        """Set password hash (alias for hashed_password)."""
+        self.hashed_password = value
+
     # Relationships
     sessions: Mapped[List["Session"]] = relationship(
         "Session", back_populates="user", cascade="all, delete-orphan"
@@ -126,10 +139,6 @@ class User(BaseModel):
 
     def increment_failed_login(self) -> None:
         """Increment failed login attempts."""
-        # Initialize to 0 if None (for new instances)
-        if self.failed_login_attempts is None:
-            self.failed_login_attempts = 0
-
         self.failed_login_attempts += 1
 
         # Lock account after 5 failed attempts

@@ -39,9 +39,7 @@ class ProfileService:
                 username=user.username,
                 email=user.email,
                 display_name=user.display_name,
-                subscription_tier=(
-                    user.subscription_tier.value if user.subscription_tier else "free"
-                ),
+                subscription_tier=user.subscription_tier or "free",
                 created_at=user.created_at,
                 updated_at=user.updated_at,
             )
@@ -75,8 +73,14 @@ class ProfileService:
                 update_data["email"] = profile_data.email
 
             if update_data:
-                updated_user = await self.user_repo.update(user.id, update_data)
+                updated_user = await self.user_repo.update(user.id, **update_data)
                 await self.session.commit()
+
+                if updated_user is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                        detail="Failed to update user profile",
+                    )
             else:
                 updated_user = user
 
@@ -85,11 +89,7 @@ class ProfileService:
                 username=updated_user.username,
                 email=updated_user.email,
                 display_name=updated_user.display_name,
-                subscription_tier=(
-                    updated_user.subscription_tier.value
-                    if updated_user.subscription_tier
-                    else "free"
-                ),
+                subscription_tier=updated_user.subscription_tier or "free",
                 created_at=updated_user.created_at,
                 updated_at=updated_user.updated_at,
             )
@@ -143,7 +143,7 @@ class ProfileService:
     async def get_account_stats(self, user: User) -> Dict[str, Any]:
         """Get user account statistics."""
         try:
-            stats = await self.user_repo.get_user_stats(user.id)
+            stats = await self.user_repo.get_user_stats(str(user.id))
 
             return {
                 "profile_completeness": self._calculate_profile_completeness(user),

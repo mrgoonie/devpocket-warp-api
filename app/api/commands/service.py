@@ -151,7 +151,7 @@ class CommandService:
         """Search commands with advanced filters."""
         try:
             # Build search criteria
-            criteria = {"user_id": user.id}
+            criteria: Dict[str, Any] = {"user_id": user.id}
 
             if search_request.session_id:
                 criteria["session_id"] = search_request.session_id
@@ -192,12 +192,12 @@ class CommandService:
             command_responses = []
             for cmd in commands:
                 response = CommandResponse(
-                    id=cmd.id,
-                    user_id=cmd.user_id,
-                    session_id=cmd.session_id,
+                    id=str(cmd.id),
+                    user_id=str(cmd.user_id) if cmd.user_id else "",
+                    session_id=str(cmd.session_id),
                     command=cmd.command,
                     working_directory=cmd.working_directory,
-                    environment=cmd.environment or {},
+                    environment={},  # Parse from environment string if needed
                     timeout_seconds=cmd.timeout_seconds or 30,
                     capture_output=cmd.capture_output,
                     status=CommandStatus(cmd.status),
@@ -206,16 +206,20 @@ class CommandService:
                     stderr=cmd.stderr or "",
                     output_truncated=cmd.output_truncated or False,
                     output_size=len(cmd.stdout or "") + len(cmd.stderr or ""),
-                    executed_at=cmd.executed_at,
+                    executed_at=cmd.executed_at or cmd.created_at,
                     started_at=cmd.started_at,
                     completed_at=cmd.completed_at,
-                    duration_ms=cmd.duration_ms,
+                    duration_ms=cmd.duration_ms or 0,
                     command_type=CommandType(cmd.command_type or "unknown"),
                     is_dangerous=cmd.is_dangerous or False,
                     pid=cmd.pid,
-                    signal=cmd.signal,
+                    signal=int(cmd.signal)
+                    if cmd.signal and cmd.signal.isdigit()
+                    else None,
                     sequence_number=cmd.sequence_number or 0,
-                    parent_command_id=cmd.parent_command_id,
+                    parent_command_id=str(cmd.parent_command_id)
+                    if cmd.parent_command_id
+                    else None,
                 )
                 command_responses.append(response)
 
@@ -240,12 +244,12 @@ class CommandService:
                 )
 
             return CommandResponse(
-                id=command.id,
-                user_id=command.user_id,
-                session_id=command.session_id,
+                id=str(command.id),
+                user_id=str(command.user_id),
+                session_id=str(command.session_id),
                 command=command.command,
                 working_directory=command.working_directory,
-                environment=command.environment or {},
+                environment={},  # Parse from environment string if needed
                 timeout_seconds=command.timeout_seconds or 30,
                 capture_output=command.capture_output,
                 status=CommandStatus(command.status),
@@ -254,16 +258,20 @@ class CommandService:
                 stderr=command.stderr or "",
                 output_truncated=command.output_truncated or False,
                 output_size=len(command.stdout or "") + len(command.stderr or ""),
-                executed_at=command.executed_at,
+                executed_at=command.executed_at or command.created_at,
                 started_at=command.started_at,
                 completed_at=command.completed_at,
-                duration_ms=command.duration_ms,
+                duration_ms=command.duration_ms or 0,
                 command_type=CommandType(command.command_type or "unknown"),
                 is_dangerous=command.is_dangerous or False,
                 pid=command.pid,
-                signal=command.signal,
+                signal=int(command.signal)
+                if command.signal and command.signal.isdigit()
+                else None,
                 sequence_number=command.sequence_number or 0,
-                parent_command_id=command.parent_command_id,
+                parent_command_id=str(command.parent_command_id)
+                if command.parent_command_id
+                else None,
             )
 
         except HTTPException:

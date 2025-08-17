@@ -204,14 +204,14 @@ class SSHKeyCreate(SSHKeyBase):
     )
 
     @validator("private_key")
-    def validate_private_key(cls, v):
+    def validate_private_key(cls, v: str) -> str:
         """Validate private key format."""
         if not v.startswith(("-----BEGIN ", "ssh-")):
             raise ValueError("Invalid private key format")
         return v
 
     @validator("public_key")
-    def validate_public_key(cls, v):
+    def validate_public_key(cls, v: str) -> str:
         """Validate public key format."""
         if not v.startswith(("ssh-", "ecdsa-", "ssh-ed25519")):
             raise ValueError("Invalid public key format")
@@ -300,7 +300,7 @@ class SSHConnectionTestRequest(BaseModel):
     )
 
     @validator("profile_id", "host")
-    def validate_profile_or_host(cls, v, values):
+    def validate_profile_or_host(cls, v: Optional[str], values: dict) -> Optional[str]:
         """Ensure either profile_id or host is provided."""
         if "profile_id" in values and not values.get("profile_id") and not v:
             raise ValueError("Either profile_id or host must be provided")

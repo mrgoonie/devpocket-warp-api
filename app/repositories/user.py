@@ -2,7 +2,7 @@
 User repository for DevPocket API.
 """
 
-from typing import Optional, List
+from typing import Optional, List, Any
 from datetime import datetime
 from sqlalchemy import select, and_, or_, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -61,7 +61,7 @@ class UserRepository(BaseRepository[User]):
         return result.scalar_one_or_none()
 
     async def create_user_with_settings(
-        self, email: str, username: str, password_hash: str, **kwargs
+        self, email: str, username: str, password_hash: str, **kwargs: Any
     ) -> User:
         """Create a new user with default settings."""
         # Create user
@@ -94,7 +94,8 @@ class UserRepository(BaseRepository[User]):
             query = query.where(User.id != exclude_user_id)
 
         result = await self.session.execute(query)
-        return result.scalar() > 0
+        count = result.scalar()
+        return count is not None and count > 0
 
     async def is_username_taken(
         self, username: str, exclude_user_id: Optional[str] = None
@@ -106,13 +107,14 @@ class UserRepository(BaseRepository[User]):
             query = query.where(User.id != exclude_user_id)
 
         result = await self.session.execute(query)
-        return result.scalar() > 0
+        count = result.scalar()
+        return count is not None and count > 0
 
     async def get_active_users(self, offset: int = 0, limit: int = 100) -> List[User]:
         """Get all active users."""
         result = await self.session.execute(
             select(User)
-            .where(User.is_active is True)
+            .where(User.is_active == True)
             .order_by(User.created_at.desc())
             .offset(offset)
             .limit(limit)

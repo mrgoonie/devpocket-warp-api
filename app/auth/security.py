@@ -380,7 +380,7 @@ def verify_password_reset_token(token: str) -> Optional[str]:
             logger.warning("No email found in password reset token")
             return None
 
-        return email
+        return str(email)
 
     except JWTError:
         logger.warning("Invalid password reset token")

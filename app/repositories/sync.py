@@ -2,9 +2,9 @@
 Sync data repository for DevPocket API.
 """
 
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 from datetime import datetime, timedelta
-from uuid import UUID
+from uuid import UUID, UUID as PyUUID
 from sqlalchemy import select, and_, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,7 +20,7 @@ class SyncDataRepository(BaseRepository[SyncData]):
 
     async def get_user_sync_data(
         self,
-        user_id: str,
+        user_id: Union[str, PyUUID],
         sync_type: Optional[str] = None,
         include_deleted: bool = False,
         offset: int = 0,
@@ -33,7 +33,7 @@ class SyncDataRepository(BaseRepository[SyncData]):
             query = query.where(SyncData.sync_type == sync_type)
 
         if not include_deleted:
-            query = query.where(SyncData.is_deleted is False)
+            query = query.where(SyncData.is_deleted == False)
 
         query = (
             query.order_by(desc(SyncData.last_modified_at)).offset(offset).limit(limit)
@@ -43,7 +43,7 @@ class SyncDataRepository(BaseRepository[SyncData]):
         return list(result.scalars().all())
 
     async def get_sync_item(
-        self, user_id: str, sync_type: str, sync_key: str
+        self, user_id: Union[str, PyUUID], sync_type: str, sync_key: str
     ) -> Optional[SyncData]:
         """Get a specific sync item."""
         result = await self.session.execute(
@@ -153,7 +153,7 @@ class SyncDataRepository(BaseRepository[SyncData]):
 
     async def get_sync_changes_since(
         self,
-        user_id: str,
+        user_id: Union[str, PyUUID],
         since: datetime,
         sync_type: Optional[str] = None,
         device_id: Optional[str] = None,
@@ -224,7 +224,7 @@ class SyncDataRepository(BaseRepository[SyncData]):
 
         return created_items
 
-    async def get_sync_stats(self, user_id: str) -> dict:
+    async def get_sync_stats(self, user_id: Union[str, PyUUID]) -> dict:
         """Get sync statistics for a user."""
         # Total items
         total_items = await self.session.execute(
@@ -252,7 +252,7 @@ class SyncDataRepository(BaseRepository[SyncData]):
         # Deleted items
         deleted_items = await self.session.execute(
             select(func.count(SyncData.id)).where(
-                and_(SyncData.user_id == user_id, SyncData.is_deleted is True)
+                and_(SyncData.user_id == user_id, SyncData.is_deleted == True)
             )
         )
 
@@ -271,6 +271,15 @@ class SyncDataRepository(BaseRepository[SyncData]):
             "device_breakdown": {row[0]: row[1] for row in device_breakdown.fetchall()},
         }
 
+    async def count_user_devices(self, user_id: Union[str, PyUUID]) -> int:
+        """Count the number of unique devices for a user."""
+        result = await self.session.execute(
+            select(func.count(func.distinct(SyncData.source_device_id))).where(
+                SyncData.user_id == user_id
+            )
+        )
+        return result.scalar() or 0
+
     async def cleanup_old_sync_data(
         self,
         user_id: Optional[str] = None,
@@ -282,7 +291,7 @@ class SyncDataRepository(BaseRepository[SyncData]):
 
         conditions = [
             SyncData.last_modified_at < cutoff_date,
-            SyncData.is_deleted is True,
+            SyncData.is_deleted == True,
         ]
 
         if user_id:
@@ -291,7 +300,12 @@ class SyncDataRepository(BaseRepository[SyncData]):
         if sync_type:
             conditions.append(SyncData.sync_type == sync_type)
 
-        result = await self.session.execute(select(SyncData).where(and_(*conditions)))
+        from sqlalchemy import BinaryExpression
+
+        typed_conditions: List[BinaryExpression[bool]] = conditions  # type: ignore
+        result = await self.session.execute(
+            select(SyncData).where(and_(*typed_conditions))
+        )
 
         old_items = list(result.scalars().all())
 
@@ -325,7 +339,7 @@ class SyncDataRepository(BaseRepository[SyncData]):
     ) -> dict:
         """Export all sync data for a user."""
         query = select(SyncData).where(
-            and_(SyncData.user_id == user_id, SyncData.is_deleted is False)
+            and_(SyncData.user_id == user_id, SyncData.is_deleted == False)
         )
 
         if sync_type:

@@ -25,7 +25,7 @@ from app.models.ssh_profile import SSHKey
 class SSHClientService:
     """Service for SSH client operations."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize SSH client service."""
         self.supported_key_types = {
             "rsa": RSAKey,
@@ -60,7 +60,7 @@ class SSHClientService:
         client = SSHClient()
         client.set_missing_host_key_policy(AutoAddPolicy())
 
-        result = {
+        result: Dict[str, Any] = {
             "success": False,
             "message": "",
             "details": {},
@@ -130,21 +130,21 @@ class SSHClientService:
                 if test_output == "connection_test":
                     result["success"] = True
                     result["message"] = "Connection successful"
-                    result["details"]["command_test"] = "passed"  # type: ignore
+                    result["details"]["command_test"] = "passed"
                 else:
                     result[
                         "message"
-                    ] = "Connection established but command execution failed"  # type: ignore
-                    result["details"]["command_test"] = "failed"  # type: ignore
-                    result["details"]["command_output"] = test_output  # type: ignore
+                    ] = "Connection established but command execution failed"
+                    result["details"]["command_test"] = "failed"
+                    result["details"]["command_output"] = test_output
 
             except Exception as cmd_error:
                 # Connection successful but command failed
                 logger.warning(f"SSH command test failed: {cmd_error}")
                 result["success"] = True  # Connection itself is successful
                 result["message"] = "Connection successful (command test failed)"
-                result["details"]["command_test"] = "failed"  # type: ignore
-                result["details"]["command_error"] = str(cmd_error)  # type: ignore
+                result["details"]["command_test"] = "failed"
+                result["details"]["command_error"] = str(cmd_error)
 
         except paramiko.AuthenticationException as e:
             logger.warning(f"SSH authentication failed for {username}@{host}: {e}")
@@ -383,7 +383,8 @@ class SSHClientService:
             else:
                 return None
 
-            return key.get_fingerprint().hex()
+            fingerprint = key.get_fingerprint().hex()
+            return str(fingerprint)
 
         except Exception as e:
             logger.error(f"Failed to get key fingerprint: {e}")

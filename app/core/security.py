@@ -4,6 +4,7 @@ Security utilities for DevPocket API.
 
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any
+from fastapi import Request
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import HTTPException, status
@@ -275,7 +276,7 @@ def rate_limit_key(ip: str, endpoint: str) -> str:
     return f"rate_limit:{ip}:{endpoint}"
 
 
-def get_client_ip(request) -> str:
+def get_client_ip(request: Request) -> str:
     """
     Extract client IP address from request.
 
@@ -288,12 +289,12 @@ def get_client_ip(request) -> str:
     # Check for forwarded IP (reverse proxy)
     forwarded_for = request.headers.get("X-Forwarded-For")
     if forwarded_for:
-        return forwarded_for.split(",")[0].strip()
+        return str(forwarded_for.split(",")[0].strip())
 
     # Check for real IP (some proxies)
     real_ip = request.headers.get("X-Real-IP")
     if real_ip:
-        return real_ip.strip()
+        return str(real_ip.strip())
 
     # Fall back to direct connection
-    return request.client.host if request.client else "unknown"
+    return str(request.client.host) if request.client else "unknown"

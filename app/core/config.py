@@ -2,7 +2,7 @@
 Configuration settings for DevPocket API.
 """
 
-from typing import List, Union
+from typing import Any, List, Union
 from pydantic import BaseModel, field_validator
 from pydantic_settings import BaseSettings
 
@@ -160,7 +160,7 @@ class Settings(BaseSettings):
 
     @field_validator("jwt_secret_key")
     @classmethod
-    def validate_jwt_secret(cls, v):
+    def validate_jwt_secret(cls, v: str) -> str:
         """Validate JWT secret key."""
         if len(v) < 32:
             raise ValueError("JWT secret key must be at least 32 characters long")
@@ -168,7 +168,7 @@ class Settings(BaseSettings):
 
     @field_validator("cors_origins", mode="before")
     @classmethod
-    def validate_cors_origins(cls, v):
+    def validate_cors_origins(cls, v: Any) -> list:
         """Validate CORS origins."""
         if isinstance(v, str):
             return [x.strip() for x in v.split(",") if x.strip()]
@@ -176,7 +176,7 @@ class Settings(BaseSettings):
 
     @field_validator("cors_allow_methods", mode="before")
     @classmethod
-    def validate_cors_methods(cls, v):
+    def validate_cors_methods(cls, v: Any) -> list:
         """Validate CORS methods."""
         if isinstance(v, str):
             return [x.strip() for x in v.split(",") if x.strip()]
@@ -184,7 +184,7 @@ class Settings(BaseSettings):
 
     @field_validator("cors_allow_headers", mode="before")
     @classmethod
-    def validate_cors_headers(cls, v):
+    def validate_cors_headers(cls, v: Any) -> list:
         """Validate CORS headers."""
         if isinstance(v, str):
             return [x.strip() for x in v.split(",") if x.strip()]
@@ -192,7 +192,7 @@ class Settings(BaseSettings):
 
     @field_validator("redis_db", mode="before")
     @classmethod
-    def validate_redis_db(cls, v):
+    def validate_redis_db(cls, v: Any) -> int:
         """Validate Redis database number."""
         if isinstance(v, str):
             # Handle cases where redis_db might be set to a string like 'devpocket_dev'
@@ -205,7 +205,7 @@ class Settings(BaseSettings):
 
     @field_validator("workers", mode="before")
     @classmethod
-    def validate_workers(cls, v):
+    def validate_workers(cls, v: Any) -> int:
         """Validate number of workers."""
         if isinstance(v, str):
             # Handle boolean-like strings

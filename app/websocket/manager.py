@@ -241,9 +241,29 @@ class ConnectionManager:
     ) -> None:
         """Handle session connect message."""
         try:
+            # Type guard: ensure message.data is a dictionary
+            if not isinstance(message.data, dict):
+                logger.error(f"Invalid connect message data type: {type(message.data)}")
+                error_msg = create_error_message(
+                    "invalid_message_data",
+                    "Connect message data must be a dictionary",
+                    {"received_type": str(type(message.data))},
+                )
+                await connection.send_message(error_msg)
+                return
+
             # Get database session
             async with AsyncSessionLocal() as db:
                 session_repo = SessionRepository(db)
+
+                # Extract terminal size safely
+                terminal_size = message.data.get("terminal_size", {})
+                if isinstance(terminal_size, dict):
+                    cols = terminal_size.get("cols", 80)
+                    rows = terminal_size.get("rows", 24)
+                else:
+                    cols = 80
+                    rows = 24
 
                 # Create or get session
                 session_data = {
@@ -251,17 +271,14 @@ class ConnectionManager:
                     "device_id": connection.device_id,
                     "device_type": "web",  # Could be enhanced to detect actual device type
                     "session_type": message.data.get("session_type", "terminal"),
-                    "terminal_cols": message.data.get("terminal_size", {}).get(
-                        "cols", 80
-                    ),
-                    "terminal_rows": message.data.get("terminal_size", {}).get(
-                        "rows", 24
-                    ),
+                    "terminal_cols": cols,
+                    "terminal_rows": rows,
                     "is_active": True,
                 }
 
                 # Add SSH details if applicable
-                if message.data.get("ssh_profile_id"):
+                ssh_profile_id = message.data.get("ssh_profile_id")
+                if ssh_profile_id:
                     session_data.update(
                         {
                             "session_type": "ssh",
@@ -274,22 +291,26 @@ class ConnectionManager:
 
                 # Create terminal session
                 terminal_session = TerminalSession(
-                    session_id=db_session.id,
+                    session_id=str(db_session.id),  # Convert UUID to string
                     connection=connection,
-                    ssh_profile_id=message.data.get("ssh_profile_id"),
+                    ssh_profile_id=ssh_profile_id,
                     db=db,
                 )
 
                 # Register terminal session
                 connection.add_terminal_session(terminal_session)
-                self.session_connections[db_session.id] = connection.connection_id
+                self.session_connections[
+                    str(db_session.id)
+                ] = connection.connection_id  # Convert UUID to string
 
                 # Start the terminal session
                 await terminal_session.start()
 
                 # Send success status
                 status_msg = create_status_message(
-                    db_session.id, "connected", "Session started successfully"
+                    str(db_session.id),
+                    "connected",
+                    "Session started successfully",  # Convert UUID to string
                 )
                 await connection.send_message(status_msg)
 
@@ -338,13 +359,28 @@ class ConnectionManager:
 
         # Route to terminal session
         if message.type == MessageType.INPUT:
-            await session.handle_input(message.data)
+            # Type guard for input data
+            if isinstance(message.data, str):
+                await session.handle_input(message.data)
+            else:
+                logger.warning(f"Invalid input data type: {type(message.data)}")
+
         elif message.type == MessageType.RESIZE:
-            await session.handle_resize(
-                message.data.get("cols", 80), message.data.get("rows", 24)
-            )
+            # Type guard for resize data
+            if isinstance(message.data, dict):
+                cols = message.data.get("cols", 80)
+                rows = message.data.get("rows", 24)
+                await session.handle_resize(cols, rows)
+            else:
+                logger.warning(f"Invalid resize data type: {type(message.data)}")
+
         elif message.type == MessageType.SIGNAL:
-            await session.handle_signal(message.data.get("signal", ""))
+            # Type guard for signal data
+            if isinstance(message.data, dict):
+                signal = message.data.get("signal", "")
+                await session.handle_signal(signal)
+            else:
+                logger.warning(f"Invalid signal data type: {type(message.data)}")
 
     async def _cleanup_terminal_session(self, session: TerminalSession) -> None:
         """Clean up a terminal session."""

@@ -64,7 +64,7 @@ class BaseModel(Base, UUIDMixin, TimestampMixin):
                 setattr(self, key, value)
 
     @classmethod
-    def create(cls, **kwargs) -> "BaseModel":
+    def create(cls, **kwargs: Any) -> "BaseModel":
         """Create a new instance with the given arguments."""
         return cls(**kwargs)
 

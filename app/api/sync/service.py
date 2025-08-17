@@ -3,7 +3,7 @@ Multi-device synchronization service for DevPocket API.
 """
 
 from datetime import datetime, timezone
-from typing import Dict, Any
+from typing import Dict, Any, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException, status
 
@@ -25,9 +25,10 @@ class SyncService:
         """Synchronize data across devices."""
         try:
             # Get data based on last sync timestamp
-            sync_data = await self.sync_repo.get_sync_changes_since(
-                user.id, request.last_sync_timestamp
+            last_sync = request.last_sync_timestamp or datetime.min.replace(
+                tzinfo=timezone.utc
             )
+            sync_data = await self.sync_repo.get_sync_changes_since(user.id, last_sync)
 
             # Organize data by type
             organized_data: Dict[str, Any] = {}
@@ -35,7 +36,7 @@ class SyncService:
                 organized_data[data_type.value] = []
 
             total_items = len(sync_data)
-            conflicts = []  # Would detect conflicts here
+            conflicts: List[Dict[str, Any]] = []  # Would detect conflicts here
 
             # Get device count
             device_count = await self.sync_repo.count_user_devices(user.id)

@@ -92,7 +92,7 @@ class SessionCreate(SessionBase):
     )
 
     @validator("ssh_profile_id")
-    def validate_ssh_session(cls, v, values):
+    def validate_ssh_session(cls, v: Optional[str], values: dict) -> Optional[str]:
         """Validate SSH session requirements."""
         if values.get("session_type") == SessionType.SSH and not v:
             raise ValueError("SSH profile ID is required for SSH sessions")

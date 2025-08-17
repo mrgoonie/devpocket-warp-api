@@ -117,9 +117,12 @@ class SSHHandler:
                 }
 
             # Connect to SSH server
+            if self.ssh_client is None:
+                raise RuntimeError("SSH client not initialized")
+
             loop = asyncio.get_event_loop()
             await loop.run_in_executor(
-                None, lambda: self.ssh_client.connect(**connect_params)
+                None, lambda: self.ssh_client.connect(**connect_params)  # type: ignore[union-attr]
             )
 
             # Get server information
@@ -225,7 +228,7 @@ class SSHHandler:
         try:
             # Send data to SSH channel
             bytes_sent = self.ssh_channel.send(data)
-            return bytes_sent > 0
+            return bool(bytes_sent and bytes_sent > 0)
 
         except Exception as e:
             logger.error(f"Failed to send SSH input: {e}")

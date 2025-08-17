@@ -29,6 +29,7 @@ from .schemas import (
     SessionHistoryResponse,
     SessionHistoryEntry,
     SessionHealthCheck,
+    SessionStatus,
 )
 
 
@@ -94,8 +95,12 @@ class SessionService:
                 ssh_profile_id=session_data.ssh_profile_id,
                 status="pending",
                 mode=session_data.mode.value,
-                terminal_cols=session_data.terminal_size.get("cols", 80),
-                terminal_rows=session_data.terminal_size.get("rows", 24),
+                terminal_cols=session_data.terminal_size.get("cols", 80)
+                if session_data.terminal_size
+                else 80,
+                terminal_rows=session_data.terminal_size.get("rows", 24)
+                if session_data.terminal_size
+                else 24,
                 environment=session_data.environment or {},
                 working_directory=session_data.working_directory,
                 idle_timeout=session_data.idle_timeout,
@@ -149,16 +154,14 @@ class SessionService:
             )
 
             # Get total count
-            total = await self.session_repo.count_user_sessions(
-                user.id, active_only=active_only
-            )
+            total = await self.session_repo.count_user_sessions(user.id)
 
             # Update session status from memory
             session_responses = []
             for session_obj in sessions:
                 # Update with real-time status if available
-                if session_obj.id in self._active_sessions:
-                    memory_session = self._active_sessions[session_obj.id]
+                if str(session_obj.id) in self._active_sessions:
+                    memory_session = self._active_sessions[str(session_obj.id)]
                     session_obj.status = memory_session.get(
                         "status", session_obj.status
                     )
@@ -194,9 +197,7 @@ class SessionService:
             session_obj.last_activity = memory_session.get(
                 "last_activity", session_obj.last_activity
             )
-            session_obj.command_count = memory_session.get(
-                "command_count", session_obj.command_count
-            )
+            # command_count is computed from the commands relationship
 
         return SessionResponse.model_validate(session_obj)
 
@@ -235,9 +236,15 @@ class SessionService:
             updated_session = await self.session_repo.update(session_obj)
             await self.session.commit()
 
+            if updated_session is None:
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Failed to update session",
+                )
+
             # Update active session in memory if it exists
-            if session_id in self._active_sessions:
-                self._active_sessions[session_id].update(
+            if str(session_id) in self._active_sessions:
+                self._active_sessions[str(session_id)].update(
                     {
                         "terminal_cols": updated_session.terminal_cols,
                         "terminal_rows": updated_session.terminal_rows,
@@ -444,13 +451,17 @@ class SessionService:
         """Search terminal sessions with filters."""
         try:
             # Build search criteria
-            criteria = {"user_id": user.id}
+            criteria: Dict[str, Any] = {"user_id": user.id}
 
             if search_request.session_type:
                 criteria["session_type"] = search_request.session_type.value
 
+            # Note: status is a computed property, we'll filter by is_active instead
             if search_request.status:
-                criteria["status"] = search_request.status.value
+                if search_request.status.value == "active":
+                    criteria["is_active"] = True
+                elif search_request.status.value == "terminated":
+                    criteria["is_active"] = False
 
             if search_request.ssh_profile_id:
                 criteria["ssh_profile_id"] = search_request.ssh_profile_id
@@ -563,10 +574,16 @@ class SessionService:
                     ).total_seconds()
                 )
 
+            # Convert string status to SessionStatus enum
+            try:
+                status_enum = SessionStatus(session_obj.status)
+            except ValueError:
+                status_enum = SessionStatus.PENDING
+
             return SessionHealthCheck(
                 session_id=session_id,
                 is_healthy=is_healthy,
-                status=session_obj.status,
+                status=status_enum,
                 last_activity=session_obj.last_activity,
                 uptime_seconds=uptime,
                 connection_stable=session_obj.status == "active",
@@ -586,7 +603,7 @@ class SessionService:
 
     async def _initialize_session(self, session: Session) -> None:
         """Initialize session in memory."""
-        self._active_sessions[session.id] = {
+        self._active_sessions[str(session.id)] = {
             "status": "connecting",
             "created_at": session.created_at,
             "last_activity": datetime.now(timezone.utc),
@@ -608,15 +625,14 @@ class SessionService:
 
             # Update session status
             session.status = "active"
-            session.start_time = datetime.now(timezone.utc)
             session.last_activity = datetime.now(timezone.utc)
 
             await self.session_repo.update(session)
             await self.session.commit()
 
             # Update memory
-            if session.id in self._active_sessions:
-                self._active_sessions[session.id].update(
+            if str(session.id) in self._active_sessions:
+                self._active_sessions[str(session.id)].update(
                     {
                         "status": "active",
                         "start_time": session.start_time,
@@ -711,6 +727,6 @@ class SessionService:
         last_activity = memory_session.get("last_activity")
         if last_activity:
             time_since_activity = datetime.now(timezone.utc) - last_activity
-            return time_since_activity.total_seconds() < 3600  # 1 hour threshold
+            return bool(time_since_activity.total_seconds() < 3600)  # 1 hour threshold
 
         return memory_session.get("status") == "active"

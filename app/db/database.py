@@ -2,7 +2,7 @@
 Database connection and session management for DevPocket API.
 """
 
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 import asyncpg
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -43,7 +43,7 @@ AsyncSessionLocal = async_sessionmaker(
 class DatabaseManager:
     """Database connection manager."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._pool: asyncpg.Pool = None
 
     async def connect(self) -> None:
@@ -85,7 +85,7 @@ class DatabaseManager:
             schema="pg_catalog",
         )
 
-    async def execute_query(self, query: str, *args) -> list:
+    async def execute_query(self, query: str, *args: Any) -> list:
         """Execute a SELECT query and return results."""
         async with self._pool.acquire() as connection:
             try:
@@ -95,12 +95,12 @@ class DatabaseManager:
                 logger.error(f"Database query error: {e}")
                 raise
 
-    async def execute_command(self, query: str, *args) -> str:
+    async def execute_command(self, query: str, *args: Any) -> str:
         """Execute an INSERT/UPDATE/DELETE command and return status."""
         async with self._pool.acquire() as connection:
             try:
                 result = await connection.execute(query, *args)
-                return result
+                return str(result)
             except Exception as e:
                 logger.error(f"Database command error: {e}")
                 raise

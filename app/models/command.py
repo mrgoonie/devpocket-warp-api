@@ -5,7 +5,7 @@ Command model for DevPocket API.
 from datetime import datetime
 from typing import Optional, TYPE_CHECKING
 from uuid import UUID as PyUUID
-from sqlalchemy import String, ForeignKey, Integer, Text, Float, Index
+from sqlalchemy import String, ForeignKey, Integer, Text, Float, Boolean, Index
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from .base import BaseModel
@@ -65,6 +65,42 @@ class Command(BaseModel):
     environment_vars: Mapped[Optional[str]] = mapped_column(
         Text, nullable=True
     )  # JSON string of environment variables
+
+    # Additional command execution details
+    environment: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True
+    )  # Alias for environment_vars
+    timeout_seconds: Mapped[Optional[int]] = mapped_column(
+        Integer, nullable=True, default=30
+    )
+    capture_output: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default="true"
+    )
+
+    # Output details
+    stdout: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True
+    )  # Alias for output
+    stderr: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True
+    )  # Alias for error_output
+    output_truncated: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+
+    # Execution details
+    executed_at: Mapped[Optional[datetime]] = mapped_column(
+        nullable=True
+    )  # Alias for started_at
+    is_dangerous: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    pid: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    signal: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    sequence_number: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    parent_command_id: Mapped[Optional[PyUUID]] = mapped_column(
+        UUID(as_uuid=True), nullable=True
+    )
 
     # AI-related fields
     was_ai_suggested: Mapped[bool] = mapped_column(

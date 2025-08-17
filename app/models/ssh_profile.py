@@ -92,6 +92,21 @@ class SSHProfile(BaseModel):
         Integer, nullable=False, default=0, server_default="0"
     )
 
+    # Connection status tracking
+    last_connection_status: Mapped[Optional[str]] = mapped_column(
+        String(50), nullable=True
+    )  # connected, connection_failed, timeout, etc.
+
+    last_connection_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+
+    last_successful_connection_at: Mapped[Optional[datetime]] = mapped_column(
+        nullable=True
+    )
+
+    last_error_message: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True
+    )  # Last connection error message
+
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="ssh_profiles")
 

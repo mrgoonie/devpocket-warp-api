@@ -5,7 +5,7 @@ Provides request-level authentication processing, user context injection,
 and authentication logging for protected routes.
 """
 
-from typing import Optional, Callable
+from typing import Any, Optional, Callable
 from fastapi import Request, Response, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -25,7 +25,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
     5. Logs authentication events
     """
 
-    def __init__(self, app, skip_paths: Optional[list] = None):
+    def __init__(self, app: Any, skip_paths: Optional[list] = None) -> None:
         """
         Initialize authentication middleware.
 
@@ -61,7 +61,8 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
         """
         # Skip authentication for certain paths
         if self._should_skip_auth(request):
-            return await call_next(request)
+            response: Response = await call_next(request)
+            return response
 
         # Extract token from request
         token = self._extract_token(request)

@@ -77,7 +77,7 @@ class UserCreate(UserBase):
 
     @field_validator("password")
     @classmethod
-    def validate_password_strength(cls, v):
+    def validate_password_strength(cls, v: str) -> str:
         """Validate password meets strength requirements."""
         is_strong, errors = is_password_strong(v)
         if not is_strong:
@@ -165,7 +165,7 @@ class PasswordChange(BaseModel):
 
     @field_validator("new_password")
     @classmethod
-    def validate_new_password_strength(cls, v):
+    def validate_new_password_strength(cls, v: str) -> str:
         """Validate new password meets strength requirements."""
         is_strong, errors = is_password_strong(v)
         if not is_strong:
@@ -189,7 +189,7 @@ class ResetPassword(BaseModel):
 
     @field_validator("new_password")
     @classmethod
-    def validate_password_strength(cls, v):
+    def validate_password_strength(cls, v: str) -> str:
         """Validate new password meets strength requirements."""
         is_strong, errors = is_password_strong(v)
         if not is_strong:

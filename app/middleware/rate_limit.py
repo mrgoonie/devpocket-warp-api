@@ -7,7 +7,7 @@ to prevent abuse and ensure fair usage of the API.
 
 import time
 from collections import defaultdict, deque
-from typing import Dict, Deque, Tuple, Optional
+from typing import Any, Dict, Deque, Tuple, Optional
 from fastapi import Request, Response, HTTPException, status
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -20,7 +20,7 @@ class RateLimitStore:
     In production, this should be replaced with Redis for distributed rate limiting.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Store format: {key: deque([(timestamp, count), ...])}
         self._store: Dict[str, Deque[Tuple[float, int]]] = defaultdict(deque)
         self._cleanup_interval = 60  # Clean up old entries every 60 seconds
@@ -164,7 +164,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     5. Adds rate limit headers to responses
     """
 
-    def __init__(self, app, enabled: bool = True):
+    def __init__(self, app: Any, enabled: bool = True) -> None:
         """
         Initialize rate limiting middleware.
 
@@ -178,7 +178,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         # Paths that are exempt from rate limiting
         self.exempt_paths = ["/health", "/docs", "/redoc", "/openapi.json"]
 
-    async def dispatch(self, request: Request, call_next) -> Response:
+    async def dispatch(self, request: Request, call_next: Any) -> Response:
         """
         Process request through rate limiting middleware.
 
@@ -190,7 +190,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             HTTP response with rate limit headers
         """
         if not self.enabled or self._is_exempt(request):
-            return await call_next(request)
+            response: Response = await call_next(request)
+            return response
 
         try:
             # Determine endpoint type and rate limits
@@ -251,7 +252,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             logger.error(f"Rate limit middleware error: {e}")
             # Don't fail requests due to rate limiting errors
-            return await call_next(request)
+            fallback_response: Response = await call_next(request)
+            return fallback_response
 
     def _is_exempt(self, request: Request) -> bool:
         """Check if request is exempt from rate limiting."""

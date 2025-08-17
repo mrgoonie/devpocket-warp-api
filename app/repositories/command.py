@@ -2,10 +2,12 @@
 Command repository for DevPocket API.
 """
 
-from typing import Optional, List
+from typing import Optional, List, Any, Dict, Union
 from datetime import datetime, timedelta
+from uuid import UUID as PyUUID
 from sqlalchemy import select, and_, func, desc, or_
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models.command import Command
 from .base import BaseRepository
@@ -100,7 +102,9 @@ class CommandRepository(BaseRepository[Command]):
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def create_command(self, session_id: str, command: str, **kwargs) -> Command:
+    async def create_command(
+        self, session_id: str, command: str, **kwargs: Any
+    ) -> Command:
         """Create a new command."""
         cmd = Command(session_id=session_id, command=command, **kwargs)
 
@@ -158,28 +162,241 @@ class CommandRepository(BaseRepository[Command]):
 
     async def search_commands(
         self,
-        search_term: str,
-        user_id: Optional[str] = None,
-        session_id: Optional[str] = None,
+        criteria: Optional[Dict[str, Any]] = None,
+        query: Optional[str] = None,
+        executed_after: Optional[datetime] = None,
+        executed_before: Optional[datetime] = None,
+        min_duration_ms: Optional[int] = None,
+        max_duration_ms: Optional[int] = None,
+        has_output: Optional[bool] = None,
+        has_error: Optional[bool] = None,
+        output_contains: Optional[str] = None,
+        working_directory: Optional[str] = None,
+        include_dangerous: bool = True,
+        only_dangerous: bool = False,
+        sort_by: str = "created_at",
+        sort_order: str = "desc",
         offset: int = 0,
         limit: int = 100,
     ) -> List[Command]:
-        """Search commands by command text."""
-        query = select(Command).where(Command.command.ilike(f"%{search_term}%"))
+        """Search commands with comprehensive criteria."""
+        from app.models.session import Session
 
-        if session_id:
-            query = query.where(Command.session_id == session_id)
-        elif user_id:
-            from app.models.session import Session
+        cmd_query = select(Command)
+        needs_session_join = False
 
-            query = query.join(Session, Command.session_id == Session.id).where(
-                Session.user_id == user_id
+        # Apply basic criteria
+        if criteria:
+            for key, value in criteria.items():
+                if key == "user_id":
+                    needs_session_join = True
+                elif hasattr(Command, key):
+                    cmd_query = cmd_query.where(getattr(Command, key) == value)
+
+        # Join with session if needed
+        if needs_session_join:
+            cmd_query = cmd_query.join(Session, Command.session_id == Session.id)
+            if criteria and "user_id" in criteria:
+                cmd_query = cmd_query.where(Session.user_id == criteria["user_id"])
+
+        # Apply search query
+        if query:
+            cmd_query = cmd_query.where(Command.command.ilike(f"%{query}%"))
+
+        # Apply date filters
+        if executed_after:
+            cmd_query = cmd_query.where(Command.executed_at >= executed_after)
+        if executed_before:
+            cmd_query = cmd_query.where(Command.executed_at <= executed_before)
+
+        # Apply duration filters
+        if min_duration_ms:
+            cmd_query = cmd_query.where(
+                Command.execution_time >= min_duration_ms / 1000
             )
+        if max_duration_ms:
+            cmd_query = cmd_query.where(
+                Command.execution_time <= max_duration_ms / 1000
+            )
+
+        # Apply output filters
+        if has_output is not None:
+            if has_output:
+                cmd_query = cmd_query.where(Command.output.isnot(None))
+            else:
+                cmd_query = cmd_query.where(Command.output.is_(None))
+
+        if has_error is not None:
+            if has_error:
+                cmd_query = cmd_query.where(Command.exit_code != 0)
+            else:
+                cmd_query = cmd_query.where(Command.exit_code == 0)
+
+        if output_contains:
+            cmd_query = cmd_query.where(
+                or_(
+                    Command.output.ilike(f"%{output_contains}%"),
+                    Command.error_output.ilike(f"%{output_contains}%"),
+                )
+            )
+
+        if working_directory:
+            cmd_query = cmd_query.where(Command.working_directory == working_directory)
+
+        # Apply dangerous command filters
+        if only_dangerous:
+            cmd_query = cmd_query.where(Command.is_dangerous == True)
+        elif not include_dangerous:
+            cmd_query = cmd_query.where(Command.is_dangerous == False)
+
+        # Apply sorting
+        if sort_order.lower() == "desc":
+            cmd_query = cmd_query.order_by(desc(getattr(Command, sort_by)))
+        else:
+            cmd_query = cmd_query.order_by(getattr(Command, sort_by))
+
+        cmd_query = cmd_query.offset(offset).limit(limit)
+
+        result = await self.session.execute(cmd_query)
+        return list(result.scalars().all())
+
+    async def get_user_commands_with_session(
+        self,
+        user_id: Union[str, PyUUID],
+        offset: int = 0,
+        limit: int = 100,
+        include_session_info: bool = True,
+    ) -> List[Command]:
+        """Get user commands with session information."""
+        from app.models.session import Session
+
+        query = (
+            select(Command)
+            .join(Session, Command.session_id == Session.id)
+            .where(Session.user_id == user_id)
+        )
+
+        if include_session_info:
+            query = query.options(selectinload(Command.session))
 
         query = query.order_by(desc(Command.created_at)).offset(offset).limit(limit)
 
         result = await self.session.execute(query)
         return list(result.scalars().all())
+
+    async def count_user_commands(self, user_id: Union[str, PyUUID]) -> int:
+        """Count total commands for a user."""
+        from app.models.session import Session
+
+        query = (
+            select(func.count(Command.id))
+            .join(Session, Command.session_id == Session.id)
+            .where(Session.user_id == user_id)
+        )
+
+        result = await self.session.execute(query)
+        return result.scalar() or 0
+
+    async def count_commands_with_criteria(self, criteria: Dict[str, Any]) -> int:
+        """Count commands matching criteria."""
+        from app.models.session import Session
+
+        query = select(func.count(Command.id))
+
+        # Join with session if needed for user filtering
+        needs_session_join = "user_id" in criteria
+        if needs_session_join:
+            query = query.join(Session, Command.session_id == Session.id)
+
+        # Apply criteria filters
+        for key, value in criteria.items():
+            if key == "user_id" and needs_session_join:
+                query = query.where(Session.user_id == value)
+            elif hasattr(Command, key):
+                query = query.where(getattr(Command, key) == value)
+
+        result = await self.session.execute(query)
+        return result.scalar() or 0
+
+    async def get_user_commands(
+        self,
+        user_id: Union[str, PyUUID],
+        offset: int = 0,
+        limit: int = 100,
+    ) -> List[Command]:
+        """Get all commands for a user."""
+        from app.models.session import Session
+
+        query = (
+            select(Command)
+            .join(Session, Command.session_id == Session.id)
+            .where(Session.user_id == user_id)
+            .order_by(desc(Command.created_at))
+            .offset(offset)
+            .limit(limit)
+        )
+
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def get_session_command_stats(
+        self, user_id: Union[str, PyUUID]
+    ) -> List[Dict[str, Any]]:
+        """Get command statistics by session."""
+        from app.models.session import Session
+
+        query = (
+            select(
+                Session.id,
+                Session.session_name,
+                func.count(Command.id).label("command_count"),
+                func.avg(Command.execution_time).label("avg_duration"),
+            )
+            .join(Command, Session.id == Command.session_id)
+            .where(Session.user_id == user_id)
+            .group_by(Session.id, Session.session_name)
+        )
+
+        result = await self.session.execute(query)
+        return [
+            {
+                "session_id": row.id,
+                "session_name": row.session_name,
+                "command_count": row.command_count,
+                "avg_duration": row.avg_duration,
+            }
+            for row in result
+        ]
+
+    async def get_user_commands_since(
+        self,
+        user_id: Union[str, PyUUID],
+        since: datetime,
+        limit: int = 100,
+    ) -> List[Command]:
+        """Get user commands since a specific date."""
+        from app.models.session import Session
+
+        query = (
+            select(Command)
+            .join(Session, Command.session_id == Session.id)
+            .where(and_(Session.user_id == user_id, Command.created_at >= since))
+            .order_by(desc(Command.created_at))
+            .limit(limit)
+        )
+
+        result = await self.session.execute(query)
+        return list(result.scalars().all())
+
+    async def get_user_recent_commands(
+        self,
+        user_id: Union[str, PyUUID],
+        limit: int = 10,
+    ) -> List[Command]:
+        """Get recent commands for a user."""
+        return await self.get_user_commands_since(
+            user_id, datetime.now() - timedelta(days=7), limit
+        )
 
     async def get_commands_by_type(
         self,
@@ -207,7 +424,7 @@ class CommandRepository(BaseRepository[Command]):
         self, user_id: Optional[str] = None, offset: int = 0, limit: int = 100
     ) -> List[Command]:
         """Get commands that were AI-suggested."""
-        query = select(Command).where(Command.was_ai_suggested is True)
+        query = select(Command).where(Command.was_ai_suggested == True)
 
         if user_id:
             from app.models.session import Session
@@ -281,7 +498,7 @@ class CommandRepository(BaseRepository[Command]):
         ai_commands = await self.session.execute(
             select(func.count(Command.id))
             .select_from(base_query.subquery())
-            .where(Command.was_ai_suggested is True)
+            .where(Command.was_ai_suggested == True)
         )
 
         # Average execution time

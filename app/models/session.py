@@ -2,7 +2,7 @@
 Session model for DevPocket API.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, List, TYPE_CHECKING
 from uuid import UUID as PyUUID
 from sqlalchemy import String, ForeignKey, Integer, Text, Boolean
@@ -40,6 +40,17 @@ class Session(BaseModel):
     # Session metadata
     session_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
+    # Alias for compatibility with services expecting 'name'
+    @property
+    def name(self) -> Optional[str]:
+        """Get session name (alias for session_name)."""
+        return self.session_name
+
+    @name.setter
+    def name(self, value: Optional[str]) -> None:
+        """Set session name (alias for session_name)."""
+        self.session_name = value
+
     session_type: Mapped[str] = mapped_column(
         String(20),
         nullable=False,
@@ -63,11 +74,74 @@ class Session(BaseModel):
         index=True,
     )
 
+    # Session status string (computed from is_active and other fields)
+    @property
+    def status(self) -> str:
+        """Get session status as string."""
+        if not self.is_active:
+            return "terminated"
+        elif self.ssh_host and not hasattr(self, "_ssh_connected"):
+            return "connecting"
+        else:
+            return "active"
+
+    @status.setter
+    def status(self, value: str) -> None:
+        """Set session status."""
+        if value == "terminated":
+            self.is_active = False
+            if not self.ended_at:
+                self.ended_at = datetime.now()
+        elif value == "active":
+            self.is_active = True
+        # For other statuses like "connecting", we just store internally
+
     last_activity_at: Mapped[Optional[datetime]] = mapped_column(
         nullable=True, index=True
     )
 
+    # Alias for compatibility with services expecting 'last_activity'
+    @property
+    def last_activity(self) -> Optional[datetime]:
+        """Get last activity timestamp (alias for last_activity_at)."""
+        return self.last_activity_at
+
+    @last_activity.setter
+    def last_activity(self, value: Optional[datetime]) -> None:
+        """Set last activity timestamp (alias for last_activity_at)."""
+        self.last_activity_at = value
+
     ended_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+
+    # Session timing
+    @property
+    def start_time(self) -> datetime:
+        """Get session start time (alias for created_at)."""
+        return self.created_at
+
+    @property
+    def end_time(self) -> Optional[datetime]:
+        """Get session end time (alias for ended_at)."""
+        return self.ended_at
+
+    @end_time.setter
+    def end_time(self, value: Optional[datetime]) -> None:
+        """Set session end time (alias for ended_at)."""
+        self.ended_at = value
+
+    @property
+    def duration_seconds(self) -> Optional[int]:
+        """Get session duration in seconds."""
+        if not self.ended_at:
+            return None
+        return int((self.ended_at - self.created_at).total_seconds())
+
+    @duration_seconds.setter
+    def duration_seconds(self, value: Optional[int]) -> None:
+        """Set session duration in seconds (computed field, setter for compatibility)."""
+        # This is computed from start/end times, but we provide setter for compatibility
+        if value is not None and not self.ended_at:
+            self.ended_at = self.created_at + timedelta(seconds=value)
 
     # SSH connection details (if applicable)
     ssh_host: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
@@ -84,6 +158,14 @@ class Session(BaseModel):
     terminal_rows: Mapped[int] = mapped_column(
         Integer, nullable=False, default=24, server_default="24"
     )
+
+    # Environment variables (JSON string)
+    environment: Mapped[Optional[str]] = mapped_column(
+        Text, nullable=True
+    )  # JSON string of environment variables
+
+    # Session error information
+    error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="sessions")

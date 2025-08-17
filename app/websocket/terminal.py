@@ -124,8 +124,9 @@ class TerminalSession:
                 session_repo = SessionRepository(self.db)
                 self.db_session.end_session()
                 await session_repo.update(
-                    self.db_session.id,
-                    {"is_active": False, "ended_at": datetime.now()},
+                    self.db_session,  # Pass the session object instead of just ID
+                    is_active=False,
+                    ended_at=datetime.now(),
                 )
                 await self.db.commit()
             except Exception as e:
@@ -191,8 +192,9 @@ class TerminalSession:
                 try:
                     session_repo = SessionRepository(self.db)
                     await session_repo.update(
-                        self.session_id,
-                        {"terminal_cols": cols, "terminal_rows": rows},
+                        self.db_session,  # Pass the session object instead of just ID
+                        terminal_cols=cols,
+                        terminal_rows=rows,
                     )
                     await self.db.commit()
                 except Exception as e:
@@ -245,6 +247,13 @@ class TerminalSession:
                 raise Exception("Database session required for SSH")
 
             ssh_repo = SSHProfileRepository(self.db)
+
+            if self.ssh_profile_id is None:
+                await self._send_error(
+                    "ssh_profile_required", "SSH profile ID is required"
+                )
+                return False
+
             self.ssh_profile = await ssh_repo.get(self.ssh_profile_id)
 
             if not self.ssh_profile:
@@ -279,13 +288,11 @@ class TerminalSession:
             if self.db_session:
                 session_repo = SessionRepository(self.db)
                 await session_repo.update(
-                    self.session_id,
-                    {
-                        "ssh_host": self.ssh_profile.host,
-                        "ssh_port": self.ssh_profile.port,
-                        "ssh_username": self.ssh_profile.username,
-                        "session_type": "ssh",
-                    },
+                    self.db_session,  # Pass the session object instead of just ID
+                    ssh_host=self.ssh_profile.host,
+                    ssh_port=self.ssh_profile.port,
+                    ssh_username=self.ssh_profile.username,
+                    session_type="ssh",
                 )
                 await self.db.commit()
 

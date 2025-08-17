@@ -2,7 +2,8 @@
 SSH Profile repository for DevPocket API.
 """
 
-from typing import Optional, List
+from typing import Optional, List, Any, Union
+from uuid import UUID as PyUUID
 from sqlalchemy import select, and_, func, desc, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -19,7 +20,7 @@ class SSHProfileRepository(BaseRepository[SSHProfile]):
 
     async def get_user_profiles(
         self,
-        user_id: str,
+        user_id: Union[str, PyUUID],
         active_only: bool = True,
         offset: int = 0,
         limit: int = 100,
@@ -28,7 +29,7 @@ class SSHProfileRepository(BaseRepository[SSHProfile]):
         query = select(SSHProfile).where(SSHProfile.user_id == user_id)
 
         if active_only:
-            query = query.where(SSHProfile.is_active is True)
+            query = query.where(SSHProfile.is_active == True)
 
         query = (
             query.order_by(desc(SSHProfile.last_used_at), SSHProfile.name)
@@ -49,7 +50,7 @@ class SSHProfileRepository(BaseRepository[SSHProfile]):
         return result.scalar_one_or_none()
 
     async def get_profile_by_name(
-        self, user_id: str, name: str
+        self, user_id: Union[str, PyUUID], name: str
     ) -> Optional[SSHProfile]:
         """Get SSH profile by name for a user."""
         result = await self.session.execute(
@@ -71,10 +72,16 @@ class SSHProfileRepository(BaseRepository[SSHProfile]):
             query = query.where(SSHProfile.id != exclude_profile_id)
 
         result = await self.session.execute(query)
-        return result.scalar() > 0
+        count = result.scalar()
+        return count is not None and count > 0
 
     async def create_profile(
-        self, user_id: str, name: str, host: str, username: str, **kwargs
+        self,
+        user_id: Union[str, PyUUID],
+        name: str,
+        host: str,
+        username: str,
+        **kwargs: Any,
     ) -> SSHProfile:
         """Create a new SSH profile."""
         profile = SSHProfile(
@@ -119,7 +126,7 @@ class SSHProfileRepository(BaseRepository[SSHProfile]):
         return list(result.scalars().all())
 
     async def get_most_used_profiles(
-        self, user_id: str, limit: int = 10
+        self, user_id: Union[str, PyUUID], limit: int = 10
     ) -> List[SSHProfile]:
         """Get most frequently used SSH profiles."""
         result = await self.session.execute(
@@ -131,7 +138,11 @@ class SSHProfileRepository(BaseRepository[SSHProfile]):
         return list(result.scalars().all())
 
     async def search_profiles(
-        self, user_id: str, search_term: str, offset: int = 0, limit: int = 100
+        self,
+        user_id: Union[str, PyUUID],
+        search_term: str,
+        offset: int = 0,
+        limit: int = 100,
     ) -> List[SSHProfile]:
         """Search SSH profiles by name, host, or username."""
         search_pattern = f"%{search_term}%"
@@ -171,7 +182,7 @@ class SSHKeyRepository(BaseRepository[SSHKey]):
 
     async def get_user_keys(
         self,
-        user_id: str,
+        user_id: Union[str, PyUUID],
         active_only: bool = True,
         offset: int = 0,
         limit: int = 100,
@@ -180,7 +191,7 @@ class SSHKeyRepository(BaseRepository[SSHKey]):
         query = select(SSHKey).where(SSHKey.user_id == user_id)
 
         if active_only:
-            query = query.where(SSHKey.is_active is True)
+            query = query.where(SSHKey.is_active == True)
 
         query = (
             query.order_by(desc(SSHKey.last_used_at), SSHKey.name)
@@ -198,7 +209,9 @@ class SSHKeyRepository(BaseRepository[SSHKey]):
         )
         return result.scalar_one_or_none()
 
-    async def get_key_by_name(self, user_id: str, name: str) -> Optional[SSHKey]:
+    async def get_key_by_name(
+        self, user_id: Union[str, PyUUID], name: str
+    ) -> Optional[SSHKey]:
         """Get SSH key by name for a user."""
         result = await self.session.execute(
             select(SSHKey).where(and_(SSHKey.user_id == user_id, SSHKey.name == name))
@@ -217,7 +230,8 @@ class SSHKeyRepository(BaseRepository[SSHKey]):
             query = query.where(SSHKey.id != exclude_key_id)
 
         result = await self.session.execute(query)
-        return result.scalar() > 0
+        count = result.scalar()
+        return count is not None and count > 0
 
     async def is_fingerprint_exists(
         self, fingerprint: str, exclude_key_id: Optional[str] = None
@@ -229,16 +243,17 @@ class SSHKeyRepository(BaseRepository[SSHKey]):
             query = query.where(SSHKey.id != exclude_key_id)
 
         result = await self.session.execute(query)
-        return result.scalar() > 0
+        count = result.scalar()
+        return count is not None and count > 0
 
     async def create_key(
         self,
-        user_id: str,
+        user_id: Union[str, PyUUID],
         name: str,
         key_type: str,
         encrypted_private_key: bytes,
         public_key: str,
-        **kwargs,
+        **kwargs: Any,
     ) -> SSHKey:
         """Create a new SSH key."""
         key = SSHKey(
@@ -269,7 +284,11 @@ class SSHKeyRepository(BaseRepository[SSHKey]):
         return key
 
     async def get_keys_by_type(
-        self, user_id: str, key_type: str, offset: int = 0, limit: int = 100
+        self,
+        user_id: Union[str, PyUUID],
+        key_type: str,
+        offset: int = 0,
+        limit: int = 100,
     ) -> List[SSHKey]:
         """Get SSH keys by type."""
         result = await self.session.execute(
@@ -281,7 +300,9 @@ class SSHKeyRepository(BaseRepository[SSHKey]):
         )
         return list(result.scalars().all())
 
-    async def get_most_used_keys(self, user_id: str, limit: int = 10) -> List[SSHKey]:
+    async def get_most_used_keys(
+        self, user_id: Union[str, PyUUID], limit: int = 10
+    ) -> List[SSHKey]:
         """Get most frequently used SSH keys."""
         result = await self.session.execute(
             select(SSHKey)
@@ -292,7 +313,11 @@ class SSHKeyRepository(BaseRepository[SSHKey]):
         return list(result.scalars().all())
 
     async def search_keys(
-        self, user_id: str, search_term: str, offset: int = 0, limit: int = 100
+        self,
+        user_id: Union[str, PyUUID],
+        search_term: str,
+        offset: int = 0,
+        limit: int = 100,
     ) -> List[SSHKey]:
         """Search SSH keys by name, comment, or fingerprint."""
         search_pattern = f"%{search_term}%"
@@ -322,7 +347,7 @@ class SSHKeyRepository(BaseRepository[SSHKey]):
         """Reactivate an SSH key."""
         return await self.update(key_id, is_active=True)
 
-    async def get_key_stats(self, user_id: Optional[str] = None) -> dict:
+    async def get_key_stats(self, user_id: Union[str, PyUUID, None] = None) -> dict:
         """Get SSH key statistics."""
         base_query = select(SSHKey)
 
@@ -345,7 +370,7 @@ class SSHKeyRepository(BaseRepository[SSHKey]):
         active_keys = await self.session.execute(
             select(func.count(SSHKey.id))
             .select_from(base_query.subquery())
-            .where(SSHKey.is_active is True)
+            .where(SSHKey.is_active == True)
         )
 
         return {

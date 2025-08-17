@@ -2,7 +2,8 @@
 Base repository class with common database operations.
 """
 
-from typing import Generic, TypeVar, Type, List, Optional, Dict, Any
+from typing import Generic, TypeVar, Type, List, Optional, Dict, Any, Union
+from uuid import UUID as PyUUID
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, func, and_, or_
 from sqlalchemy.orm import selectinload
@@ -18,20 +19,42 @@ class BaseRepository(Generic[ModelType]):
         self.model = model
         self.session = session
 
-    async def create(self, **kwargs) -> ModelType:
+    async def create(
+        self, data: Union[Dict[str, Any], ModelType, None] = None, **kwargs: Any
+    ) -> ModelType:
         """Create a new model instance."""
-        instance = self.model(**kwargs)
+        if isinstance(data, dict):
+            # Handle dict data
+            instance = self.model(**data)
+        elif isinstance(data, self.model):
+            # Handle model instance
+            instance = data
+        elif data is None:
+            # Handle kwargs only
+            instance = self.model(**kwargs)
+        else:
+            # Handle any other case by merging data and kwargs
+            combined_kwargs = {**kwargs}
+            if hasattr(data, "__dict__"):
+                combined_kwargs.update(data.__dict__)
+            instance = self.model(**combined_kwargs)
+
         self.session.add(instance)
         await self.session.flush()
         await self.session.refresh(instance)
         return instance
 
-    async def get_by_id(self, id: str) -> Optional[ModelType]:
+    async def get_by_id(self, id: Union[str, PyUUID]) -> Optional[ModelType]:
         """Get model instance by ID."""
         result = await self.session.execute(
             select(self.model).where(self.model.id == id)
         )
         return result.scalar_one_or_none()
+
+    # Alias for compatibility
+    async def get(self, id: Union[str, PyUUID]) -> Optional[ModelType]:
+        """Get model instance by ID (alias for get_by_id)."""
+        return await self.get_by_id(id)
 
     async def get_all(
         self,
@@ -80,39 +103,56 @@ class BaseRepository(Generic[ModelType]):
         )
         return list(result.scalars().all())
 
-    async def update(self, id: str, **kwargs) -> Optional[ModelType]:
-        """Update model instance by ID."""
-        # Remove None values and protected fields
-        update_data = {
-            k: v
-            for k, v in kwargs.items()
-            if v is not None and k not in ["id", "created_at"]
-        }
+    async def update(
+        self, id_or_instance: Union[str, PyUUID, ModelType], **kwargs: Any
+    ) -> Optional[ModelType]:
+        """Update model instance by ID or instance."""
+        if isinstance(id_or_instance, (str, PyUUID)):
+            # Original behavior: update by ID
+            # Remove None values and protected fields
+            update_data = {
+                k: v
+                for k, v in kwargs.items()
+                if v is not None and k not in ["id", "created_at"]
+            }
 
-        if not update_data:
-            return await self.get_by_id(id)
+            if not update_data:
+                return await self.get_by_id(id_or_instance)
 
-        result = await self.session.execute(
-            update(self.model)
-            .where(self.model.id == id)
-            .values(**update_data)
-            .returning(self.model)
-        )
+            result = await self.session.execute(
+                update(self.model)
+                .where(self.model.id == id_or_instance)
+                .values(**update_data)
+                .returning(self.model)
+            )
 
-        updated_instance = result.scalar_one_or_none()
-        if updated_instance:
-            await self.session.refresh(updated_instance)
+            updated_instance = result.scalar_one_or_none()
+            if updated_instance:
+                await self.session.refresh(updated_instance)
 
-        return updated_instance
+            return updated_instance
+        else:
+            # New behavior: update instance directly
+            instance = id_or_instance
 
-    async def delete(self, id: str) -> bool:
+            # Update instance attributes with kwargs
+            for key, value in kwargs.items():
+                if hasattr(instance, key) and key not in ["id", "created_at"]:
+                    setattr(instance, key, value)
+
+            # Mark as dirty and flush
+            await self.session.flush()
+            await self.session.refresh(instance)
+            return instance
+
+    async def delete(self, id: Union[str, PyUUID]) -> bool:
         """Delete model instance by ID."""
         result = await self.session.execute(
             delete(self.model).where(self.model.id == id)
         )
         return result.rowcount > 0
 
-    async def exists(self, **kwargs) -> bool:
+    async def exists(self, **kwargs: Any) -> bool:
         """Check if model instance exists with given criteria."""
         conditions = [
             getattr(self.model, key) == value for key, value in kwargs.items()
@@ -123,7 +163,7 @@ class BaseRepository(Generic[ModelType]):
         count = result.scalar()
         return (count or 0) > 0
 
-    async def count(self, **kwargs) -> int:
+    async def count(self, **kwargs: Any) -> int:
         """Count model instances with optional criteria."""
         if kwargs:
             conditions = [

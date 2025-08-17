@@ -85,7 +85,7 @@ def log_request(
 
 
 def log_websocket_event(
-    event_type: str, session_id: str, user_id: Optional[str] = None, **kwargs
+    event_type: str, session_id: str, user_id: Optional[str] = None, **kwargs: Any
 ) -> None:
     """
     Log WebSocket event information.
@@ -150,7 +150,11 @@ def log_error(
 
 
 def log_ssh_event(
-    event_type: str, session_id: str, host: str, user_id: Optional[str] = None, **kwargs
+    event_type: str,
+    session_id: str,
+    host: str,
+    user_id: Optional[str] = None,
+    **kwargs: Any,
 ) -> None:
     """
     Log SSH connection event.
@@ -191,7 +195,7 @@ def log_ai_event(
     prompt_length: int,
     response_length: Optional[int] = None,
     user_id: Optional[str] = None,
-    **kwargs,
+    **kwargs: Any,
 ) -> None:
     """
     Log AI service event.
@@ -242,10 +246,10 @@ def get_current_time() -> datetime:
 
 # Custom logger class with additional methods
 class DevPocketLogger:
-    def __init__(self, base_logger):
+    def __init__(self, base_logger: Any) -> None:
         self._logger = base_logger
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         # Delegate all unknown attributes to the base logger
         return getattr(self._logger, name)
 
