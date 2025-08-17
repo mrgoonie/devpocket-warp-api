@@ -255,7 +255,7 @@ class TestAIService:
             result = await ai_service.explain_command(request)
 
             # Assert
-            assert isinstance(result, ExplainCommandResponse)
+            assert isinstance(result, CommandExplanationResponse)
             assert result.safety_level == "dangerous"
             assert len(result.warnings) > 0
 
@@ -342,7 +342,7 @@ class TestAIEndpoints:
         }
 
         with patch("app.api.ai.service.AIService.explain_command") as mock_explain:
-            mock_explain.return_value = ExplainCommandResponse(
+            mock_explain.return_value = CommandExplanationResponse(
                 explanation="Searches for 'pattern' recursively",
                 safety_level="safe",
                 complexity="intermediate",
