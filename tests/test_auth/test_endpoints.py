@@ -67,7 +67,7 @@ class TestRegistrationEndpoint:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         data = response.json()
-        assert "email" in data["detail"].lower()
+        assert "email" in data["error"]["message"].lower()
 
     @pytest.mark.asyncio
     async def test_register_user_duplicate_username(self, async_client, test_session):
@@ -88,7 +88,7 @@ class TestRegistrationEndpoint:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         data = response.json()
-        assert "username" in data["detail"].lower()
+        assert "username" in data["error"]["message"].lower()
 
     @pytest.mark.asyncio
     async def test_register_user_weak_password(self, async_client):
@@ -104,7 +104,7 @@ class TestRegistrationEndpoint:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         data = response.json()
-        assert "password" in data["detail"].lower()
+        assert "password" in data["error"]["message"].lower()
 
     @pytest.mark.asyncio
     async def test_register_user_invalid_email(self, async_client):
@@ -203,7 +203,7 @@ class TestLoginEndpoint:
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
         data = response.json()
-        assert "Invalid credentials" in data["detail"]
+        assert "incorrect" in data["error"]["message"].lower() or "invalid" in data["error"]["message"].lower()
 
     @pytest.mark.asyncio
     async def test_login_nonexistent_user(self, async_client):
@@ -241,7 +241,7 @@ class TestLoginEndpoint:
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
         data = response.json()
-        assert "verify" in data["detail"].lower()
+        assert "verification" in data["error"]["message"].lower()
 
     @pytest.mark.asyncio
     async def test_login_inactive_user(self, async_client, test_session):
@@ -263,7 +263,7 @@ class TestLoginEndpoint:
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
         data = response.json()
-        assert "deactivated" in data["detail"].lower()
+        assert "deactivated" in data["error"]["message"].lower()
 
     @pytest.mark.asyncio
     async def test_login_locked_user(self, async_client, test_session):
@@ -287,9 +287,9 @@ class TestLoginEndpoint:
             headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
 
-        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.status_code == status.HTTP_423_LOCKED
         data = response.json()
-        assert "locked" in data["detail"].lower()
+        assert "locked" in data["error"]["message"].lower()
 
     @pytest.mark.asyncio
     async def test_login_failed_attempt_tracking(self, async_client, test_session):
@@ -466,7 +466,7 @@ class TestPasswordResetEndpoints:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         data = response.json()
-        assert "invalid" in data["detail"].lower()
+        assert "invalid" in data["error"]["message"].lower()
 
     @pytest.mark.asyncio
     async def test_confirm_password_reset_weak_password(
@@ -490,7 +490,7 @@ class TestPasswordResetEndpoints:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         data = response.json()
-        assert "password" in data["detail"].lower()
+        assert "password" in data["error"]["message"].lower()
 
 
 @pytest.mark.auth
@@ -541,7 +541,7 @@ class TestEmailVerificationEndpoints:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         data = response.json()
-        assert "already verified" in data["detail"].lower()
+        assert "already verified" in data["error"]["message"].lower()
 
     @pytest.mark.asyncio
     async def test_confirm_email_verification_success(self, async_client, test_session):
@@ -576,7 +576,7 @@ class TestEmailVerificationEndpoints:
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         data = response.json()
-        assert "invalid" in data["detail"].lower()
+        assert "invalid" in data["error"]["message"].lower()
 
 
 @pytest.mark.auth

@@ -29,26 +29,36 @@ class UserFactory(factory.Factory):
     is_active = True
     is_verified = False
 
+    # Subscription information - align with model defaults
+    subscription_tier = "free"
+    subscription_expires_at = None
+
     # Optional fields that exist in the database
     verification_token = None
     reset_token = None
     reset_token_expires = None
     openrouter_api_key = None
+    
+    # Security fields - ensure they have default values
+    failed_login_attempts = 0
+    locked_until = None
+    last_login_at = None
+    verified_at = None
 
 
 class VerifiedUserFactory(UserFactory):
     """Factory for verified User."""
 
     is_verified = True
-    verified_at = factory.LazyFunction(lambda: fake.date_time_this_month())
+    verified_at = factory.Faker('date_time_this_month')
 
 
 class PremiumUserFactory(VerifiedUserFactory):
     """Factory for premium User."""
 
     subscription_tier = "premium"
-    subscription_expires_at = factory.LazyFunction(
-        lambda: fake.date_time_between(start_date="+1d", end_date="+30d")
+    subscription_expires_at = factory.Faker(
+        'date_time_between', start_date='+1d', end_date='+30d'
     )
 
 
