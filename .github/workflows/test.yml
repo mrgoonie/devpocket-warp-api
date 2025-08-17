@@ -21,13 +21,15 @@ jobs:
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
           POSTGRES_DB: devpocket_test
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5433:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U test -d devpocket_test"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
+          --name postgres-test
       
       redis:
         image: redis:7-alpine
@@ -37,7 +39,8 @@ jobs:
           --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
+          --name redis-test
 
     steps:
     - name: Checkout code
@@ -81,17 +84,34 @@ jobs:
 
     - name: Wait for services
       run: |
-        while ! pg_isready -h localhost -p 5433 -U test; do
-          echo "Waiting for PostgreSQL..."
+        echo "Waiting for PostgreSQL to be ready..."
+        for i in {1..30}; do
+          if pg_isready -h localhost -p 5433 -U test -d devpocket_test; then
+            echo "PostgreSQL is ready!"
+            break
+          fi
+          echo "Attempt $i: PostgreSQL not ready, waiting..."
+          sleep 3
+        done
+        
+        echo "Waiting for Redis to be ready..."
+        for i in {1..30}; do
+          if redis-cli -h localhost -p 6380 ping > /dev/null 2>&1; then
+            echo "Redis is ready!"
+            break
+          fi
+          echo "Attempt $i: Redis not ready, waiting..."
           sleep 2
         done
         
-        while ! redis-cli -h localhost -p 6380 ping; do
-          echo "Waiting for Redis..."
-          sleep 2
-        done
+        # Verify services are accessible
+        echo "Testing PostgreSQL connection..."
+        psql -h localhost -p 5433 -U test -d devpocket_test -c "SELECT 1;" || exit 1
         
-        echo "Services are ready!"
+        echo "Testing Redis connection..."
+        redis-cli -h localhost -p 6380 ping || exit 1
+        
+        echo "All services are ready!"
 
     - name: Run database migrations
       run: |
@@ -113,6 +133,14 @@ jobs:
     - name: Run Unit Tests
       run: |
         echo "::group::Unit Tests"
+        
+        # Pre-test verification
+        echo "Verifying test environment..."
+        psql -h localhost -p 5433 -U test -d devpocket_test -c "SELECT 'DB Connected' as status;"
+        redis-cli -h localhost -p 6380 ping
+        
+        # Run tests with better error handling
+        set -e
         pytest tests/test_auth/ tests/test_database/ tests/test_api/ \
           --cov=app \
           --cov-report=term-missing \
@@ -125,11 +153,14 @@ jobs:
           --tb=short \
           --durations=10 \
           --randomly-seed=12345 \
+          --maxfail=5 \
+          -x \
           -m "not integration and not performance and not external"
         echo "::endgroup::"
       env:
         DATABASE_URL: postgresql://test:test@localhost:5433/devpocket_test
         REDIS_URL: redis://localhost:6380
+        PYTHONPATH: ${{ github.workspace }}
 
     - name: Run Service Layer Tests
       run: |
@@ -292,18 +323,26 @@ jobs:
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
           POSTGRES_DB: devpocket_test
+          POSTGRES_HOST_AUTH_METHOD: trust
         ports:
           - 5433:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U test -d devpocket_test"
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 5
+          --health-retries 10
+          --name postgres-integration
       
       redis:
         image: redis:7-alpine
         ports:
           - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+          --name redis-integration
 
     steps:
     - name: Checkout code
@@ -326,17 +365,34 @@ jobs:
 
     - name: Wait for services
       run: |
-        while ! pg_isready -h localhost -p 5433 -U test; do
-          echo "Waiting for PostgreSQL..."
+        echo "Waiting for PostgreSQL to be ready..."
+        for i in {1..30}; do
+          if pg_isready -h localhost -p 5433 -U test -d devpocket_test; then
+            echo "PostgreSQL is ready!"
+            break
+          fi
+          echo "Attempt $i: PostgreSQL not ready, waiting..."
+          sleep 3
+        done
+        
+        echo "Waiting for Redis to be ready..."
+        for i in {1..30}; do
+          if redis-cli -h localhost -p 6380 ping > /dev/null 2>&1; then
+            echo "Redis is ready!"
+            break
+          fi
+          echo "Attempt $i: Redis not ready, waiting..."
           sleep 2
         done
         
-        while ! redis-cli -h localhost -p 6380 ping; do
-          echo "Waiting for Redis..."
-          sleep 2
-        done
+        # Verify services are accessible
+        echo "Testing PostgreSQL connection..."
+        psql -h localhost -p 5433 -U test -d devpocket_test -c "SELECT 1;" || exit 1
         
-        echo "Services are ready!"
+        echo "Testing Redis connection..."
+        redis-cli -h localhost -p 6380 ping || exit 1
+        
+        echo "All services are ready!"
 
     - name: Run integration tests
       run: |

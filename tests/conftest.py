@@ -53,32 +53,47 @@ TEST_REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6380")
 
 async def _cleanup_test_data(engine):
     """Clear all test data while preserving database schema."""
-    async with engine.begin() as conn:
-        # Get all table names from the current schema
-        result = await conn.execute(
-            text(
-                """
-            SELECT tablename FROM pg_tables
-            WHERE schemaname = 'public'
-            AND tablename != 'alembic_version'
-            ORDER BY tablename
-        """
-            )
-        )
-        tables = [row[0] for row in result.fetchall()]
-
-        if tables:
-            # Disable foreign key checks temporarily
-            await conn.execute(text("SET session_replication_role = 'replica'"))
-
-            # Truncate all tables
-            for table in tables:
-                await conn.execute(
-                    text(f"TRUNCATE TABLE {table} RESTART IDENTITY CASCADE")
+    try:
+        async with engine.begin() as conn:
+            # Get all table names from the current schema
+            result = await conn.execute(
+                text(
+                    """
+                SELECT tablename FROM pg_tables
+                WHERE schemaname = 'public'
+                AND tablename != 'alembic_version'
+                ORDER BY tablename DESC
+            """
                 )
+            )
+            tables = [row[0] for row in result.fetchall()]
 
-            # Re-enable foreign key checks
-            await conn.execute(text("SET session_replication_role = 'origin'"))
+            if tables:
+                # Use CASCADE truncation to handle foreign key constraints
+                table_list = ", ".join(tables)
+                await conn.execute(
+                    text(f"TRUNCATE TABLE {table_list} RESTART IDENTITY CASCADE")
+                )
+                
+                # Reset sequences for primary keys
+                await conn.execute(text(
+                    """
+                    SELECT setval(pg_get_serial_sequence(schemaname||'.'||tablename, columnname), 1, false)
+                    FROM (
+                        SELECT schemaname, tablename, columnname
+                        FROM pg_tables t
+                        INNER JOIN information_schema.columns c 
+                            ON c.table_name = t.tablename 
+                            AND c.table_schema = t.schemaname
+                        WHERE t.schemaname = 'public'
+                        AND t.tablename != 'alembic_version'
+                        AND c.column_default LIKE 'nextval%'
+                    ) AS seq_info
+                    """
+                ))
+    except Exception as e:
+        # Log error but don't fail - cleanup is best effort
+        print(f"Warning: Test data cleanup failed: {e}")
 
 
 @pytest.fixture(scope="session")
@@ -129,14 +144,19 @@ async def test_session(test_db_engine) -> AsyncGenerator[AsyncSession, None]:
     )
 
     async with async_session_factory() as session:
-        # Start a transaction that will be rolled back after the test
+        # Start a nested transaction (savepoint) that will be rolled back after the test
         transaction = await session.begin()
 
         try:
             yield session
+        except Exception:
+            # Rollback on any exception
+            await transaction.rollback()
+            raise
         finally:
             # Always rollback to ensure test isolation
-            await transaction.rollback()
+            if transaction.is_active:
+                await transaction.rollback()
             await session.close()
 
 
@@ -192,15 +212,19 @@ async def app(test_db_engine, mock_redis) -> FastAPI:
     # Override dependencies
     async def override_get_db():
         async with test_session_factory() as session:
-            # Use transaction for each request to ensure isolation
+            # Use nested transaction (savepoint) for each request to ensure isolation
             transaction = await session.begin()
             try:
                 yield session
-                await transaction.commit()
+                # Don't commit in tests - let the test session handle rollback
             except Exception:
-                await transaction.rollback()
+                if transaction.is_active:
+                    await transaction.rollback()
                 raise
             finally:
+                # Rollback transaction to maintain test isolation
+                if transaction.is_active:
+                    await transaction.rollback()
                 await session.close()
 
     app.dependency_overrides[get_db] = override_get_db
@@ -237,12 +261,19 @@ async def user_repository(test_session) -> UserRepository:
 # User fixtures
 @pytest.fixture
 def user_data() -> dict:
-    """Basic user data for testing."""
+    """Basic user data for testing with unique identifiers."""
+    import uuid
+    import time
+    
+    # Generate unique identifiers to prevent conflicts between tests
+    unique_id = str(uuid.uuid4())[:8]
+    timestamp = str(int(time.time()))[-6:]  # Last 6 digits of timestamp
+    
     return {
-        "email": "test@example.com",
-        "username": "testuser",
+        "email": f"test_{unique_id}_{timestamp}@example.com",
+        "username": f"testuser_{unique_id}",
         "password": "SecurePassword123!",
-        "full_name": "Test User",
+        "full_name": f"Test User {unique_id}",
     }
 
 
@@ -388,6 +419,14 @@ async def cleanup_test_data(test_session):
     """Auto cleanup test data after each test."""
     yield
     # Cleanup happens in test_session fixture rollback
+    # Additional cleanup to ensure test isolation
+    try:
+        # Force rollback any active transactions
+        if test_session.in_transaction():
+            await test_session.rollback()
+    except Exception:
+        # Ignore cleanup errors - session will be closed anyway
+        pass
 
 
 # Environment setup
