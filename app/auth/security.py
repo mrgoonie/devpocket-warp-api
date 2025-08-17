@@ -8,6 +8,7 @@ token blacklisting, and password reset functionality.
 import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Any
+from uuid import UUID
 
 import redis.asyncio as aioredis
 from jose import JWTError, jwt
@@ -74,6 +75,27 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return False
 
 
+def _make_jwt_serializable(data: dict[str, Any]) -> dict[str, Any]:
+    """
+    Convert complex data types to JSON-serializable formats for JWT encoding.
+    
+    Args:
+        data: Dictionary that may contain non-serializable objects
+        
+    Returns:
+        Dictionary with all values converted to JSON-serializable types
+    """
+    serializable_data = {}
+    for key, value in data.items():
+        if isinstance(value, UUID):
+            serializable_data[key] = str(value)
+        elif isinstance(value, datetime):
+            serializable_data[key] = int(value.timestamp())
+        else:
+            serializable_data[key] = value
+    return serializable_data
+
+
 # JWT Token Functions
 def create_access_token(
     data: dict[str, Any], expires_delta: timedelta | None = None
@@ -94,7 +116,7 @@ def create_access_token(
     if not data.get("sub"):
         raise ValueError("Token data must include 'sub' (subject) field")
 
-    to_encode = data.copy()
+    to_encode = _make_jwt_serializable(data.copy())
 
     if expires_delta:
         expire = datetime.now(UTC) + expires_delta
@@ -143,7 +165,7 @@ def create_refresh_token(
     if not data.get("sub"):
         raise ValueError("Token data must include 'sub' (subject) field")
 
-    to_encode = data.copy()
+    to_encode = _make_jwt_serializable(data.copy())
 
     if expires_delta:
         expire = datetime.now(UTC) + expires_delta

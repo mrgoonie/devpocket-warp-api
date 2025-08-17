@@ -24,7 +24,7 @@ class TestRegistrationEndpoint:
             "email": "newuser@example.com",
             "username": "newuser",
             "password": "SecurePass123!",
-            "full_name": "New User",
+            "display_name": "New User",
         }
 
         response = await async_client.post("/api/auth/register", json=user_data)
@@ -32,12 +32,21 @@ class TestRegistrationEndpoint:
         assert response.status_code == status.HTTP_201_CREATED
         data = response.json()
 
-        assert data["email"] == user_data["email"]
-        assert data["username"] == user_data["username"]
-        assert data["full_name"] == user_data["full_name"]
-        assert "id" in data
-        assert "password" not in data  # Password should not be returned
-        assert data["is_verified"] is False  # Should start unverified
+        # Check token structure
+        assert "access_token" in data
+        assert "refresh_token" in data
+        assert data["token_type"] == "bearer"
+        assert "expires_in" in data
+        assert "user" in data
+        
+        # Check user data within token response
+        user = data["user"]
+        assert user["email"] == user_data["email"]
+        assert user["username"] == user_data["username"]
+        assert user["display_name"] == user_data["display_name"]
+        assert "id" in user
+        assert "password" not in user  # Password should not be returned
+        assert user["is_verified"] is False  # Should start unverified
 
     @pytest.mark.asyncio
     async def test_register_user_duplicate_email(self, async_client, test_session):
@@ -321,7 +330,7 @@ class TestLogoutEndpoint:
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert data["message"] == "Successfully logged out"
+        assert data["message"] == "Logout successful"
 
         # Verify token was blacklisted
         mock_redis.setex.assert_called_once()
@@ -406,7 +415,7 @@ class TestPasswordResetEndpoints:
         reset_data = {"email": user.email}
 
         response = await async_client.post(
-            "/api/auth/password-reset-request", json=reset_data
+            "/api/auth/forgot-password", json=reset_data
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -422,7 +431,7 @@ class TestPasswordResetEndpoints:
         reset_data = {"email": "nonexistent@example.com"}
 
         response = await async_client.post(
-            "/api/auth/password-reset-request", json=reset_data
+            "/api/auth/forgot-password", json=reset_data
         )
 
         # Should return success to prevent email enumeration
@@ -444,12 +453,12 @@ class TestPasswordResetEndpoints:
         reset_data = {"token": reset_token, "new_password": new_password}
 
         response = await async_client.post(
-            "/api/auth/password-reset-confirm", json=reset_data
+            "/api/auth/reset-password", json=reset_data
         )
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
-        assert "password reset successfully" in data["message"].lower()
+        assert "password reset successful" in data["message"].lower()
 
     @pytest.mark.asyncio
     async def test_confirm_password_reset_invalid_token(self, async_client):
@@ -460,7 +469,7 @@ class TestPasswordResetEndpoints:
         }
 
         response = await async_client.post(
-            "/api/auth/password-reset-confirm", json=reset_data
+            "/api/auth/reset-password", json=reset_data
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -486,7 +495,7 @@ class TestPasswordResetEndpoints:
         }
 
         response = await async_client.post(
-            "/api/auth/password-reset-confirm", json=reset_data
+            "/api/auth/reset-password", json=reset_data
         )
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST

@@ -75,20 +75,22 @@ async def _cleanup_test_data(engine):
                     text(f"TRUNCATE TABLE {table_list} RESTART IDENTITY CASCADE")
                 )
                 
-                # Reset sequences for primary keys
+                # Reset sequences for primary keys - simplified approach
                 await conn.execute(text(
                     """
-                    SELECT setval(pg_get_serial_sequence(schemaname||'.'||tablename, columnname), 1, false)
-                    FROM (
-                        SELECT schemaname, tablename, columnname
-                        FROM pg_tables t
-                        INNER JOIN information_schema.columns c 
-                            ON c.table_name = t.tablename 
-                            AND c.table_schema = t.schemaname
-                        WHERE t.schemaname = 'public'
-                        AND t.tablename != 'alembic_version'
-                        AND c.column_default LIKE 'nextval%'
-                    ) AS seq_info
+                    DO $$
+                    DECLARE
+                        seq_record RECORD;
+                    BEGIN
+                        FOR seq_record IN
+                            SELECT sequence_name
+                            FROM information_schema.sequences
+                            WHERE sequence_schema = 'public'
+                        LOOP
+                            EXECUTE 'SELECT setval(''' || seq_record.sequence_name || ''', 1, false)';
+                        END LOOP;
+                    END
+                    $$;
                     """
                 ))
     except Exception as e:
@@ -149,9 +151,11 @@ async def test_session(test_db_engine) -> AsyncGenerator[AsyncSession, None]:
 
         try:
             yield session
+            # Don't commit in tests - let the test cleanup handle rollback
         except Exception:
             # Rollback on any exception
-            await transaction.rollback()
+            if transaction.is_active:
+                await transaction.rollback()
             raise
         finally:
             # Always rollback to ensure test isolation
@@ -212,19 +216,15 @@ async def app(test_db_engine, mock_redis) -> FastAPI:
     # Override dependencies
     async def override_get_db():
         async with test_session_factory() as session:
-            # Use nested transaction (savepoint) for each request to ensure isolation
-            transaction = await session.begin()
             try:
                 yield session
-                # Don't commit in tests - let the test session handle rollback
+                # In tests, don't auto-commit - let the test control transactions
             except Exception:
-                if transaction.is_active:
-                    await transaction.rollback()
+                # Rollback on any exception to maintain consistency
+                if session.in_transaction():
+                    await session.rollback()
                 raise
             finally:
-                # Rollback transaction to maintain test isolation
-                if transaction.is_active:
-                    await transaction.rollback()
                 await session.close()
 
     app.dependency_overrides[get_db] = override_get_db
