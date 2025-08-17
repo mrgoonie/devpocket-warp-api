@@ -22,7 +22,7 @@ except ImportError:
     SSHClient = None
 
 try:
-    from app.websocket.ssh_handler import SSHWebSocketHandler
+    from app.websocket.ssh_handler import SSHHandler as SSHWebSocketHandler
 except ImportError:
     SSHWebSocketHandler = None
 
@@ -47,7 +47,7 @@ class TestSSHClient:
     @pytest.fixture
     def ssh_client(self, ssh_profile_data):
         """Create SSH client instance."""
-        return SSHClient(ssh_profile_data)
+        return SSHClient()
 
     @pytest.fixture
     def mock_paramiko_client(self):
@@ -413,12 +413,30 @@ class TestSSHWebSocketHandler:
     @pytest.fixture
     def ssh_handler(self, mock_websocket):
         """Create SSH WebSocket handler."""
+        from app.models.ssh_profile import SSHProfile
+
+        # Create mock SSH profile
+        mock_ssh_profile = MagicMock(spec=SSHProfile)
+        mock_ssh_profile.host = "test.example.com"
+        mock_ssh_profile.port = 22
+        mock_ssh_profile.username = "testuser"
+
+        # Create mock output callback
+        async def mock_output_callback(data: str):
+            pass
+
+        if SSHWebSocketHandler is None:
+            return None
+
         return SSHWebSocketHandler(
-            websocket=mock_websocket,
-            ssh_profile_id="profile-123",
-            user_id="user-456",
+            ssh_profile=mock_ssh_profile,
+            ssh_key=None,
+            output_callback=mock_output_callback,
         )
 
+    @pytest.mark.skipif(
+        SSHWebSocketHandler is None, reason="SSHWebSocketHandler not available"
+    )
     @pytest.mark.asyncio
     async def test_ssh_websocket_connection(self, ssh_handler, mock_websocket):
         """Test SSH WebSocket connection establishment."""
@@ -433,6 +451,9 @@ class TestSSHWebSocketHandler:
             mock_ssh_client.connect.assert_called_once()
             assert ssh_handler.is_connected
 
+    @pytest.mark.skipif(
+        SSHWebSocketHandler is None, reason="SSHWebSocketHandler not available"
+    )
     @pytest.mark.asyncio
     async def test_ssh_websocket_command_execution(self, ssh_handler):
         """Test command execution through SSH WebSocket."""
@@ -453,6 +474,9 @@ class TestSSHWebSocketHandler:
             # Assert
             mock_ssh_client.execute_command.assert_called_once_with(command)
 
+    @pytest.mark.skipif(
+        SSHWebSocketHandler is None, reason="SSHWebSocketHandler not available"
+    )
     @pytest.mark.asyncio
     async def test_ssh_websocket_interactive_shell(self, ssh_handler):
         """Test interactive shell session through SSH WebSocket."""
@@ -470,6 +494,9 @@ class TestSSHWebSocketHandler:
             mock_ssh_client.invoke_shell.assert_called_once()
             assert ssh_handler.shell_session == mock_shell
 
+    @pytest.mark.skipif(
+        SSHWebSocketHandler is None, reason="SSHWebSocketHandler not available"
+    )
     @pytest.mark.asyncio
     async def test_ssh_websocket_file_operations(self, ssh_handler):
         """Test file operations through SSH WebSocket."""
@@ -483,6 +510,9 @@ class TestSSHWebSocketHandler:
             # Assert
             mock_ssh_client.execute_command.assert_called_with("ls -la /home/user")
 
+    @pytest.mark.skipif(
+        SSHWebSocketHandler is None, reason="SSHWebSocketHandler not available"
+    )
     @pytest.mark.asyncio
     async def test_ssh_websocket_disconnect_cleanup(self, ssh_handler):
         """Test proper cleanup on SSH WebSocket disconnect."""

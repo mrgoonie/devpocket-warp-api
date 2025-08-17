@@ -305,7 +305,7 @@ class TestAIEndpoints:
     """Test AI API endpoints."""
 
     @pytest.mark.asyncio
-    async def test_suggest_command_endpoint(self, test_client, auth_headers):
+    async def test_suggest_command_endpoint(self, client, auth_headers):
         """Test command suggestion endpoint."""
         # Arrange
         request_data = {
@@ -323,7 +323,7 @@ class TestAIEndpoints:
             )
 
             # Act
-            response = test_client.post(
+            response = client.post(
                 "/api/ai/suggest", json=request_data, headers=auth_headers
             )
 
@@ -334,7 +334,7 @@ class TestAIEndpoints:
             assert data["confidence"] == 0.95
 
     @pytest.mark.asyncio
-    async def test_explain_command_endpoint(self, test_client, auth_headers):
+    async def test_explain_command_endpoint(self, client, auth_headers):
         """Test command explanation endpoint."""
         # Arrange
         request_data = {
@@ -350,7 +350,7 @@ class TestAIEndpoints:
             )
 
             # Act
-            response = test_client.post(
+            response = client.post(
                 "/api/ai/explain", json=request_data, headers=auth_headers
             )
 
@@ -361,7 +361,7 @@ class TestAIEndpoints:
             assert data["safety_level"] == "safe"
 
     @pytest.mark.asyncio
-    async def test_ai_endpoint_without_api_key(self, test_client, auth_headers):
+    async def test_ai_endpoint_without_api_key(self, client, auth_headers):
         """Test AI endpoint without user API key."""
         # Arrange
         request_data = {
@@ -370,7 +370,7 @@ class TestAIEndpoints:
         }
 
         # Act
-        response = test_client.post(
+        response = client.post(
             "/api/ai/suggest", json=request_data, headers=auth_headers
         )
 
@@ -379,7 +379,7 @@ class TestAIEndpoints:
         assert "api_key" in response.json()["detail"].lower()
 
     @pytest.mark.asyncio
-    async def test_ai_endpoint_invalid_api_key(self, test_client, auth_headers):
+    async def test_ai_endpoint_invalid_api_key(self, client, auth_headers):
         """Test AI endpoint with invalid API key."""
         # Arrange
         request_data = {"prompt": "list files", "api_key": "invalid-key"}
@@ -390,7 +390,7 @@ class TestAIEndpoints:
             mock_validate.return_value = False
 
             # Act
-            response = test_client.post(
+            response = client.post(
                 "/api/ai/suggest", json=request_data, headers=auth_headers
             )
 

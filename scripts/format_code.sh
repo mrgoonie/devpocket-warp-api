@@ -172,7 +172,7 @@ run_ruff() {
     fi
     
     # Configuration options
-    ruff_args+=("--output-format" "full")
+    ruff_args+=("--output-format" "text")
     
     # Add target
     ruff_args+=("$target")

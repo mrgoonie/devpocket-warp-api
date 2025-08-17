@@ -51,7 +51,7 @@ class User(BaseModel):
         ENUM(
             UserRole,
             name="user_role",
-            create_type=False,
+            create_type=True,
             values_callable=lambda x: [e.value for e in x],
         ),
         nullable=False,

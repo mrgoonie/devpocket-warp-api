@@ -433,7 +433,7 @@ class TestWebSocketEndpoints:
     """Test WebSocket endpoint integration."""
 
     @pytest.mark.asyncio
-    async def test_websocket_terminal_endpoint(self, test_client):
+    async def test_websocket_terminal_endpoint(self, client):
         """Test WebSocket terminal endpoint."""
         # This would require a more complex setup with actual WebSocket testing
         # For now, we'll test the endpoint exists and basic structure
