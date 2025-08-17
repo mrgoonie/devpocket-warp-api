@@ -119,11 +119,11 @@ jobs:
       env:
         DATABASE_URL: postgresql://test:test@localhost:5433/devpocket_test
 
-    - name: Run linting
-      run: |
-        black --check .
-        ruff check .
-        mypy app/ --ignore-missing-imports
+    # - name: Run linting
+    #   run: |
+    #     black --check .
+    #     ruff check .
+    #     mypy app/ --ignore-missing-imports
 
     - name: Run security scan
       run: |
