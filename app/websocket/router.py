@@ -26,7 +26,7 @@ websocket_router = APIRouter(prefix="/ws", tags=["websocket"])
 
 
 async def authenticate_websocket(
-    websocket: WebSocket, token: str | None = None
+    _websocket: WebSocket, token: str | None = None
 ) -> dict | None:
     """
     Authenticate WebSocket connection using JWT token.
@@ -234,4 +234,4 @@ async def websocket_stats() -> dict:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get WebSocket statistics",
-        )
+        ) from e

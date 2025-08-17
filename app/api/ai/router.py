@@ -87,7 +87,7 @@ async def validate_api_key(
     description="Get usage statistics for user's OpenRouter API key",
 )
 async def get_ai_usage(
-    current_user: Annotated[User, Depends(get_current_active_user)],
+    _current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
     api_key: str = Query(..., description="OpenRouter API key"),
 ) -> AIUsageStats:
@@ -103,7 +103,7 @@ async def get_ai_usage(
     description="Get list of available AI models for the API key",
 )
 async def get_available_models(
-    current_user: Annotated[User, Depends(get_current_active_user)],
+    _current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
     api_key: str = Query(..., description="OpenRouter API key"),
 ) -> AvailableModelsResponse:
@@ -139,7 +139,7 @@ async def suggest_command(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate command suggestions: {e!s}",
-        )
+        ) from e
 
 
 @router.post(
@@ -166,7 +166,7 @@ async def explain_command(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to explain command: {e!s}",
-        )
+        ) from e
 
 
 @router.post(
@@ -193,7 +193,7 @@ async def explain_error(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to analyze error: {e!s}",
-        )
+        ) from e
 
 
 @router.post(
@@ -222,7 +222,7 @@ async def optimize_command(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to optimize command: {e!s}",
-        )
+        ) from e
 
 
 # Batch Processing Endpoints
@@ -255,7 +255,7 @@ async def process_batch_requests(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to process batch requests: {e!s}",
-        )
+        ) from e
 
 
 # AI Settings Endpoints
@@ -269,7 +269,7 @@ async def process_batch_requests(
 )
 async def get_ai_settings(
     current_user: Annotated[User, Depends(get_current_active_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
+    _db: Annotated[AsyncSession, Depends(get_db)],
 ) -> AISettingsResponse:
     """Get user's AI service preferences and configuration."""
     # This would typically load from user settings in database
@@ -296,7 +296,7 @@ async def get_ai_settings(
 async def update_ai_settings(
     settings: AISettings,
     current_user: Annotated[User, Depends(get_current_active_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
+    _db: Annotated[AsyncSession, Depends(get_db)],
 ) -> AISettingsResponse:
     """Update user's AI service preferences and configuration."""
     # In a real implementation, this would save to user settings
@@ -327,7 +327,7 @@ async def update_ai_settings(
     description="Test connection to OpenRouter API service",
 )
 async def test_ai_connection(
-    current_user: Annotated[User, Depends(get_current_active_user)],
+    _current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
     api_key: str = Query(..., description="OpenRouter API key to test"),
 ) -> dict:
@@ -405,7 +405,7 @@ async def quick_suggest(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Quick suggestion failed: {e!s}",
-        )
+        ) from e
 
 
 # Analytics and Insights Endpoints
@@ -418,8 +418,8 @@ async def quick_suggest(
     description="Get insights and analytics about AI service usage",
 )
 async def get_ai_usage_insights(
-    current_user: Annotated[User, Depends(get_current_active_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
+    _current_user: Annotated[User, Depends(get_current_active_user)],
+    _db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict:
     """Get insights and analytics about AI service usage."""
     try:
@@ -461,7 +461,7 @@ async def get_ai_usage_insights(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to generate AI usage insights",
-        )
+        ) from e
 
 
 # Health and Monitoring Endpoints
@@ -474,8 +474,8 @@ async def get_ai_usage_insights(
     description="Check AI service health and status",
 )
 async def ai_service_health(
-    current_user: Annotated[User, Depends(get_current_active_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
+    _current_user: Annotated[User, Depends(get_current_active_user)],
+    _db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict:
     """Check AI service health and status."""
     try:
@@ -513,8 +513,8 @@ async def ai_service_health(
     description="Get current AI service operational status",
 )
 async def get_ai_service_status(
-    current_user: Annotated[User, Depends(get_current_active_user)],
-    db: Annotated[AsyncSession, Depends(get_db)],
+    _current_user: Annotated[User, Depends(get_current_active_user)],
+    _db: Annotated[AsyncSession, Depends(get_db)],
 ) -> dict:
     """Get current AI service operational status."""
     try:

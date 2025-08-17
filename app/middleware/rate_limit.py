@@ -370,7 +370,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     def _add_rate_limit_headers(
         self,
         response: Response,
-        current_count: int,
+        _current_count: int,
         remaining: int,
         endpoint_type: str,
     ) -> None:

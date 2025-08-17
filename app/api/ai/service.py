@@ -101,7 +101,7 @@ class AIService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to retrieve AI usage statistics",
-            )
+            ) from e
 
     async def suggest_command(
         self, user: User, request: CommandSuggestionRequest
@@ -163,7 +163,7 @@ class AIService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to generate command suggestions: {e!s}",
-            )
+            ) from e
 
     async def explain_command(
         self, user: User, request: CommandExplanationRequest
@@ -221,7 +221,7 @@ class AIService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to explain command: {e!s}",
-            )
+            ) from e
 
     async def analyze_error(
         self, user: User, request: ErrorAnalysisRequest
@@ -290,7 +290,7 @@ class AIService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to analyze error: {e!s}",
-            )
+            ) from e
 
     async def optimize_command(
         self, user: User, request: CommandOptimizationRequest
@@ -349,7 +349,7 @@ class AIService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Failed to optimize command: {e!s}",
-            )
+            ) from e
 
     async def get_available_models(self, api_key: str) -> AvailableModelsResponse:
         """Get list of available AI models."""
@@ -393,10 +393,10 @@ class AIService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to fetch available models",
-            )
+            ) from e
 
     async def process_batch_requests(
-        self, user: User, request: BatchAIRequest
+        self, _user: User, request: BatchAIRequest
     ) -> BatchAIResponse:
         """Process multiple AI requests in batch."""
         try:
@@ -457,7 +457,7 @@ class AIService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to process batch requests",
-            )
+            ) from e
 
     # Private batch processing methods
 
@@ -575,7 +575,7 @@ class AIService:
         self,
         ai_response: AIResponse,
         max_suggestions: int,
-        include_explanations: bool,
+        _include_explanations: bool,
     ) -> list[CommandSuggestion]:
         """Parse AI response into command suggestions."""
         suggestions = []
@@ -657,7 +657,7 @@ class AIService:
     def _parse_error_analysis(
         self,
         ai_response: AIResponse,
-        command: str,
+        _command: str,
         error_output: str,
         include_solutions: bool,
         include_prevention: bool,
@@ -696,7 +696,7 @@ class AIService:
         self,
         ai_response: AIResponse,
         original_command: str,
-        include_modern_alternatives: bool,
+        _include_modern_alternatives: bool,
     ) -> CommandOptimization:
         """Parse AI response into command optimization."""
         try:

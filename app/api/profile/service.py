@@ -50,7 +50,7 @@ class ProfileService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to retrieve user profile",
-            )
+            ) from e
 
     async def update_profile(
         self, user: User, profile_data: UserProfileUpdate
@@ -103,9 +103,9 @@ class ProfileService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to update user profile",
-            )
+            ) from e
 
-    async def get_settings(self, user: User) -> UserSettingsResponse:
+    async def get_settings(self, _user: User) -> UserSettingsResponse:
         """Get user settings."""
         # TODO: Implement UserSettings functionality
         raise HTTPException(
@@ -114,7 +114,7 @@ class ProfileService:
         )
 
     async def update_settings(
-        self, user: User, settings_data: UserSettings
+        self, _user: User, _settings_data: UserSettings
     ) -> UserSettingsResponse:
         """Update user settings."""
         # TODO: Implement UserSettings functionality
@@ -139,7 +139,7 @@ class ProfileService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to delete user account",
-            )
+            ) from e
 
     async def get_account_stats(self, user: User) -> dict[str, Any]:
         """Get user account statistics."""
@@ -162,7 +162,7 @@ class ProfileService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to get account statistics",
-            )
+            ) from e
 
     def _calculate_profile_completeness(self, user: User) -> int:
         """Calculate profile completeness percentage."""

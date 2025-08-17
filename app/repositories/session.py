@@ -152,7 +152,7 @@ class SessionRepository(BaseRepository[Session]):
         }
 
     async def get_session_with_commands(
-        self, session_id: str, command_limit: int = 50
+        self, session_id: str, _command_limit: int = 50
     ) -> Session | None:
         """Get session with its commands loaded."""
         result = await self.session.execute(
@@ -428,14 +428,14 @@ class SessionRepository(BaseRepository[Session]):
         return await self.get_user_session_count(user_id, session_type)
 
     async def get_session_commands(
-        self, session_id: str | PyUUID, offset: int = 0, limit: int = 100
+        self, _session_id: str | PyUUID, _offset: int = 0, _limit: int = 100
     ) -> list[Any]:
         """Get commands for a session."""
         # This would need the Command model imported, for now return empty list
         # as the actual implementation would depend on the Command model
         return []
 
-    async def count_session_commands(self, session_id: str | PyUUID) -> int:
+    async def count_session_commands(self, _session_id: str | PyUUID) -> int:
         """Count commands for a session."""
         # This would need the Command model imported, for now return 0
         # as the actual implementation would depend on the Command model

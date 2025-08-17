@@ -53,7 +53,7 @@ def hash_password(password: str) -> str:
         return pwd_context.hash(password)
     except Exception as e:
         logger.error(f"Password hashing failed: {e}")
-        raise ValueError("Failed to hash password")
+        raise ValueError("Failed to hash password") from e
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -121,7 +121,7 @@ def create_access_token(
 
     except Exception as e:
         logger.error(f"JWT encoding failed: {e}")
-        raise ValueError("Failed to create access token")
+        raise ValueError("Failed to create access token") from e
 
 
 def create_refresh_token(
@@ -172,7 +172,7 @@ def create_refresh_token(
 
     except Exception as e:
         logger.error(f"JWT refresh token encoding failed: {e}")
-        raise ValueError("Failed to create refresh token")
+        raise ValueError("Failed to create refresh token") from e
 
 
 def decode_token(token: str) -> dict[str, Any]:
@@ -196,16 +196,16 @@ def decode_token(token: str) -> dict[str, Any]:
 
     except ExpiredSignatureError:
         logger.warning("JWT token has expired")
-        raise JWTError("Token has expired")
+        raise JWTError("Token has expired") from None
     except (JWTClaimsError, JWSSignatureError) as e:
         logger.warning(f"JWT decoding failed: {e}")
-        raise JWTError(f"Invalid token: {e}")
+        raise JWTError(f"Invalid token: {e}") from e
     except JWTError as e:
         logger.warning(f"JWT decoding failed: {e}")
         raise
     except Exception as e:
         logger.error(f"Unexpected error decoding JWT: {e}")
-        raise JWTError("Token decoding failed")
+        raise JWTError("Token decoding failed") from e
 
 
 def verify_token(token: str) -> dict[str, Any] | None:
@@ -254,7 +254,7 @@ async def is_token_blacklisted(token: str) -> bool:
         return False
 
 
-def is_token_blacklisted_sync(token: str) -> bool:
+def is_token_blacklisted_sync(_token: str) -> bool:
     """
     Synchronous version of token blacklist check.
     Used in verify_token for backwards compatibility.
@@ -352,7 +352,7 @@ def generate_password_reset_token(email: str) -> str:
 
     except Exception as e:
         logger.error(f"JWT password reset token encoding failed: {e}")
-        raise ValueError("Failed to create password reset token")
+        raise ValueError("Failed to create password reset token") from e
 
 
 def verify_password_reset_token(token: str) -> str | None:

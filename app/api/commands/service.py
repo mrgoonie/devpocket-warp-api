@@ -151,7 +151,7 @@ class CommandService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to retrieve command history",
-            )
+            ) from e
 
     async def search_commands(
         self, user: User, search_request: CommandSearchRequest
@@ -238,7 +238,7 @@ class CommandService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to search commands",
-            )
+            ) from e
 
     async def get_command_details(self, user: User, command_id: str) -> CommandResponse:
         """Get detailed command information."""
@@ -293,7 +293,7 @@ class CommandService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to get command details",
-            )
+            ) from e
 
     async def delete_command(self, user: User, command_id: str) -> bool:
         """Delete a command from history."""
@@ -320,7 +320,7 @@ class CommandService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to delete command",
-            )
+            ) from e
 
     async def get_usage_stats(self, user: User) -> CommandUsageStats:
         """Get comprehensive command usage statistics."""
@@ -445,10 +445,10 @@ class CommandService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to get command usage statistics",
-            )
+            ) from e
 
     async def get_session_command_stats(
-        self, user: User, session_id: str | None = None
+        self, user: User, _session_id: str | None = None
     ) -> list[SessionCommandStats]:
         """Get command statistics grouped by session."""
         try:
@@ -476,7 +476,7 @@ class CommandService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to get session command statistics",
-            )
+            ) from e
 
     async def get_frequent_commands(
         self, user: User, days: int = 30, min_usage: int = 3
@@ -539,7 +539,7 @@ class CommandService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to analyze frequent commands",
-            )
+            ) from e
 
     async def get_command_suggestions(
         self, user: User, request: CommandSuggestionRequest
@@ -600,7 +600,7 @@ class CommandService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to generate command suggestions",
-            )
+            ) from e
 
     async def get_command_metrics(self, user: User) -> CommandMetrics:
         """Get real-time command execution metrics."""
@@ -716,7 +716,7 @@ class CommandService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to get command metrics",
-            )
+            ) from e
 
     # Private helper methods
 
