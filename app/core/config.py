@@ -2,7 +2,7 @@
 Configuration settings for DevPocket API.
 """
 
-from typing import Any
+from typing import Any, ClassVar
 
 from pydantic import BaseModel, field_validator
 from pydantic_settings import BaseSettings
@@ -314,7 +314,7 @@ class Settings(BaseSettings):
             max_output_size=self.max_output_size,
         )
 
-    model_config = {
+    model_config: ClassVar[dict] = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
     }

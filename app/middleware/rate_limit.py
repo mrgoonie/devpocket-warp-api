@@ -7,7 +7,7 @@ to prevent abuse and ensure fair usage of the API.
 
 import time
 from collections import defaultdict, deque
-from typing import Any
+from typing import Any, ClassVar
 
 from fastapi import HTTPException, Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -98,7 +98,7 @@ class RateLimitConfig:
     """Rate limiting configuration for different endpoints and user types."""
 
     # Default rate limits (requests per minute)
-    DEFAULT_LIMITS = {
+    DEFAULT_LIMITS: ClassVar[dict[str, int]] = {
         "global": 1000,  # Global limit per IP
         "auth": 10,  # Authentication endpoints
         "api": 100,  # General API endpoints
@@ -107,7 +107,7 @@ class RateLimitConfig:
     }
 
     # Rate limits by subscription tier
-    TIER_LIMITS = {
+    TIER_LIMITS: ClassVar[dict[str, dict[str, int]]] = {
         "free": {
             "api": 60,  # 60 requests per minute
             "ai": 10,  # 10 AI requests per minute

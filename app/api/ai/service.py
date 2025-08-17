@@ -950,27 +950,27 @@ class AIService:
 
     def _extract_solutions(self, content: str) -> list[dict[str, str]]:
         """Extract solutions from error analysis."""
-        solutions = []
         lines = content.split("\n")
 
-        for line in lines:
-            if any(word in line.lower() for word in ["solution", "fix", "try"]):
-                solutions.append(
-                    {
-                        "solution": line.strip(),
-                        "description": "Suggested solution",
-                    }
-                )
+        solutions = [
+            {
+                "solution": line.strip(),
+                "description": "Suggested solution",
+            }
+            for line in lines
+            if any(word in line.lower() for word in ["solution", "fix", "try"])
+        ]
 
         return solutions[:5]  # Limit to 5 solutions
 
     def _extract_prevention_tips(self, content: str) -> list[str]:
         """Extract prevention tips from analysis."""
-        tips = []
         lines = content.split("\n")
 
-        for line in lines:
-            if any(word in line.lower() for word in ["prevent", "avoid", "tip"]):
-                tips.append(line.strip())
+        tips = [
+            line.strip()
+            for line in lines
+            if any(word in line.lower() for word in ["prevent", "avoid", "tip"])
+        ]
 
         return tips[:3]  # Limit to 3 tips

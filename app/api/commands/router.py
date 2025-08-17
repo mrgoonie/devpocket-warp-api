@@ -366,7 +366,7 @@ async def export_commands(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to export commands",
-        )
+        ) from e
 
 
 # Analysis and Insights Endpoints
@@ -434,7 +434,7 @@ async def get_command_patterns(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to analyze command patterns",
-        )
+        ) from e
 
 
 @router.get(
@@ -523,7 +523,7 @@ async def get_performance_insights(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to generate performance insights",
-        )
+        ) from e
 
 
 # Utility and Health Endpoints
@@ -637,4 +637,4 @@ async def get_command_summary(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to generate command summary",
-        )
+        ) from e

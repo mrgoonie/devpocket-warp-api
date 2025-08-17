@@ -201,14 +201,14 @@ async def register_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User with this email or username already exists",
-        )
+        ) from e
     except Exception as e:
         await db.rollback()
         logger.error(f"Registration error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Registration failed. Please try again.",
-        )
+        ) from e
 
 
 @router.post(
@@ -309,7 +309,7 @@ async def login_user(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Login failed. Please try again.",
-        )
+        ) from e
 
 
 @router.post(
@@ -380,7 +380,7 @@ async def refresh_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not refresh token",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from e
 
 
 @router.post(
@@ -521,7 +521,7 @@ async def reset_password(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Password reset failed. Please try again.",
-        )
+        ) from e
 
 
 @router.post(
@@ -565,7 +565,7 @@ async def change_password(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Password change failed. Please try again.",
-        )
+        ) from e
 
 
 # Account Management Endpoints

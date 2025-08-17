@@ -6,6 +6,7 @@ and password management with comprehensive validation.
 """
 
 from datetime import datetime
+from typing import ClassVar
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -210,7 +211,7 @@ class ErrorResponse(BaseModel):
     error: dict = Field(..., description="Error details")
 
     class Config:
-        schema_extra = {
+        schema_extra: ClassVar[dict] = {
             "example": {
                 "error": {
                     "code": 400,

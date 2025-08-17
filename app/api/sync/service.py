@@ -54,7 +54,7 @@ class SyncService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to synchronize data",
-            )
+            ) from e
 
     async def upload_sync_data(self, user: User, data: dict[str, Any]) -> bool:
         """Upload synchronization data from device."""
@@ -78,7 +78,7 @@ class SyncService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to upload sync data",
-            )
+            ) from e
 
     async def get_sync_stats(self, user: User) -> SyncStats:
         """Get synchronization statistics."""
@@ -100,4 +100,4 @@ class SyncService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to get sync statistics",
-            )
+            ) from e

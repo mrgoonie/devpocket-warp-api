@@ -305,26 +305,23 @@ class OpenRouterService:
                     models_data = response.json()
 
                     # Filter and format models
-                    available_models = []
-                    for model in models_data.get("data", []):
-                        available_models.append(
-                            {
-                                "id": model.get("id"),
-                                "name": model.get("name", model.get("id")),
-                                "description": model.get("description", ""),
-                                "pricing": {
-                                    "prompt": model.get("pricing", {}).get(
-                                        "prompt", "0"
-                                    ),
-                                    "completion": model.get("pricing", {}).get(
-                                        "completion", "0"
-                                    ),
-                                },
-                                "context_length": model.get("context_length", 0),
-                                "architecture": model.get("architecture", {}),
-                                "top_provider": model.get("top_provider", {}),
-                            }
-                        )
+                    available_models = [
+                        {
+                            "id": model.get("id"),
+                            "name": model.get("name", model.get("id")),
+                            "description": model.get("description", ""),
+                            "pricing": {
+                                "prompt": model.get("pricing", {}).get("prompt", "0"),
+                                "completion": model.get("pricing", {}).get(
+                                    "completion", "0"
+                                ),
+                            },
+                            "context_length": model.get("context_length", 0),
+                            "architecture": model.get("architecture", {}),
+                            "top_provider": model.get("top_provider", {}),
+                        }
+                        for model in models_data.get("data", [])
+                    ]
 
                     return available_models
                 else:
@@ -443,7 +440,7 @@ class OpenRouterService:
         except httpx.TimeoutException:
             raise Exception(
                 "Request timeout - OpenRouter API is taking too long to respond"
-            )
+            ) from None
         except Exception as e:
             logger.error(f"OpenRouter completion request error: {e}")
             raise

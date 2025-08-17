@@ -223,7 +223,9 @@ class SSHClientService:
 
         except Exception as e:
             logger.error(f"Failed to load {key_type} key: {e}")
-            raise Exception(f"Invalid {key_type} key format or incorrect passphrase")
+            raise Exception(
+                f"Invalid {key_type} key format or incorrect passphrase"
+            ) from e
 
     async def get_host_key(
         self, host: str, port: int = 22, timeout: int = 10
@@ -307,7 +309,7 @@ class SSHClientService:
 
         except Exception as e:
             logger.error(f"Failed to generate {key_type} key pair: {e}")
-            raise Exception(f"Key generation failed: {e!s}")
+            raise Exception(f"Key generation failed: {e!s}") from e
 
     def validate_public_key(self, public_key: str) -> bool:
         """

@@ -3,7 +3,7 @@ Base model classes for DevPocket API.
 """
 
 from datetime import datetime
-from typing import Any
+from typing import Any, ClassVar
 from uuid import UUID as PyUUID
 from uuid import uuid4
 
@@ -16,7 +16,7 @@ class Base(DeclarativeBase):
     """Base class for all database models."""
 
     # Common type annotations
-    type_annotation_map = {
+    type_annotation_map: ClassVar[dict] = {
         datetime: DateTime(timezone=True),
     }
 

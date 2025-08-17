@@ -137,14 +137,14 @@ class SessionService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Session with this name already exists",
-            )
+            ) from e
         except Exception as e:
             await self.session.rollback()
             logger.error(f"Error creating session: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to create terminal session",
-            )
+            ) from e
 
     async def get_user_sessions(
         self,
@@ -184,7 +184,7 @@ class SessionService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to fetch terminal sessions",
-            )
+            ) from e
 
     async def get_session(self, user: User, session_id: str) -> SessionResponse:
         """Get a specific terminal session."""
@@ -272,7 +272,7 @@ class SessionService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to update terminal session",
-            )
+            ) from e
 
     async def terminate_session(
         self, user: User, session_id: str, force: bool = False
@@ -322,7 +322,7 @@ class SessionService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to terminate terminal session",
-            )
+            ) from e
 
     async def delete_session(self, user: User, session_id: str) -> bool:
         """Delete a terminal session."""
@@ -359,7 +359,7 @@ class SessionService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to delete terminal session",
-            )
+            ) from e
 
     async def execute_command(
         self, user: User, session_id: str, command: SessionCommand
@@ -395,7 +395,7 @@ class SessionService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to execute command",
-            )
+            ) from e
 
     async def get_session_history(
         self, user: User, session_id: str, limit: int = 100, offset: int = 0
@@ -416,21 +416,20 @@ class SessionService:
             )
 
             # Convert to history entries
-            entries = []
-            for cmd in commands:
-                entries.append(
-                    SessionHistoryEntry(
-                        id=cmd.id,
-                        timestamp=cmd.executed_at,
-                        entry_type="command",
-                        content=cmd.command,
-                        metadata={
-                            "exit_code": cmd.exit_code,
-                            "duration_ms": cmd.duration_ms,
-                            "working_directory": cmd.working_directory,
-                        },
-                    )
+            entries = [
+                SessionHistoryEntry(
+                    id=cmd.id,
+                    timestamp=cmd.executed_at,
+                    entry_type="command",
+                    content=cmd.command,
+                    metadata={
+                        "exit_code": cmd.exit_code,
+                        "duration_ms": cmd.duration_ms,
+                        "working_directory": cmd.working_directory,
+                    },
                 )
+                for cmd in commands
+            ]
 
             total_entries = await self.session_repo.count_session_commands(session_id)
 
@@ -449,7 +448,7 @@ class SessionService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to fetch session history",
-            )
+            ) from e
 
     async def search_sessions(
         self, user: User, search_request: SessionSearchRequest
@@ -497,7 +496,7 @@ class SessionService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to search terminal sessions",
-            )
+            ) from e
 
     async def get_session_stats(self, user: User) -> SessionStats:
         """Get terminal session statistics for user."""
@@ -554,7 +553,7 @@ class SessionService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to get session statistics",
-            )
+            ) from e
 
     async def check_session_health(
         self, user: User, session_id: str
@@ -601,7 +600,7 @@ class SessionService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to check session health",
-            )
+            ) from e
 
     # Private helper methods
 

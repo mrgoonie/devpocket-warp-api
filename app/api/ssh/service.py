@@ -88,14 +88,14 @@ class SSHProfileService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Profile with this name already exists",
-            )
+            ) from e
         except Exception as e:
             await self.session.rollback()
             logger.error(f"Error creating SSH profile: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to create SSH profile",
-            )
+            ) from e
 
     async def get_user_profiles(
         self,
@@ -128,7 +128,7 @@ class SSHProfileService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to fetch SSH profiles",
-            )
+            ) from e
 
     async def get_profile(self, user: User, profile_id: str) -> SSHProfileResponse:
         """Get a specific SSH profile."""
@@ -186,7 +186,7 @@ class SSHProfileService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to update SSH profile",
-            )
+            ) from e
 
     async def delete_profile(self, user: User, profile_id: str) -> bool:
         """Delete an SSH profile."""
@@ -213,7 +213,7 @@ class SSHProfileService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to delete SSH profile",
-            )
+            ) from e
 
     async def test_connection(
         self, user: User, test_request: SSHConnectionTestRequest
@@ -358,7 +358,7 @@ class SSHProfileService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to search SSH profiles",
-            )
+            ) from e
 
     async def get_profile_stats(self, user: User) -> SSHProfileStats:
         """Get SSH profile statistics for user."""
@@ -382,19 +382,18 @@ class SSHProfileService:
             ]
 
             # Get recent connections (simplified)
-            recent_connections = []
-            for profile in all_profiles[:10]:
-                if profile.last_connection_at:
-                    recent_connections.append(
-                        {
-                            "profile_id": profile.id,
-                            "profile_name": profile.name,
-                            "host": profile.host,
-                            "status": profile.last_connection_status,
-                            "timestamp": profile.last_connection_at.isoformat(),
-                            "success": profile.last_connection_status == "connected",
-                        }
-                    )
+            recent_connections = [
+                {
+                    "profile_id": profile.id,
+                    "profile_name": profile.name,
+                    "host": profile.host,
+                    "status": profile.last_connection_status,
+                    "timestamp": profile.last_connection_at.isoformat(),
+                    "success": profile.last_connection_status == "connected",
+                }
+                for profile in all_profiles[:10]
+                if profile.last_connection_at
+            ]
 
             return SSHProfileStats(
                 total_profiles=len(all_profiles),
@@ -409,7 +408,7 @@ class SSHProfileService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to get SSH profile statistics",
-            )
+            ) from e
 
 
 class SSHKeyService:
@@ -457,14 +456,14 @@ class SSHKeyService:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="SSH key with this name or fingerprint already exists",
-            )
+            ) from e
         except Exception as e:
             await self.session.rollback()
             logger.error(f"Error creating SSH key: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to create SSH key",
-            )
+            ) from e
 
     async def get_user_keys(
         self,
@@ -494,7 +493,7 @@ class SSHKeyService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to fetch SSH keys",
-            )
+            ) from e
 
     async def get_key(self, user: User, key_id: str) -> SSHKeyResponse:
         """Get a specific SSH key."""
@@ -552,7 +551,7 @@ class SSHKeyService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to update SSH key",
-            )
+            ) from e
 
     async def delete_key(self, user: User, key_id: str) -> bool:
         """Delete an SSH key."""
@@ -579,7 +578,7 @@ class SSHKeyService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to delete SSH key",
-            )
+            ) from e
 
     async def search_keys(
         self, user: User, search_request: SSHKeySearchRequest
@@ -622,7 +621,7 @@ class SSHKeyService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to search SSH keys",
-            )
+            ) from e
 
     async def get_key_stats(self, user: User) -> SSHKeyStats:
         """Get SSH key statistics for user."""
@@ -648,4 +647,4 @@ class SSHKeyService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Failed to get SSH key statistics",
-            )
+            ) from e

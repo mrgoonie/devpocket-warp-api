@@ -4,7 +4,7 @@ WebSocket message protocols and data structures.
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Union, cast
+from typing import Any, ClassVar, Union, cast
 
 from pydantic import BaseModel, Field
 
@@ -43,7 +43,7 @@ class TerminalMessage(BaseModel):
 
     class Config:
         use_enum_values = True
-        json_encoders = {datetime: lambda v: v.isoformat()}
+        json_encoders: ClassVar[dict] = {datetime: lambda v: v.isoformat()}
 
 
 class InputMessage(TerminalMessage):
@@ -239,7 +239,7 @@ def parse_message(data: dict[str, Any]) -> ParsedMessage:
     try:
         message_type = MessageType(data.get("type"))
     except ValueError:
-        raise ValueError(f"Invalid message type: {data.get('type')}")
+        raise ValueError(f"Invalid message type: {data.get('type')}") from None
 
     # Map message types to their specific classes
     message_classes = {
@@ -261,7 +261,7 @@ def parse_message(data: dict[str, Any]) -> ParsedMessage:
         result = message_class(**data)
         return cast(ParsedMessage, result)
     except Exception as e:
-        raise ValueError(f"Invalid message format for {message_type}: {e!s}")
+        raise ValueError(f"Invalid message format for {message_type}: {e!s}") from e
 
 
 def create_output_message(session_id: str, data: str) -> OutputMessage:

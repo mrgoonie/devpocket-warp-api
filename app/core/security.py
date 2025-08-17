@@ -145,7 +145,7 @@ def verify_token(token: str, token_type: str = "access") -> dict[str, Any]:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Could not validate credentials: {e!s}",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from e
 
 
 def generate_session_id() -> str:

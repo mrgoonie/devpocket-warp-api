@@ -441,9 +441,7 @@ class TestLoadTesting:
                 app=performance_app, base_url="http://test"
             ) as client:
                 # Simulate 50 concurrent users making requests
-                tasks = []
-                for _i in range(50):
-                    tasks.append(client.get("/api/auth/profile"))
+                tasks = [client.get("/api/auth/profile") for _i in range(50)]
 
                 responses = await asyncio.gather(*tasks, return_exceptions=True)
                 return responses
@@ -491,9 +489,7 @@ class TestLoadTesting:
             initial_memory = process.memory_info().rss
 
             # Simulate memory-intensive operations
-            large_data = []
-            for _i in range(1000):
-                large_data.append({"data": "x" * 1000})  # 1KB per item
+            large_data = [{"data": "x" * 1000} for _i in range(1000)]  # 1KB per item
 
             final_memory = process.memory_info().rss
             memory_increase = final_memory - initial_memory

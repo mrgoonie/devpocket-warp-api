@@ -144,7 +144,7 @@ async def get_current_user(
         raise
     except Exception as e:
         logger.error(f"Authentication error: {e}")
-        raise AuthenticationError("Authentication failed")
+        raise AuthenticationError("Authentication failed") from e
 
 
 async def get_current_active_user(

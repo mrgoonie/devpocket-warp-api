@@ -5,6 +5,8 @@ Configures Cross-Origin Resource Sharing (CORS) settings to allow
 the Flutter mobile app and web clients to access the API securely.
 """
 
+from typing import ClassVar
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -122,7 +124,7 @@ class CORSConfig:
     """CORS configuration helper class."""
 
     # Standard headers that mobile apps typically need
-    MOBILE_HEADERS = [
+    MOBILE_HEADERS: ClassVar[list[str]] = [
         "Accept",
         "Accept-Language",
         "Content-Language",
@@ -135,7 +137,7 @@ class CORSConfig:
     ]
 
     # Methods commonly used by mobile apps
-    MOBILE_METHODS = [
+    MOBILE_METHODS: ClassVar[list[str]] = [
         "GET",
         "POST",
         "PUT",
@@ -146,7 +148,7 @@ class CORSConfig:
     ]
 
     # Headers to expose to mobile clients
-    EXPOSED_HEADERS = [
+    EXPOSED_HEADERS: ClassVar[list[str]] = [
         "X-Request-ID",
         "X-API-Version",
         "X-RateLimit-Limit",
