@@ -97,6 +97,7 @@ When implementation begins:
 ### Pre-commit/Push Rules
 - Run `./scripts/format_code.sh` before commit
 - Run `./scripts/run_tests.sh` before push (DO NOT ignore failed tests just to pass the build or github actions)
+- Always run code linting, coverage tests (similar to GitHub Actions test), and fix all the issues before pushing the code
 - Keep commits focused on the actual code changes
 - **DO NOT** commit and push any confidential information (such as dotenv files, API keys, database credentials, etc.) to git repository!
 - NEVER automatically add AI attribution signatures like:
