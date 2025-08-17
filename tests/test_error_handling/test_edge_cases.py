@@ -11,12 +11,13 @@ Tests comprehensive error handling including:
 - Graceful degradation
 """
 
-import pytest
 import asyncio
-import httpx
 from unittest.mock import AsyncMock, patch
-from sqlalchemy.exc import SQLAlchemyError
+
+import httpx
+import pytest
 import redis.exceptions
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.auth.security import create_access_token
 

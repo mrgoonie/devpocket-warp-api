@@ -4,27 +4,26 @@ Main FastAPI application for DevPocket API.
 
 from contextlib import asynccontextmanager
 from datetime import datetime
+
+import redis.asyncio as aioredis
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
-import redis.asyncio as aioredis
 
-from app.auth.security import set_redis_client
-from app.auth.router import router as auth_router
-from app.api.ssh import router as ssh_router
-from app.api.sessions import router as sessions_router
-from app.api.commands import router as commands_router
 from app.api.ai import router as ai_router
-from app.api.sync import router as sync_router
+from app.api.commands import router as commands_router
 from app.api.profile import router as profile_router
-from app.websocket import websocket_router
-from app.websocket.manager import connection_manager
+from app.api.sessions import router as sessions_router
+from app.api.ssh import router as ssh_router
+from app.api.sync import router as sync_router
+from app.auth.router import router as auth_router
+from app.auth.security import set_redis_client
 from app.core.config import settings
-from app.core.logging import logger, log_error
+from app.core.logging import log_error, logger
 from app.db.database import (
+    check_database_connection,
     db_manager,
     init_database,
-    check_database_connection,
 )
 from app.middleware import (
     AuthenticationMiddleware,
@@ -32,6 +31,8 @@ from app.middleware import (
     SecurityHeadersMiddleware,
     setup_cors,
 )
+from app.websocket import websocket_router
+from app.websocket.manager import connection_manager
 
 
 @asynccontextmanager

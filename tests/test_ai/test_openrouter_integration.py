@@ -9,18 +9,19 @@ Tests AI service functionality with OpenRouter API mocking including:
 - Error handling and rate limiting
 """
 
-import pytest
-import httpx
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from app.services.openrouter import OpenRouterService
-from app.api.ai.service import AIService
+import httpx
+import pytest
+
 from app.api.ai.schemas import (
-    CommandSuggestionRequest,
-    CommandSuggestionResponse,
     CommandExplanationRequest,
     CommandExplanationResponse,
+    CommandSuggestionRequest,
+    CommandSuggestionResponse,
 )
+from app.api.ai.service import AIService
+from app.services.openrouter import OpenRouterService
 
 
 class TestOpenRouterService:

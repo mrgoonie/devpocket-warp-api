@@ -9,13 +9,13 @@ Tests cover:
 - Performance and reliability under load
 """
 
-import pytest
-import subprocess
 import os
+import subprocess
 import time
 from unittest.mock import patch
+
 import asyncpg
-from typing import Dict, List
+import pytest
 
 
 @pytest.mark.integration
@@ -39,15 +39,15 @@ class TestEndToEndWorkflows:
         self,
         script_runner,
         script_name: str,
-        args: List[str],
-        env: Dict[str, str],
+        args: list[str],
+        env: dict[str, str],
         timeout: int = 60,
     ) -> subprocess.CompletedProcess:
         """Run script with timeout and environment."""
         with patch.dict(os.environ, env):
             return script_runner.run_script(script_name, args, timeout=timeout)
 
-    async def get_table_counts(self, db_connection) -> Dict[str, int]:
+    async def get_table_counts(self, db_connection) -> dict[str, int]:
         """Get row counts for all tables."""
         tables = [
             "users",

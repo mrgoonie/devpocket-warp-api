@@ -4,10 +4,11 @@ Database utilities for DevPocket API.
 """
 
 import asyncio
-import asyncpg
-import sys
 import os
+import sys
 from pathlib import Path
+
+import asyncpg
 from dotenv import load_dotenv
 
 # Add the project root to the path
@@ -155,11 +156,9 @@ async def reset_database():
     """Reset the database by dropping and recreating it."""
     logger.info("Resetting database...")
 
-    if await drop_database():
-        if await create_database():
-            if await init_database():
-                logger.info("Database reset completed successfully")
-                return True
+    if await drop_database() and await create_database() and await init_database():
+        logger.info("Database reset completed successfully")
+        return True
 
     logger.error("Database reset failed")
     return False

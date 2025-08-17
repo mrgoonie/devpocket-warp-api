@@ -2,10 +2,11 @@
 User profile and settings service for DevPocket API.
 """
 
-from datetime import datetime, timezone
-from typing import Dict, Any
-from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import UTC, datetime
+from typing import Any
+
 from fastapi import HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import logger
 from app.models.user import User
@@ -15,9 +16,9 @@ from app.repositories.user import UserRepository
 
 # from app.repositories.user_settings import UserSettingsRepository
 from .schemas import (
+    UserProfileResponse,
     UserProfileUpdate,
     UserSettings,
-    UserProfileResponse,
     UserSettingsResponse,
 )
 
@@ -140,14 +141,14 @@ class ProfileService:
                 detail="Failed to delete user account",
             )
 
-    async def get_account_stats(self, user: User) -> Dict[str, Any]:
+    async def get_account_stats(self, user: User) -> dict[str, Any]:
         """Get user account statistics."""
         try:
             stats = await self.user_repo.get_user_stats(str(user.id))
 
             return {
                 "profile_completeness": self._calculate_profile_completeness(user),
-                "account_age_days": (datetime.now(timezone.utc) - user.created_at).days,
+                "account_age_days": (datetime.now(UTC) - user.created_at).days,
                 "total_sessions": stats.get("total_sessions", 0),
                 "total_commands": stats.get("total_commands", 0),
                 "ssh_profiles": stats.get("ssh_profiles", 0),

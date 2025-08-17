@@ -2,16 +2,16 @@
 Test factories for DevPocket API models.
 """
 
-from .user_factory import (
-    UserFactory,
-    VerifiedUserFactory,
-    PremiumUserFactory,
-    UserSettingsFactory,
-)
-from .session_factory import SessionFactory
-from .ssh_factory import SSHProfileFactory, SSHKeyFactory
 from .command_factory import CommandFactory
+from .session_factory import SessionFactory
+from .ssh_factory import SSHKeyFactory, SSHProfileFactory
 from .sync_factory import SyncDataFactory
+from .user_factory import (
+    PremiumUserFactory,
+    UserFactory,
+    UserSettingsFactory,
+    VerifiedUserFactory,
+)
 
 __all__ = [
     "UserFactory",

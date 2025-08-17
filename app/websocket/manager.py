@@ -5,22 +5,24 @@ Manages WebSocket connections, message routing, and session lifecycle.
 """
 
 import asyncio
+import contextlib
 import uuid
 from datetime import datetime
-from typing import Dict, Optional, Set
-from fastapi import WebSocket
+
 import redis.asyncio as aioredis
+from fastapi import WebSocket
 
 from app.core.logging import logger
 from app.db.database import AsyncSessionLocal
 from app.repositories.session import SessionRepository
+
 from .protocols import (
-    TerminalMessage,
+    HeartbeatMessage,
     MessageType,
-    parse_message,
+    TerminalMessage,
     create_error_message,
     create_status_message,
-    HeartbeatMessage,
+    parse_message,
 )
 from .terminal import TerminalSession
 
@@ -41,7 +43,7 @@ class Connection:
         self.device_id = device_id
         self.connected_at = datetime.now()
         self.last_ping = datetime.now()
-        self.terminal_sessions: Dict[str, TerminalSession] = {}
+        self.terminal_sessions: dict[str, TerminalSession] = {}
 
     async def send_message(self, message: TerminalMessage) -> bool:
         """
@@ -76,11 +78,11 @@ class Connection:
         """Add a terminal session to this connection."""
         self.terminal_sessions[session.session_id] = session
 
-    def remove_terminal_session(self, session_id: str) -> Optional[TerminalSession]:
+    def remove_terminal_session(self, session_id: str) -> TerminalSession | None:
         """Remove and return a terminal session."""
         return self.terminal_sessions.pop(session_id, None)
 
-    def get_terminal_session(self, session_id: str) -> Optional[TerminalSession]:
+    def get_terminal_session(self, session_id: str) -> TerminalSession | None:
         """Get a terminal session by ID."""
         return self.terminal_sessions.get(session_id)
 
@@ -92,12 +94,12 @@ class Connection:
 class ConnectionManager:
     """Manages all WebSocket connections and routing."""
 
-    def __init__(self, redis_client: Optional[aioredis.Redis] = None):
-        self.connections: Dict[str, Connection] = {}
-        self.user_connections: Dict[str, Set[str]] = {}  # user_id -> connection_ids
-        self.session_connections: Dict[str, str] = {}  # session_id -> connection_id
+    def __init__(self, redis_client: aioredis.Redis | None = None):
+        self.connections: dict[str, Connection] = {}
+        self.user_connections: dict[str, set[str]] = {}  # user_id -> connection_ids
+        self.session_connections: dict[str, str] = {}  # session_id -> connection_id
         self.redis = redis_client
-        self._cleanup_task: Optional[asyncio.Task] = None
+        self._cleanup_task: asyncio.Task | None = None
 
     async def start_background_tasks(self) -> None:
         """Start background tasks for connection management."""
@@ -110,10 +112,8 @@ class ConnectionManager:
         """Stop background tasks."""
         if self._cleanup_task and not self._cleanup_task.done():
             self._cleanup_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._cleanup_task
-            except asyncio.CancelledError:
-                pass
 
     async def connect(self, websocket: WebSocket, user_id: str, device_id: str) -> str:
         """
@@ -190,7 +190,7 @@ class ConnectionManager:
         except Exception as e:
             logger.error(f"Error during disconnect cleanup: {e}")
 
-    async def handle_message(self, connection_id: str, message_data: Dict) -> None:
+    async def handle_message(self, connection_id: str, message_data: dict) -> None:
         """
         Handle incoming WebSocket message.
 

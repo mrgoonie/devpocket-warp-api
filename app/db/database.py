@@ -2,7 +2,9 @@
 Database connection and session management for DevPocket API.
 """
 
-from typing import Any, AsyncGenerator
+from collections.abc import AsyncGenerator
+from typing import Any
+
 import asyncpg
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -10,6 +12,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import DeclarativeBase
+
 from app.core.config import settings
 from app.core.logging import logger
 
@@ -107,15 +110,14 @@ class DatabaseManager:
 
     async def execute_transaction(self, queries: list) -> bool:
         """Execute multiple queries in a transaction."""
-        async with self._pool.acquire() as connection:
-            async with connection.transaction():
-                try:
-                    for query, args in queries:
-                        await connection.execute(query, *args)
-                    return True
-                except Exception as e:
-                    logger.error(f"Database transaction error: {e}")
-                    raise
+        async with self._pool.acquire() as connection, connection.transaction():
+            try:
+                for query, args in queries:
+                    await connection.execute(query, *args)
+                return True
+            except Exception as e:
+                logger.error(f"Database transaction error: {e}")
+                raise
 
     @property
     def pool(self) -> asyncpg.Pool:

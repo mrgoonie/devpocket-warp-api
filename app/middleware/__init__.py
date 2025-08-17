@@ -6,9 +6,9 @@ security headers, and other cross-cutting concerns.
 """
 
 from .auth import AuthenticationMiddleware
+from .cors import setup_cors
 from .rate_limit import RateLimitMiddleware
 from .security import SecurityHeadersMiddleware
-from .cors import setup_cors
 
 __all__ = [
     "AuthenticationMiddleware",

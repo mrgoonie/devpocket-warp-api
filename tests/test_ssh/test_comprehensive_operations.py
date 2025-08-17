@@ -10,9 +10,10 @@ Tests SSH and PTY functionality including:
 - Error handling and recovery
 """
 
-import pytest
-import paramiko
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import paramiko
+import pytest
 
 from app.services.ssh_client import SSHClient, SSHConnectionPool
 from app.websocket.ssh_handler import SSHWebSocketHandler
@@ -356,7 +357,7 @@ class TestSSHConnectionPool:
 
             # Act - Acquire more than max connections
             connections = []
-            for i in range(10):  # More than max_connections=5
+            for _i in range(10):  # More than max_connections=5
                 conn = await connection_pool.acquire(profile_id)
                 connections.append(conn)
 

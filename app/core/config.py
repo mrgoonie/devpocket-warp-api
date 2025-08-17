@@ -2,7 +2,8 @@
 Configuration settings for DevPocket API.
 """
 
-from typing import Any, List, Union
+from typing import Any
+
 from pydantic import BaseModel, field_validator
 from pydantic_settings import BaseSettings
 
@@ -39,9 +40,9 @@ class JWTSettings(BaseModel):
 class CORSSettings(BaseModel):
     """CORS configuration settings."""
 
-    origins: List[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
+    origins: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
     allow_credentials: bool = True
-    allow_methods: List[str] = [
+    allow_methods: list[str] = [
         "GET",
         "POST",
         "PUT",
@@ -49,7 +50,7 @@ class CORSSettings(BaseModel):
         "OPTIONS",
         "PATCH",
     ]
-    allow_headers: List[str] = ["*"]
+    allow_headers: list[str] = ["*"]
 
 
 class OpenRouterSettings(BaseModel):
@@ -106,7 +107,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     redis_host: str = "localhost"
     redis_port: int = 6379
-    redis_db: Union[int, str] = 0
+    redis_db: int | str = 0
 
     # JWT settings
     jwt_secret_key: str = "development-secret-key-change-in-production"
@@ -115,12 +116,12 @@ class Settings(BaseSettings):
     jwt_refresh_expiration_days: int = 30
 
     # CORS settings
-    cors_origins: Union[
-        str, List[str]
+    cors_origins: str | list[
+        str
     ] = "http://localhost:3000,http://127.0.0.1:3000,https://devpocket.app"
     cors_allow_credentials: bool = True
-    cors_allow_methods: Union[str, List[str]] = "GET,POST,PUT,DELETE,OPTIONS,PATCH"
-    cors_allow_headers: Union[str, List[str]] = "*"
+    cors_allow_methods: str | list[str] = "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+    cors_allow_headers: str | list[str] = "*"
 
     # OpenRouter settings
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
@@ -148,7 +149,7 @@ class Settings(BaseSettings):
 
     # Development settings
     reload: bool = True
-    workers: Union[int, str] = 1
+    workers: int | str = 1
 
     # Additional secret key (for general encryption)
     secret_key: str = ""

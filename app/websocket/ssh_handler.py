@@ -6,12 +6,14 @@ Integrates SSH connections with PTY support for real-time terminal communication
 
 import asyncio
 import threading
-from typing import Optional, Callable, Awaitable, Dict, Any
+from collections.abc import Awaitable, Callable
+from typing import Any
+
 import paramiko
-from paramiko import SSHClient, Channel
+from paramiko import Channel, SSHClient
 
 from app.core.logging import logger
-from app.models.ssh_profile import SSHProfile, SSHKey
+from app.models.ssh_profile import SSHKey, SSHProfile
 from app.services.ssh_client import SSHClientService
 
 
@@ -26,7 +28,7 @@ class SSHHandler:
     def __init__(
         self,
         ssh_profile: SSHProfile,
-        ssh_key: Optional[SSHKey],
+        ssh_key: SSHKey | None,
         output_callback: Callable[[str], Awaitable[None]],
         rows: int = 24,
         cols: int = 80,
@@ -48,8 +50,8 @@ class SSHHandler:
         self.cols = cols
 
         # SSH connection components
-        self.ssh_client: Optional[SSHClient] = None
-        self.ssh_channel: Optional[Channel] = None
+        self.ssh_client: SSHClient | None = None
+        self.ssh_channel: Channel | None = None
         self.ssh_service = SSHClientService()
 
         # Connection state
@@ -57,13 +59,13 @@ class SSHHandler:
         self._running = False
 
         # Threading for SSH I/O
-        self._output_thread: Optional[threading.Thread] = None
+        self._output_thread: threading.Thread | None = None
         self._stop_event = threading.Event()
 
         # Server information
-        self.server_info: Dict[str, Any] = {}
+        self.server_info: dict[str, Any] = {}
 
-    async def connect(self) -> Dict[str, Any]:
+    async def connect(self) -> dict[str, Any]:
         """
         Establish SSH connection with PTY support.
 
@@ -98,7 +100,7 @@ class SSHHandler:
                 except Exception as e:
                     return {
                         "success": False,
-                        "message": f"Failed to load SSH key: {str(e)}",
+                        "message": f"Failed to load SSH key: {e!s}",
                         "error": "key_load_failed",
                     }
             elif self.ssh_profile.auth_method == "password":
@@ -164,7 +166,7 @@ class SSHHandler:
             await self.disconnect()
             return {
                 "success": False,
-                "message": f"Authentication failed: {str(e)}",
+                "message": f"Authentication failed: {e!s}",
                 "error": "authentication_failed",
             }
         except paramiko.SSHException as e:
@@ -172,7 +174,7 @@ class SSHHandler:
             await self.disconnect()
             return {
                 "success": False,
-                "message": f"SSH connection failed: {str(e)}",
+                "message": f"SSH connection failed: {e!s}",
                 "error": "connection_failed",
             }
         except Exception as e:
@@ -180,7 +182,7 @@ class SSHHandler:
             await self.disconnect()
             return {
                 "success": False,
-                "message": f"Connection failed: {str(e)}",
+                "message": f"Connection failed: {e!s}",
                 "error": "unexpected_error",
             }
 
@@ -365,7 +367,7 @@ class SSHHandler:
         return self._connected and self.ssh_channel is not None
 
     @property
-    def connection_info(self) -> Dict[str, Any]:
+    def connection_info(self) -> dict[str, Any]:
         """Get connection information."""
         return {
             "host": self.ssh_profile.host,

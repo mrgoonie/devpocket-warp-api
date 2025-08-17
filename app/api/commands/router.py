@@ -5,39 +5,41 @@ Handles all command-related endpoints including history, analytics,
 search operations, and command insights.
 """
 
-from typing import Annotated, List, Optional, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from datetime import UTC
+from typing import Annotated, Any
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_active_user
 from app.core.logging import logger
 from app.db.database import get_db
 from app.models.user import User
+
 from .schemas import (
-    # Command schemas
-    CommandResponse,
-    CommandListResponse,
-    CommandSearchRequest,
-    CommandHistoryResponse,
-    # Analytics schemas
-    CommandUsageStats,
-    SessionCommandStats,
-    FrequentCommandsResponse,
-    CommandMetrics,
-    # Suggestion schemas
-    CommandSuggestion,
-    CommandSuggestionRequest,
-    # Export schemas
-    CommandExportRequest,
-    CommandExportResponse,
     # Batch operations
     BulkCommandOperation,
     BulkCommandResponse,
+    # Export schemas
+    CommandExportRequest,
+    CommandExportResponse,
+    CommandHistoryResponse,
+    CommandListResponse,
+    CommandMetrics,
+    # Command schemas
+    CommandResponse,
+    CommandSearchRequest,
+    # Suggestion schemas
+    CommandSuggestion,
+    CommandSuggestionRequest,
+    # Analytics schemas
+    CommandUsageStats,
+    FrequentCommandsResponse,
     # Common schemas
     MessageResponse,
+    SessionCommandStats,
 )
 from .service import CommandService
-
 
 # Create router instance
 router = APIRouter(
@@ -65,7 +67,7 @@ router = APIRouter(
 async def get_command_history(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-    session_id: Optional[str] = Query(None, description="Filter by session ID"),
+    session_id: str | None = Query(None, description="Filter by session ID"),
     offset: int = Query(default=0, ge=0, description="Pagination offset"),
     limit: int = Query(default=100, ge=1, le=500, description="Pagination limit"),
 ) -> CommandHistoryResponse:
@@ -157,15 +159,15 @@ async def get_usage_stats(
 
 @router.get(
     "/stats/sessions",
-    response_model=List[SessionCommandStats],
+    response_model=list[SessionCommandStats],
     summary="Get Session Statistics",
     description="Get command statistics grouped by session",
 )
 async def get_session_stats(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-    session_id: Optional[str] = Query(None, description="Filter by specific session"),
-) -> List[SessionCommandStats]:
+    session_id: str | None = Query(None, description="Filter by specific session"),
+) -> list[SessionCommandStats]:
     """Get command statistics grouped by session."""
     service = CommandService(db)
     return await service.get_session_command_stats(current_user, session_id=session_id)
@@ -210,7 +212,7 @@ async def get_command_metrics(
 
 @router.post(
     "/suggest",
-    response_model=List[CommandSuggestion],
+    response_model=list[CommandSuggestion],
     summary="Get Command Suggestions",
     description="Get intelligent command suggestions based on context and user history",
 )
@@ -218,7 +220,7 @@ async def get_command_suggestions(
     suggestion_request: CommandSuggestionRequest,
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-) -> List[CommandSuggestion]:
+) -> list[CommandSuggestion]:
     """Get intelligent command suggestions based on context and user history."""
     service = CommandService(db)
     return await service.get_command_suggestions(current_user, suggestion_request)
@@ -325,8 +327,8 @@ async def export_commands(
         # This is a simplified implementation
         # In production, this would create a background job for large exports
 
-        from datetime import datetime, timezone
         import uuid
+        from datetime import datetime
 
         export_id = str(uuid.uuid4())
 
@@ -355,10 +357,8 @@ async def export_commands(
             status="completed",
             total_commands=len(commands),
             file_url=f"/api/commands/exports/{export_id}/download",
-            expires_at=datetime.now(timezone.utc).replace(
-                hour=23, minute=59, second=59
-            ),
-            created_at=datetime.now(timezone.utc),
+            expires_at=datetime.now(UTC).replace(hour=23, minute=59, second=59),
+            created_at=datetime.now(UTC),
         )
 
     except Exception as e:
@@ -456,7 +456,7 @@ async def get_performance_insights(
         metrics = await service.get_command_metrics(current_user)
 
         # Analyze performance
-        insights: Dict[str, Any] = {
+        insights: dict[str, Any] = {
             "execution_performance": {
                 "average_duration_ms": stats.average_duration_ms,
                 "median_duration_ms": stats.median_duration_ms,

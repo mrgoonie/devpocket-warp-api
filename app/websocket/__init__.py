@@ -6,9 +6,9 @@ including PTY support, SSH integration, and terminal emulation.
 """
 
 from .manager import ConnectionManager
-from .terminal import TerminalSession
-from .protocols import TerminalMessage, MessageType
+from .protocols import MessageType, TerminalMessage
 from .router import websocket_router
+from .terminal import TerminalSession
 
 __all__ = [
     "ConnectionManager",

@@ -10,17 +10,17 @@ Tests multi-device synchronization functionality including:
 - Offline/online sync scenarios
 """
 
-import pytest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from unittest.mock import AsyncMock, patch
 
+import pytest
 import redis.asyncio as aioredis
 
-from app.api.sync.service import SyncService
 from app.api.sync.schemas import (
-    SyncConflictResponse,
     DeviceRegistration,
+    SyncConflictResponse,
 )
+from app.api.sync.service import SyncService
 from app.models.sync import SyncData
 from app.repositories.sync import SyncRepository
 
@@ -54,7 +54,7 @@ class TestSyncService:
             "data": {
                 "command": "ls -la",
                 "output": "file1.txt\nfile2.txt",
-                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             },
             "version": 1,
             "source_device_id": "device-456",
@@ -231,7 +231,7 @@ class TestCommandHistorySync:
         # Arrange
         user_id = "user-123"
         device_id = "device-456"
-        last_sync = datetime.now(timezone.utc) - timedelta(hours=1)
+        last_sync = datetime.now(UTC) - timedelta(hours=1)
 
         # Act
         result = await command_sync_service.get_commands_since(

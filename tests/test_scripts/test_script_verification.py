@@ -5,9 +5,10 @@ These tests verify that all shell scripts work correctly with the existing
 project infrastructure and dependencies.
 """
 
-import pytest
-from unittest.mock import patch, MagicMock
 import os
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 @pytest.mark.integration

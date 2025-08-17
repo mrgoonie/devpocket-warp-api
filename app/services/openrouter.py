@@ -5,13 +5,14 @@ Provides BYOK (Bring Your Own Key) integration with OpenRouter API
 for AI-powered command suggestions, explanations, and error analysis.
 """
 
-from typing import Optional, Dict, Any, List
-from datetime import datetime, timedelta, timezone
-import httpx
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
-from app.core.logging import logger
+import httpx
+
 from app.core.config import settings
+from app.core.logging import logger
 
 
 @dataclass
@@ -20,7 +21,7 @@ class AIResponse:
 
     content: str
     model: str
-    usage: Dict[str, int]
+    usage: dict[str, int]
     finish_reason: str
     response_time_ms: int
     timestamp: datetime
@@ -32,8 +33,8 @@ class AIError:
 
     error_type: str
     message: str
-    code: Optional[int]
-    details: Optional[Dict[str, Any]]
+    code: int | None
+    details: dict[str, Any] | None
     timestamp: datetime
 
 
@@ -55,11 +56,11 @@ class OpenRouterService:
         }
 
         # Rate limiting (simple in-memory store)
-        self._rate_limits: Dict[str, List[datetime]] = {}
+        self._rate_limits: dict[str, list[datetime]] = {}
         self._rate_limit_window = 60  # seconds
         self._rate_limit_requests = 50  # requests per window
 
-    async def validate_api_key(self, api_key: str) -> Dict[str, Any]:
+    async def validate_api_key(self, api_key: str) -> dict[str, Any]:
         """
         Validate OpenRouter API key and get account information.
 
@@ -110,36 +111,36 @@ class OpenRouterService:
                         "models_available": len(models_data.get("data", [])),
                         "account_info": account_info,
                         "recommended_models": list(self.models.values()),
-                        "timestamp": datetime.now(timezone.utc),
+                        "timestamp": datetime.now(UTC),
                     }
                 else:
                     return {
                         "valid": False,
                         "error": f"API key validation failed: {response.status_code}",
                         "details": response.text[:200],
-                        "timestamp": datetime.now(timezone.utc),
+                        "timestamp": datetime.now(UTC),
                     }
 
         except httpx.TimeoutException:
             return {
                 "valid": False,
                 "error": "Request timeout - OpenRouter API is unreachable",
-                "timestamp": datetime.now(timezone.utc),
+                "timestamp": datetime.now(UTC),
             }
         except Exception as e:
             logger.error(f"OpenRouter API key validation error: {e}")
             return {
                 "valid": False,
-                "error": f"Validation error: {str(e)}",
-                "timestamp": datetime.now(timezone.utc),
+                "error": f"Validation error: {e!s}",
+                "timestamp": datetime.now(UTC),
             }
 
     async def suggest_command(
         self,
         api_key: str,
         description: str,
-        context: Optional[Dict[str, Any]] = None,
-        model: Optional[str] = None,
+        context: dict[str, Any] | None = None,
+        model: str | None = None,
     ) -> AIResponse:
         """
         Get command suggestions based on natural language description.
@@ -174,8 +175,8 @@ class OpenRouterService:
         self,
         api_key: str,
         command: str,
-        context: Optional[Dict[str, Any]] = None,
-        model: Optional[str] = None,
+        context: dict[str, Any] | None = None,
+        model: str | None = None,
     ) -> AIResponse:
         """
         Get detailed explanation of a command.
@@ -210,9 +211,9 @@ class OpenRouterService:
         api_key: str,
         command: str,
         error_output: str,
-        exit_code: Optional[int] = None,
-        context: Optional[Dict[str, Any]] = None,
-        model: Optional[str] = None,
+        exit_code: int | None = None,
+        context: dict[str, Any] | None = None,
+        model: str | None = None,
     ) -> AIResponse:
         """
         Analyze and explain command errors.
@@ -250,8 +251,8 @@ class OpenRouterService:
         self,
         api_key: str,
         command: str,
-        context: Optional[Dict[str, Any]] = None,
-        model: Optional[str] = None,
+        context: dict[str, Any] | None = None,
+        model: str | None = None,
     ) -> AIResponse:
         """
         Get optimization suggestions for a command.
@@ -281,7 +282,7 @@ class OpenRouterService:
             use_case="optimization",
         )
 
-    async def get_available_models(self, api_key: str) -> List[Dict[str, Any]]:
+    async def get_available_models(self, api_key: str) -> list[dict[str, Any]]:
         """
         Get list of available models for the API key.
 
@@ -333,7 +334,7 @@ class OpenRouterService:
             logger.error(f"Error fetching available models: {e}")
             raise
 
-    async def get_usage_stats(self, api_key: str) -> Dict[str, Any]:
+    async def get_usage_stats(self, api_key: str) -> dict[str, Any]:
         """
         Get usage statistics for the API key.
 
@@ -367,7 +368,7 @@ class OpenRouterService:
                             "requests_per_minute": 50,  # Default limit
                             "tokens_per_minute": None,
                         },
-                        "timestamp": datetime.now(timezone.utc),
+                        "timestamp": datetime.now(UTC),
                     }
                 else:
                     raise Exception(
@@ -407,7 +408,7 @@ class OpenRouterService:
             "top_p": 0.9,
         }
 
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
 
         try:
             async with httpx.AsyncClient(timeout=self.timeout) as client:
@@ -418,7 +419,7 @@ class OpenRouterService:
                 )
 
                 response_time_ms = int(
-                    (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
+                    (datetime.now(UTC) - start_time).total_seconds() * 1000
                 )
 
                 if response.status_code == 200:
@@ -431,7 +432,7 @@ class OpenRouterService:
                         usage=data.get("usage", {}),
                         finish_reason=choice.get("finish_reason", "unknown"),
                         response_time_ms=response_time_ms,
-                        timestamp=datetime.now(timezone.utc),
+                        timestamp=datetime.now(UTC),
                     )
                 else:
                     error_data = response.json() if response.content else {}
@@ -449,7 +450,7 @@ class OpenRouterService:
 
     async def _check_rate_limit(self, api_key: str) -> bool:
         """Check if API key is within rate limits."""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         window_start = now - timedelta(seconds=self._rate_limit_window)
 
         if api_key not in self._rate_limits:
@@ -520,7 +521,7 @@ Guidelines:
 - Format response with original vs optimized comparison"""
 
     def _build_command_request_prompt(
-        self, description: str, context: Optional[Dict[str, Any]]
+        self, description: str, context: dict[str, Any] | None
     ) -> str:
         """Build user prompt for command suggestions."""
         prompt = f"Task description: {description}\n\n"
@@ -539,7 +540,7 @@ Guidelines:
         return prompt
 
     def _build_command_explanation_prompt(
-        self, command: str, context: Optional[Dict[str, Any]]
+        self, command: str, context: dict[str, Any] | None
     ) -> str:
         """Build user prompt for command explanations."""
         prompt = f"Command to explain: {command}\n\n"
@@ -557,8 +558,8 @@ Guidelines:
         self,
         command: str,
         error_output: str,
-        exit_code: Optional[int],
-        context: Optional[Dict[str, Any]],
+        exit_code: int | None,
+        context: dict[str, Any] | None,
     ) -> str:
         """Build user prompt for error analysis."""
         prompt = f"Failed command: {command}\n"
@@ -577,7 +578,7 @@ Guidelines:
         return prompt
 
     def _build_optimization_prompt(
-        self, command: str, context: Optional[Dict[str, Any]]
+        self, command: str, context: dict[str, Any] | None
     ) -> str:
         """Build user prompt for command optimization."""
         prompt = f"Command to optimize: {command}\n\n"

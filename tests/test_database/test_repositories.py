@@ -2,14 +2,15 @@
 Test repository CRUD operations and business logic.
 """
 
-import pytest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
-from app.repositories.user import UserRepository
+import pytest
+
+from app.repositories.command import CommandRepository
 from app.repositories.session import SessionRepository
 from app.repositories.ssh_profile import SSHProfileRepository
-from app.repositories.command import CommandRepository
 from app.repositories.sync import SyncDataRepository
+from app.repositories.user import UserRepository
 
 
 @pytest.mark.database
@@ -403,7 +404,7 @@ class TestSessionRepository:
         )
 
         # Create old session
-        old_date = datetime.now(timezone.utc) - timedelta(days=31)
+        old_date = datetime.now(UTC) - timedelta(days=31)
         session = await session_repo.create(
             {
                 "user_id": user.id,
@@ -596,7 +597,7 @@ class TestSSHProfileRepository:
                 "host": "freq.com",
                 "username": "user",
                 "connection_count": 50,
-                "last_used_at": datetime.now(timezone.utc) - timedelta(hours=1),
+                "last_used_at": datetime.now(UTC) - timedelta(hours=1),
             }
         )
 
@@ -607,7 +608,7 @@ class TestSSHProfileRepository:
                 "host": "rare.com",
                 "username": "user",
                 "connection_count": 2,
-                "last_used_at": datetime.now(timezone.utc) - timedelta(days=7),
+                "last_used_at": datetime.now(UTC) - timedelta(days=7),
             }
         )
 
@@ -1088,7 +1089,7 @@ class TestSyncDataRepository:
         )
 
         # Manually set old date
-        old_date = datetime.now(timezone.utc) - timedelta(days=91)  # 91 days old
+        old_date = datetime.now(UTC) - timedelta(days=91)  # 91 days old
         old_sync.last_modified_at = old_date
         old_sync.created_at = old_date
         await test_session.commit()

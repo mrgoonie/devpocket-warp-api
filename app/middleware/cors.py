@@ -5,7 +5,7 @@ Configures Cross-Origin Resource Sharing (CORS) settings to allow
 the Flutter mobile app and web clients to access the API securely.
 """
 
-from typing import List
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -55,7 +55,7 @@ def setup_cors(app: FastAPI) -> None:
     logger.info("CORS middleware configured successfully")
 
 
-def get_cors_origins_for_environment(debug: bool = False) -> List[str]:
+def get_cors_origins_for_environment(debug: bool = False) -> list[str]:
     """
     Get appropriate CORS origins based on environment.
 

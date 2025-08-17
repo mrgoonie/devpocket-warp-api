@@ -5,11 +5,13 @@ Provides request-level authentication processing, user context injection,
 and authentication logging for protected routes.
 """
 
-from typing import Any, Optional, Callable
-from fastapi import Request, Response, HTTPException
+from collections.abc import Callable
+from typing import Any
+
+from fastapi import HTTPException, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.auth.security import verify_token, is_token_blacklisted_sync
+from app.auth.security import is_token_blacklisted_sync, verify_token
 from app.core.logging import logger
 
 
@@ -25,7 +27,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
     5. Logs authentication events
     """
 
-    def __init__(self, app: Any, skip_paths: Optional[list] = None) -> None:
+    def __init__(self, app: Any, skip_paths: list | None = None) -> None:
         """
         Initialize authentication middleware.
 
@@ -156,7 +158,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
 
         return False
 
-    def _extract_token(self, request: Request) -> Optional[str]:
+    def _extract_token(self, request: Request) -> str | None:
         """
         Extract JWT token from request.
 
@@ -183,7 +185,7 @@ class AuthenticationMiddleware(BaseHTTPMiddleware):
 
         return None
 
-    async def _verify_token(self, token: str) -> Optional[dict]:
+    async def _verify_token(self, token: str) -> dict | None:
         """
         Verify JWT token and return payload.
 

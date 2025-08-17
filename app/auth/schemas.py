@@ -6,7 +6,7 @@ and password management with comprehensive validation.
 """
 
 from datetime import datetime
-from typing import Optional
+
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
@@ -52,7 +52,7 @@ class UserBase(BaseModel):
         pattern="^[a-zA-Z0-9_-]+$",
         description="Username (alphanumeric, hyphens, underscores only)",
     )
-    display_name: Optional[str] = Field(
+    display_name: str | None = Field(
         None, max_length=100, description="User's display name"
     )
 
@@ -66,10 +66,10 @@ class UserCreate(UserBase):
         max_length=128,
         description="Password (minimum 8 characters)",
     )
-    device_id: Optional[str] = Field(
+    device_id: str | None = Field(
         None, description="Device identifier for session tracking"
     )
-    device_type: Optional[str] = Field(
+    device_type: str | None = Field(
         None,
         pattern="^(ios|android|web)$",
         description="Device type (ios, android, or web)",
@@ -90,10 +90,10 @@ class UserLogin(BaseModel):
 
     username: str = Field(..., description="Username or email address")
     password: str = Field(..., description="User password")
-    device_id: Optional[str] = Field(
+    device_id: str | None = Field(
         None, description="Device identifier for session tracking"
     )
-    device_type: Optional[str] = Field(
+    device_type: str | None = Field(
         None,
         pattern="^(ios|android|web)$",
         description="Device type (ios, android, or web)",
@@ -111,7 +111,7 @@ class UserResponse(UserBase):
         ..., description="Whether user has validated their OpenRouter API key"
     )
     created_at: datetime = Field(..., description="User account creation timestamp")
-    last_login_at: Optional[datetime] = Field(
+    last_login_at: datetime | None = Field(
         default=None, description="Last login timestamp"
     )
 
@@ -227,7 +227,7 @@ class AccountLockInfo(BaseModel):
     """Schema for account lock information."""
 
     is_locked: bool = Field(..., description="Whether the account is currently locked")
-    locked_until: Optional[datetime] = Field(
+    locked_until: datetime | None = Field(
         None, description="When the account lock expires"
     )
     failed_attempts: int = Field(..., description="Number of failed login attempts")
@@ -269,15 +269,15 @@ class UserSettings(BaseModel):
 class UserSettingsUpdate(BaseModel):
     """Schema for updating user settings."""
 
-    terminal_theme: Optional[str] = None
-    terminal_font_size: Optional[int] = Field(default=None, ge=8, le=32)
-    terminal_font_family: Optional[str] = None
-    preferred_ai_model: Optional[str] = None
-    ai_suggestions_enabled: Optional[bool] = None
-    ai_explanations_enabled: Optional[bool] = None
-    sync_enabled: Optional[bool] = None
-    sync_commands: Optional[bool] = None
-    sync_ssh_profiles: Optional[bool] = None
+    terminal_theme: str | None = None
+    terminal_font_size: int | None = Field(default=None, ge=8, le=32)
+    terminal_font_family: str | None = None
+    preferred_ai_model: str | None = None
+    ai_suggestions_enabled: bool | None = None
+    ai_explanations_enabled: bool | None = None
+    sync_enabled: bool | None = None
+    sync_commands: bool | None = None
+    sync_ssh_profiles: bool | None = None
 
 
 # API Key Validation Schema
@@ -291,12 +291,10 @@ class APIKeyValidationResponse(BaseModel):
     """Schema for API key validation response."""
 
     is_valid: bool = Field(..., description="Whether the API key is valid")
-    key_name: Optional[str] = Field(
+    key_name: str | None = Field(
         default=None, description="Name/description of the API key"
     )
-    remaining_credits: Optional[float] = Field(
+    remaining_credits: float | None = Field(
         default=None, description="Remaining credits (if available)"
     )
-    rate_limit: Optional[dict] = Field(
-        default=None, description="Rate limit information"
-    )
+    rate_limit: dict | None = Field(default=None, description="Rate limit information")

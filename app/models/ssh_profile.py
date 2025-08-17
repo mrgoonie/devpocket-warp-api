@@ -3,11 +3,13 @@ SSH Profile and SSH Key models for DevPocket API.
 """
 
 from datetime import datetime
-from typing import Optional, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID as PyUUID
-from sqlalchemy import String, ForeignKey, Integer, Text, Boolean, LargeBinary
+
+from sqlalchemy import Boolean, ForeignKey, Integer, LargeBinary, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from .base import BaseModel
 
 if TYPE_CHECKING:
@@ -30,7 +32,7 @@ class SSHProfile(BaseModel):
     # Profile identification
     name: Mapped[str] = mapped_column(String(100), nullable=False)
 
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Connection details
     host: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -47,7 +49,7 @@ class SSHProfile(BaseModel):
     )  # key, password, agent
 
     # SSH key reference (if using key auth)
-    ssh_key_id: Mapped[Optional[PyUUID]] = mapped_column(
+    ssh_key_id: Mapped[PyUUID | None] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("ssh_keys.id", ondelete="SET NULL"),
         nullable=True,
@@ -68,7 +70,7 @@ class SSHProfile(BaseModel):
     )
 
     # Advanced SSH options (JSON string)
-    ssh_options: Mapped[Optional[str]] = mapped_column(
+    ssh_options: Mapped[str | None] = mapped_column(
         Text, nullable=True
     )  # JSON string of additional SSH options
 
@@ -78,7 +80,7 @@ class SSHProfile(BaseModel):
     )
 
     # Connection statistics
-    last_used_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    last_used_at: Mapped[datetime | None] = mapped_column(nullable=True)
 
     connection_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default="0"
@@ -93,17 +95,17 @@ class SSHProfile(BaseModel):
     )
 
     # Connection status tracking
-    last_connection_status: Mapped[Optional[str]] = mapped_column(
+    last_connection_status: Mapped[str | None] = mapped_column(
         String(50), nullable=True
     )  # connected, connection_failed, timeout, etc.
 
-    last_connection_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    last_connection_at: Mapped[datetime | None] = mapped_column(nullable=True)
 
-    last_successful_connection_at: Mapped[Optional[datetime]] = mapped_column(
+    last_successful_connection_at: Mapped[datetime | None] = mapped_column(
         nullable=True
     )
 
-    last_error_message: Mapped[Optional[str]] = mapped_column(
+    last_error_message: Mapped[str | None] = mapped_column(
         Text, nullable=True
     )  # Last connection error message
 
@@ -173,14 +175,14 @@ class SSHKey(BaseModel):
     # Key identification
     name: Mapped[str] = mapped_column(String(100), nullable=False)
 
-    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Key details
     key_type: Mapped[str] = mapped_column(
         String(20), nullable=False
     )  # rsa, ecdsa, ed25519, dsa
 
-    key_size: Mapped[Optional[int]] = mapped_column(
+    key_size: Mapped[int | None] = mapped_column(
         Integer, nullable=True
     )  # Key size in bits (for RSA, DSA)
 
@@ -195,14 +197,14 @@ class SSHKey(BaseModel):
     public_key: Mapped[str] = mapped_column(Text, nullable=False)
 
     # Key metadata
-    comment: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    comment: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     has_passphrase: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
 
     # File system reference
-    file_path: Mapped[Optional[str]] = mapped_column(
+    file_path: Mapped[str | None] = mapped_column(
         String(500), nullable=True
     )  # Path where the key is stored on disk
 
@@ -212,7 +214,7 @@ class SSHKey(BaseModel):
     )
 
     # Usage tracking
-    last_used_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    last_used_at: Mapped[datetime | None] = mapped_column(nullable=True)
 
     usage_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default="0"
@@ -221,7 +223,7 @@ class SSHKey(BaseModel):
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="ssh_keys")
 
-    profiles: Mapped[List["SSHProfile"]] = relationship(
+    profiles: Mapped[list["SSHProfile"]] = relationship(
         "SSHProfile", back_populates="ssh_key"
     )
 

@@ -2,22 +2,23 @@
 User Profile & Settings API router for DevPocket.
 """
 
-from typing import Annotated, Dict, Any
+from typing import Annotated, Any
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_active_user
 from app.db.database import get_db
 from app.models.user import User
+
 from .schemas import (
+    MessageResponse,
     UserProfileResponse,
     UserProfileUpdate,
     UserSettings,
     UserSettingsResponse,
-    MessageResponse,
 )
 from .service import ProfileService
-
 
 router = APIRouter(
     prefix="/api/profile",
@@ -63,11 +64,11 @@ async def delete_account(
     return MessageResponse(message="Account successfully deleted")
 
 
-@router.get("/stats", response_model=Dict[str, Any], summary="Get Account Statistics")
+@router.get("/stats", response_model=dict[str, Any], summary="Get Account Statistics")
 async def get_account_stats(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Get current user's account statistics and usage information."""
     service = ProfileService(db)
     return await service.get_account_stats(current_user)

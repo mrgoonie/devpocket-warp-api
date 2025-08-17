@@ -4,38 +4,39 @@ SSH Management API router for DevPocket.
 Handles all SSH-related endpoints including profiles, keys, and connection testing.
 """
 
-from typing import Annotated, List
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Body
+from typing import Annotated
+
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_active_user
 from app.core.logging import logger
 from app.db.database import get_db
 from app.models.user import User
+
 from .schemas import (
-    # SSH Profile schemas
-    SSHProfileCreate,
-    SSHProfileUpdate,
-    SSHProfileResponse,
-    SSHProfileListResponse,
-    SSHProfileSearchRequest,
-    SSHProfileStats,
-    # SSH Key schemas
-    SSHKeyCreate,
-    SSHKeyUpdate,
-    SSHKeyResponse,
-    SSHKeyListResponse,
-    SSHKeySearchRequest,
-    SSHKeyStats,
+    BulkOperationResponse,
+    # Common schemas
+    MessageResponse,
     # Connection testing schemas
     SSHConnectionTestRequest,
     SSHConnectionTestResponse,
-    # Common schemas
-    MessageResponse,
-    BulkOperationResponse,
+    # SSH Key schemas
+    SSHKeyCreate,
+    SSHKeyListResponse,
+    SSHKeyResponse,
+    SSHKeySearchRequest,
+    SSHKeyStats,
+    SSHKeyUpdate,
+    # SSH Profile schemas
+    SSHProfileCreate,
+    SSHProfileListResponse,
+    SSHProfileResponse,
+    SSHProfileSearchRequest,
+    SSHProfileStats,
+    SSHProfileUpdate,
 )
-from .service import SSHProfileService, SSHKeyService
-
+from .service import SSHKeyService, SSHProfileService
 
 # Create router instance
 router = APIRouter(
@@ -376,7 +377,7 @@ async def test_profile_connection(
 async def bulk_delete_profiles(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-    profile_ids: List[str] = Body(..., description="List of profile IDs to delete"),
+    profile_ids: list[str] = Body(..., description="List of profile IDs to delete"),
 ) -> BulkOperationResponse:
     """Delete multiple SSH profiles in a single operation."""
     service = SSHProfileService(db)
@@ -414,7 +415,7 @@ async def bulk_delete_profiles(
 async def bulk_delete_keys(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-    key_ids: List[str] = Body(..., description="List of key IDs to delete"),
+    key_ids: list[str] = Body(..., description="List of key IDs to delete"),
 ) -> BulkOperationResponse:
     """Delete multiple SSH keys in a single operation."""
     service = SSHKeyService(db)

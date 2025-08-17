@@ -6,29 +6,30 @@ connection testing, and related operations.
 """
 
 import time
-from datetime import datetime, timezone
-from typing import List, Tuple, Dict
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError
+from datetime import UTC, datetime
+
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import logger
 from app.models.user import User
-from app.repositories.ssh_profile import SSHProfileRepository, SSHKeyRepository
+from app.repositories.ssh_profile import SSHKeyRepository, SSHProfileRepository
 from app.services.ssh_client import SSHClientService
+
 from .schemas import (
-    SSHProfileCreate,
-    SSHProfileUpdate,
-    SSHProfileResponse,
-    SSHKeyCreate,
-    SSHKeyUpdate,
-    SSHKeyResponse,
     SSHConnectionTestRequest,
     SSHConnectionTestResponse,
-    SSHProfileSearchRequest,
+    SSHKeyCreate,
+    SSHKeyResponse,
     SSHKeySearchRequest,
-    SSHProfileStats,
     SSHKeyStats,
+    SSHKeyUpdate,
+    SSHProfileCreate,
+    SSHProfileResponse,
+    SSHProfileSearchRequest,
+    SSHProfileStats,
+    SSHProfileUpdate,
 )
 
 
@@ -102,7 +103,7 @@ class SSHProfileService:
         active_only: bool = True,
         offset: int = 0,
         limit: int = 50,
-    ) -> Tuple[List[SSHProfileResponse], int]:
+    ) -> tuple[list[SSHProfileResponse], int]:
         """Get SSH profiles for a user with pagination."""
         try:
             profiles = await self.profile_repo.get_user_profiles(
@@ -170,7 +171,7 @@ class SSHProfileService:
             for field, value in update_dict.items():
                 setattr(profile, field, value)
 
-            profile.updated_at = datetime.now(timezone.utc)
+            profile.updated_at = datetime.now(UTC)
             updated_profile = await self.profile_repo.update(profile)
             await self.session.commit()
 
@@ -279,12 +280,12 @@ class SSHProfileService:
                 )
                 if test_result["success"]:
                     profile.last_connection_status = "connected"
-                    profile.last_successful_connection_at = datetime.now(timezone.utc)
+                    profile.last_successful_connection_at = datetime.now(UTC)
                 else:
                     profile.last_connection_status = "connection_failed"
                     profile.last_error_message = test_result.get("error_message")
 
-                profile.last_connection_at = datetime.now(timezone.utc)
+                profile.last_connection_at = datetime.now(UTC)
                 await self.session.commit()
 
             duration_ms = int((time.time() - start_time) * 1000)
@@ -295,7 +296,7 @@ class SSHProfileService:
                 details=test_result.get("details"),
                 duration_ms=duration_ms,
                 server_info=test_result.get("server_info"),
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
 
         except HTTPException:
@@ -306,16 +307,16 @@ class SSHProfileService:
 
             return SSHConnectionTestResponse(
                 success=False,
-                message=f"Connection test failed: {str(e)}",
+                message=f"Connection test failed: {e!s}",
                 details={"error": str(e)},
                 duration_ms=duration_ms,
                 server_info=None,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
 
     async def search_profiles(
         self, user: User, search_request: SSHProfileSearchRequest
-    ) -> Tuple[List[SSHProfileResponse], int]:
+    ) -> tuple[list[SSHProfileResponse], int]:
         """Search SSH profiles with filters."""
         try:
             if search_request.search_term:
@@ -369,7 +370,7 @@ class SSHProfileService:
             active_profiles = [p for p in all_profiles if p.is_active]
 
             # Count profiles by status
-            status_counts: Dict[str, int] = {}
+            status_counts: dict[str, int] = {}
             for profile in all_profiles:
                 profile_status = profile.last_connection_status or "never_connected"
                 status_counts[profile_status] = status_counts.get(profile_status, 0) + 1
@@ -471,7 +472,7 @@ class SSHKeyService:
         active_only: bool = True,
         offset: int = 0,
         limit: int = 50,
-    ) -> Tuple[List[SSHKeyResponse], int]:
+    ) -> tuple[list[SSHKeyResponse], int]:
         """Get SSH keys for a user with pagination."""
         try:
             keys = await self.key_repo.get_user_keys(
@@ -536,7 +537,7 @@ class SSHKeyService:
             for field, value in update_dict.items():
                 setattr(key, field, value)
 
-            key.updated_at = datetime.now(timezone.utc)
+            key.updated_at = datetime.now(UTC)
             updated_key = await self.key_repo.update(key)
             await self.session.commit()
 
@@ -582,7 +583,7 @@ class SSHKeyService:
 
     async def search_keys(
         self, user: User, search_request: SSHKeySearchRequest
-    ) -> Tuple[List[SSHKeyResponse], int]:
+    ) -> tuple[list[SSHKeyResponse], int]:
         """Search SSH keys with filters."""
         try:
             if search_request.search_term:

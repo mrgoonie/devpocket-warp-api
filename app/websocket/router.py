@@ -5,30 +5,29 @@ Handles WebSocket endpoint setup, authentication, and message routing.
 """
 
 import json
-from typing import Optional
+
 from fastapi import (
     APIRouter,
+    HTTPException,
+    Query,
     WebSocket,
     WebSocketDisconnect,
-    Query,
-    HTTPException,
     status,
 )
-from jose import jwt
 from jose.exceptions import JWTError
 
-from app.core.logging import logger
 from app.auth.security import decode_token
+from app.core.logging import logger
+
 from .manager import connection_manager
 from .protocols import create_error_message
-
 
 websocket_router = APIRouter(prefix="/ws", tags=["websocket"])
 
 
 async def authenticate_websocket(
-    websocket: WebSocket, token: Optional[str] = None
-) -> Optional[dict]:
+    websocket: WebSocket, token: str | None = None
+) -> dict | None:
     """
     Authenticate WebSocket connection using JWT token.
 
@@ -61,8 +60,8 @@ async def authenticate_websocket(
 @websocket_router.websocket("/terminal")
 async def terminal_websocket(
     websocket: WebSocket,
-    token: Optional[str] = Query(None, description="JWT authentication token"),
-    device_id: Optional[str] = Query(None, description="Device identifier"),
+    token: str | None = Query(None, description="JWT authentication token"),
+    device_id: str | None = Query(None, description="Device identifier"),
 ) -> None:
     """
     WebSocket endpoint for real-time terminal communication.

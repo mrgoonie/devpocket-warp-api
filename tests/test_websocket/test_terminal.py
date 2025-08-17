@@ -10,14 +10,15 @@ Tests WebSocket terminal functionality including:
 
 import asyncio
 import json
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 from fastapi import WebSocketDisconnect
 
-from app.websocket.terminal import TerminalWebSocket
+from app.services.terminal_service import TerminalService
 from app.websocket.manager import connection_manager
 from app.websocket.pty_handler import PTYHandler
-from app.services.terminal_service import TerminalService
+from app.websocket.terminal import TerminalWebSocket
 
 
 class TestTerminalWebSocket:

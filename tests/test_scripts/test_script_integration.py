@@ -9,10 +9,11 @@ Tests cover:
 - Cross-script compatibility
 """
 
-import pytest
-from unittest.mock import patch, MagicMock, mock_open
 import os
 import time
+from unittest.mock import MagicMock, mock_open, patch
+
+import pytest
 
 
 @pytest.mark.integration
@@ -247,8 +248,8 @@ class TestScriptIntegration:
 
     def test_script_concurrent_execution(self, script_runner):
         """Test that scripts can handle concurrent execution scenarios."""
-        import threading
         import queue
+        import threading
 
         results = queue.Queue()
 

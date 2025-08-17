@@ -7,8 +7,9 @@ to prevent abuse and ensure fair usage of the API.
 
 import time
 from collections import defaultdict, deque
-from typing import Any, Dict, Deque, Tuple, Optional
-from fastapi import Request, Response, HTTPException, status
+from typing import Any
+
+from fastapi import HTTPException, Request, Response, status
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.logging import logger
@@ -22,13 +23,13 @@ class RateLimitStore:
 
     def __init__(self) -> None:
         # Store format: {key: deque([(timestamp, count), ...])}
-        self._store: Dict[str, Deque[Tuple[float, int]]] = defaultdict(deque)
+        self._store: dict[str, deque[tuple[float, int]]] = defaultdict(deque)
         self._cleanup_interval = 60  # Clean up old entries every 60 seconds
         self._last_cleanup = time.time()
 
     def add_request(
         self, key: str, window: int = 60, limit: int = 100
-    ) -> Tuple[bool, int, int]:
+    ) -> tuple[bool, int, int]:
         """
         Add a request and check if rate limit is exceeded.
 
@@ -130,9 +131,7 @@ class RateLimitConfig:
     }
 
     @classmethod
-    def get_limit(
-        cls, endpoint_type: str, subscription_tier: Optional[str] = None
-    ) -> int:
+    def get_limit(cls, endpoint_type: str, subscription_tier: str | None = None) -> int:
         """
         Get rate limit for endpoint type and subscription tier.
 
@@ -297,7 +296,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
     def _check_ip_rate_limit(
         self, ip: str, endpoint_type: str
-    ) -> Tuple[bool, int, int]:
+    ) -> tuple[bool, int, int]:
         """
         Check IP-based rate limit.
 
@@ -317,8 +316,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self,
         user_id: str,
         endpoint_type: str,
-        subscription_tier: Optional[str],
-    ) -> Tuple[bool, int, int]:
+        subscription_tier: str | None,
+    ) -> tuple[bool, int, int]:
         """
         Check user-based rate limit.
 

@@ -5,43 +5,45 @@ Contains business logic for AI-powered features using BYOK model with OpenRouter
 """
 
 import json
-from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any, List
-from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
 from fastapi import HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import logger
 from app.models.user import User
-from app.services.openrouter import OpenRouterService, AIResponse
+from app.services.openrouter import AIResponse, OpenRouterService
+
 from .schemas import (
-    # API Key schemas
-    APIKeyValidationResponse,
-    AIUsageStats,
-    # Command suggestion schemas
-    CommandSuggestionRequest,
-    CommandSuggestionResponse,
-    CommandSuggestion,
-    # Command explanation schemas
-    CommandExplanationRequest,
-    CommandExplanationResponse,
-    CommandExplanation,
-    # Error analysis schemas
-    ErrorAnalysisRequest,
-    ErrorAnalysisResponse,
-    ErrorAnalysis,
-    # Optimization schemas
-    CommandOptimizationRequest,
-    CommandOptimizationResponse,
-    CommandOptimization,
     # Settings and models
     AIModelInfo,
+    # Enums
+    AIServiceType,
+    AIUsageStats,
+    # API Key schemas
+    APIKeyValidationResponse,
     AvailableModelsResponse,
     # Batch processing
     BatchAIRequest,
     BatchAIResponse,
-    # Enums
-    AIServiceType,
+    CommandExplanation,
+    # Command explanation schemas
+    CommandExplanationRequest,
+    CommandExplanationResponse,
+    CommandOptimization,
+    # Optimization schemas
+    CommandOptimizationRequest,
+    CommandOptimizationResponse,
+    CommandSuggestion,
+    # Command suggestion schemas
+    CommandSuggestionRequest,
+    CommandSuggestionResponse,
     ConfidenceLevel,
+    ErrorAnalysis,
+    # Error analysis schemas
+    ErrorAnalysisRequest,
+    ErrorAnalysisResponse,
 )
 
 
@@ -53,7 +55,7 @@ class AIService:
         self.openrouter = OpenRouterService()
 
         # Simple in-memory cache for responses (in production, use Redis)
-        self._response_cache: Dict[str, Dict[str, Any]] = {}
+        self._response_cache: dict[str, dict[str, Any]] = {}
         self._cache_ttl = 3600  # 1 hour
 
     async def validate_api_key(self, api_key: str) -> APIKeyValidationResponse:
@@ -77,8 +79,8 @@ class AIService:
                 account_info=None,
                 models_available=None,
                 recommended_models=None,
-                error=f"Validation failed: {str(e)}",
-                timestamp=datetime.now(timezone.utc),
+                error=f"Validation failed: {e!s}",
+                timestamp=datetime.now(UTC),
             )
 
     async def get_usage_stats(self, api_key: str) -> AIUsageStats:
@@ -160,7 +162,7 @@ class AIService:
             logger.error(f"Error generating command suggestions: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to generate command suggestions: {str(e)}",
+                detail=f"Failed to generate command suggestions: {e!s}",
             )
 
     async def explain_command(
@@ -218,7 +220,7 @@ class AIService:
             logger.error(f"Error generating command explanation: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to explain command: {str(e)}",
+                detail=f"Failed to explain command: {e!s}",
             )
 
     async def analyze_error(
@@ -287,7 +289,7 @@ class AIService:
             logger.error(f"Error analyzing command error: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to analyze error: {str(e)}",
+                detail=f"Failed to analyze error: {e!s}",
             )
 
     async def optimize_command(
@@ -346,7 +348,7 @@ class AIService:
             logger.error(f"Error optimizing command: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Failed to optimize command: {str(e)}",
+                detail=f"Failed to optimize command: {e!s}",
             )
 
     async def get_available_models(self, api_key: str) -> AvailableModelsResponse:
@@ -383,7 +385,7 @@ class AIService:
                 models=models,
                 total_models=len(models),
                 recommended_models=recommended_models,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
 
         except Exception as e:
@@ -402,7 +404,7 @@ class AIService:
             success_count = 0
             error_count = 0
             total_tokens = 0
-            start_time = datetime.now(timezone.utc)
+            start_time = datetime.now(UTC)
 
             for i, req_data in enumerate(request.requests):
                 try:
@@ -439,9 +441,7 @@ class AIService:
                     results.append({"index": i, "status": "error", "error": str(e)})
                     error_count += 1
 
-            total_time = int(
-                (datetime.now(timezone.utc) - start_time).total_seconds() * 1000
-            )
+            total_time = int((datetime.now(UTC) - start_time).total_seconds() * 1000)
 
             return BatchAIResponse(
                 results=results,
@@ -449,7 +449,7 @@ class AIService:
                 error_count=error_count,
                 total_tokens_used=total_tokens,
                 total_response_time_ms=total_time,
-                timestamp=datetime.now(timezone.utc),
+                timestamp=datetime.now(UTC),
             )
 
         except Exception as e:
@@ -462,8 +462,8 @@ class AIService:
     # Private batch processing methods
 
     async def _process_batch_suggestion(
-        self, api_key: str, req_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, api_key: str, req_data: dict[str, Any]
+    ) -> dict[str, Any]:
         """Process individual suggestion request in batch."""
         # Create a CommandSuggestionRequest from the data
         request = CommandSuggestionRequest(
@@ -489,8 +489,8 @@ class AIService:
         return response.model_dump()
 
     async def _process_batch_explanation(
-        self, api_key: str, req_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, api_key: str, req_data: dict[str, Any]
+    ) -> dict[str, Any]:
         """Process individual explanation request in batch."""
         # Create a CommandExplanationRequest from the data
         request = CommandExplanationRequest(
@@ -514,8 +514,8 @@ class AIService:
         return response.model_dump()
 
     async def _process_batch_error_analysis(
-        self, api_key: str, req_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, api_key: str, req_data: dict[str, Any]
+    ) -> dict[str, Any]:
         """Process individual error analysis request in batch."""
         # Create an ErrorAnalysisRequest from the data
         request = ErrorAnalysisRequest(
@@ -543,7 +543,7 @@ class AIService:
     # Private helper methods
 
     def _generate_cache_key(
-        self, service_type: str, content: str, model: Optional[str]
+        self, service_type: str, content: str, model: str | None
     ) -> str:
         """Generate cache key for response caching."""
         import hashlib
@@ -551,11 +551,11 @@ class AIService:
         key_content = f"{service_type}:{content}:{model or 'default'}"
         return hashlib.md5(key_content.encode()).hexdigest()
 
-    def _get_cached_response(self, cache_key: str) -> Optional[Dict[str, Any]]:
+    def _get_cached_response(self, cache_key: str) -> dict[str, Any] | None:
         """Get cached response if available and not expired."""
         if cache_key in self._response_cache:
             cached_data = self._response_cache[cache_key]
-            if datetime.now(timezone.utc) - cached_data["timestamp"] < timedelta(
+            if datetime.now(UTC) - cached_data["timestamp"] < timedelta(
                 seconds=self._cache_ttl
             ):
                 return cached_data["response"]  # type: ignore
@@ -564,11 +564,11 @@ class AIService:
                 del self._response_cache[cache_key]
         return None
 
-    def _cache_response(self, cache_key: str, response_data: Dict[str, Any]) -> None:
+    def _cache_response(self, cache_key: str, response_data: dict[str, Any]) -> None:
         """Cache response data."""
         self._response_cache[cache_key] = {
             "response": response_data,
-            "timestamp": datetime.now(timezone.utc),
+            "timestamp": datetime.now(UTC),
         }
 
     def _parse_command_suggestions(
@@ -576,7 +576,7 @@ class AIService:
         ai_response: AIResponse,
         max_suggestions: int,
         include_explanations: bool,
-    ) -> List[CommandSuggestion]:
+    ) -> list[CommandSuggestion]:
         """Parse AI response into command suggestions."""
         suggestions = []
 
@@ -729,7 +729,7 @@ class AIService:
             )
 
     def _calculate_confidence_score(
-        self, suggestions: List[CommandSuggestion]
+        self, suggestions: list[CommandSuggestion]
     ) -> float:
         """Calculate overall confidence score for suggestions."""
         if not suggestions:
@@ -777,7 +777,7 @@ class AIService:
 
         return min((optimization_count + improvement_count) / 5, 1.0)
 
-    def _assess_confidence(self, cmd_data: Dict[str, Any]) -> ConfidenceLevel:
+    def _assess_confidence(self, cmd_data: dict[str, Any]) -> ConfidenceLevel:
         """Assess confidence level for a command suggestion."""
         # Simple heuristic - in production, this would be more sophisticated
         command = cmd_data.get("command", "")
@@ -842,7 +842,7 @@ class AIService:
         else:
             return "low"
 
-    def _classify_model_performance(self, model_data: Dict[str, Any]) -> str:
+    def _classify_model_performance(self, model_data: dict[str, Any]) -> str:
         """Classify model performance tier."""
         model_id = model_data.get("id", "").lower()
 
@@ -853,7 +853,7 @@ class AIService:
         else:
             return "fast"
 
-    def _parse_text_suggestions(self, text: str) -> List[Dict[str, str]]:
+    def _parse_text_suggestions(self, text: str) -> list[dict[str, str]]:
         """Parse plain text into command suggestions."""
         # Simple text parsing - in production, this would be more sophisticated
         lines = text.strip().split("\n")
@@ -879,7 +879,7 @@ class AIService:
 
         return suggestions[:5]  # Limit to 5 suggestions
 
-    def _extract_command_components(self, command: str) -> List[Dict[str, str]]:
+    def _extract_command_components(self, command: str) -> list[dict[str, str]]:
         """Extract command components."""
         # Simple component extraction
         parts = command.split()
@@ -914,7 +914,7 @@ class AIService:
 
         return components
 
-    def _extract_examples(self, content: str) -> List[Dict[str, str]]:
+    def _extract_examples(self, content: str) -> list[dict[str, str]]:
         """Extract examples from AI response."""
         # Simple example extraction
         examples = []
@@ -931,7 +931,7 @@ class AIService:
 
         return examples[:3]  # Limit to 3 examples
 
-    def _extract_alternatives(self, content: str) -> List[Dict[str, str]]:
+    def _extract_alternatives(self, content: str) -> list[dict[str, str]]:
         """Extract alternatives from AI response."""
         alternatives = []
         lines = content.split("\n")
@@ -948,7 +948,7 @@ class AIService:
 
         return alternatives[:3]  # Limit to 3 alternatives
 
-    def _extract_solutions(self, content: str) -> List[Dict[str, str]]:
+    def _extract_solutions(self, content: str) -> list[dict[str, str]]:
         """Extract solutions from error analysis."""
         solutions = []
         lines = content.split("\n")
@@ -964,7 +964,7 @@ class AIService:
 
         return solutions[:5]  # Limit to 5 solutions
 
-    def _extract_prevention_tips(self, content: str) -> List[str]:
+    def _extract_prevention_tips(self, content: str) -> list[str]:
         """Extract prevention tips from analysis."""
         tips = []
         lines = content.split("\n")

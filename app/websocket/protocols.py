@@ -4,7 +4,8 @@ WebSocket message protocols and data structures.
 
 from datetime import datetime
 from enum import Enum
-from typing import Optional, Dict, Any, Union, cast
+from typing import Any, Union, cast
+
 from pydantic import BaseModel, Field
 
 
@@ -36,9 +37,9 @@ class TerminalMessage(BaseModel):
     """Base WebSocket terminal message."""
 
     type: MessageType
-    session_id: Optional[str] = None
+    session_id: str | None = None
     timestamp: datetime = Field(default_factory=datetime.now)
-    data: Optional[Union[str, Dict[str, Any]]] = None
+    data: str | dict[str, Any] | None = None
 
     class Config:
         use_enum_values = True
@@ -66,7 +67,7 @@ class ResizeMessage(TerminalMessage):
 
     type: MessageType = MessageType.RESIZE
     session_id: str
-    data: Dict[str, int] = Field(
+    data: dict[str, int] = Field(
         description="Terminal dimensions", examples=[{"rows": 24, "cols": 80}]
     )
 
@@ -86,7 +87,7 @@ class SignalMessage(TerminalMessage):
 
     type: MessageType = MessageType.SIGNAL
     session_id: str
-    data: Dict[str, str] = Field(
+    data: dict[str, str] = Field(
         description="Signal information",
         examples=[{"signal": "SIGINT", "key": "ctrl+c"}],
     )
@@ -106,7 +107,7 @@ class ConnectMessage(TerminalMessage):
     """Session connect message."""
 
     type: MessageType = MessageType.CONNECT
-    data: Dict[str, Any] = Field(
+    data: dict[str, Any] = Field(
         description="Connection parameters",
         examples=[
             {
@@ -123,12 +124,12 @@ class ConnectMessage(TerminalMessage):
         return str(self.data.get("session_type", "terminal"))
 
     @property
-    def ssh_profile_id(self) -> Optional[str]:
+    def ssh_profile_id(self) -> str | None:
         """Get SSH profile ID if applicable."""
         return self.data.get("ssh_profile_id")
 
     @property
-    def terminal_size(self) -> Dict[str, int]:
+    def terminal_size(self) -> dict[str, int]:
         """Get terminal size."""
         result = self.data.get("terminal_size", {"rows": 24, "cols": 80})
         return dict(result) if isinstance(result, dict) else {"rows": 24, "cols": 80}
@@ -139,7 +140,7 @@ class StatusMessage(TerminalMessage):
 
     type: MessageType = MessageType.STATUS
     session_id: str
-    data: Dict[str, Any] = Field(
+    data: dict[str, Any] = Field(
         description="Status information",
         examples=[
             {
@@ -161,7 +162,7 @@ class StatusMessage(TerminalMessage):
         return str(self.data.get("message", ""))
 
     @property
-    def server_info(self) -> Dict[str, Any]:
+    def server_info(self) -> dict[str, Any]:
         """Get server information."""
         result = self.data.get("server_info", {})
         return dict(result) if isinstance(result, dict) else {}
@@ -171,7 +172,7 @@ class ErrorMessage(TerminalMessage):
     """Error message."""
 
     type: MessageType = MessageType.ERROR
-    data: Dict[str, Any] = Field(
+    data: dict[str, Any] = Field(
         description="Error information",
         examples=[
             {
@@ -193,7 +194,7 @@ class ErrorMessage(TerminalMessage):
         return str(self.data.get("message", ""))
 
     @property
-    def details(self) -> Dict[str, Any]:
+    def details(self) -> dict[str, Any]:
         """Get error details."""
         result = self.data.get("details", {})
         return dict(result) if isinstance(result, dict) else {}
@@ -203,7 +204,7 @@ class HeartbeatMessage(TerminalMessage):
     """Heartbeat message for connection health."""
 
     type: MessageType = MessageType.PING
-    data: Optional[Dict[str, Any]] = Field(
+    data: dict[str, Any] | None = Field(
         default=None, description="Optional heartbeat data"
     )
 
@@ -222,7 +223,7 @@ ParsedMessage = Union[
 ]
 
 
-def parse_message(data: Dict[str, Any]) -> ParsedMessage:
+def parse_message(data: dict[str, Any]) -> ParsedMessage:
     """
     Parse incoming WebSocket message into appropriate message type.
 
@@ -260,7 +261,7 @@ def parse_message(data: Dict[str, Any]) -> ParsedMessage:
         result = message_class(**data)
         return cast(ParsedMessage, result)
     except Exception as e:
-        raise ValueError(f"Invalid message format for {message_type}: {str(e)}")
+        raise ValueError(f"Invalid message format for {message_type}: {e!s}")
 
 
 def create_output_message(session_id: str, data: str) -> OutputMessage:
@@ -272,7 +273,7 @@ def create_status_message(
     session_id: str,
     status: str,
     message: str = "",
-    server_info: Optional[Dict[str, Any]] = None,
+    server_info: dict[str, Any] | None = None,
 ) -> StatusMessage:
     """Create a status message."""
     return StatusMessage(
@@ -288,8 +289,8 @@ def create_status_message(
 def create_error_message(
     error: str,
     message: str = "",
-    details: Optional[Dict[str, Any]] = None,
-    session_id: Optional[str] = None,
+    details: dict[str, Any] | None = None,
+    session_id: str | None = None,
 ) -> ErrorMessage:
     """Create an error message."""
     return ErrorMessage(

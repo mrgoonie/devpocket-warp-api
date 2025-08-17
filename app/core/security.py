@@ -2,14 +2,14 @@
 Security utilities for DevPocket API.
 """
 
-from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any
-from fastapi import Request
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
+from fastapi import HTTPException, Request, status
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from fastapi import HTTPException, status
-from app.core.config import settings
 
+from app.core.config import settings
 
 # Password hashing context
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -43,7 +43,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 
 def create_access_token(
-    data: Dict[str, Any], expires_delta: Optional[timedelta] = None
+    data: dict[str, Any], expires_delta: timedelta | None = None
 ) -> str:
     """
     Create a JWT access token.
@@ -58,15 +58,11 @@ def create_access_token(
     to_encode = data.copy()
 
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(
-            hours=settings.jwt_expiration_hours
-        )
+        expire = datetime.now(UTC) + timedelta(hours=settings.jwt_expiration_hours)
 
-    to_encode.update(
-        {"exp": expire, "iat": datetime.now(timezone.utc), "type": "access"}
-    )
+    to_encode.update({"exp": expire, "iat": datetime.now(UTC), "type": "access"})
 
     encoded_jwt = jwt.encode(
         to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
@@ -76,7 +72,7 @@ def create_access_token(
 
 
 def create_refresh_token(
-    data: Dict[str, Any], expires_delta: Optional[timedelta] = None
+    data: dict[str, Any], expires_delta: timedelta | None = None
 ) -> str:
     """
     Create a JWT refresh token.
@@ -91,15 +87,13 @@ def create_refresh_token(
     to_encode = data.copy()
 
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(
+        expire = datetime.now(UTC) + timedelta(
             days=settings.jwt_refresh_expiration_days
         )
 
-    to_encode.update(
-        {"exp": expire, "iat": datetime.now(timezone.utc), "type": "refresh"}
-    )
+    to_encode.update({"exp": expire, "iat": datetime.now(UTC), "type": "refresh"})
 
     encoded_jwt = jwt.encode(
         to_encode, settings.jwt_secret_key, algorithm=settings.jwt_algorithm
@@ -108,7 +102,7 @@ def create_refresh_token(
     return encoded_jwt
 
 
-def verify_token(token: str, token_type: str = "access") -> Dict[str, Any]:
+def verify_token(token: str, token_type: str = "access") -> dict[str, Any]:
     """
     Verify and decode a JWT token.
 
@@ -137,9 +131,7 @@ def verify_token(token: str, token_type: str = "access") -> Dict[str, Any]:
 
         # Check expiration
         exp = payload.get("exp")
-        if exp and datetime.fromtimestamp(exp, tz=timezone.utc) < datetime.now(
-            timezone.utc
-        ):
+        if exp and datetime.fromtimestamp(exp, tz=UTC) < datetime.now(UTC):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Token expired",
@@ -151,7 +143,7 @@ def verify_token(token: str, token_type: str = "access") -> Dict[str, Any]:
     except JWTError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Could not validate credentials: {str(e)}",
+            detail=f"Could not validate credentials: {e!s}",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -207,8 +199,8 @@ def sanitize_filename(filename: str) -> str:
     Returns:
         str: Sanitized filename
     """
-    import re
     import os
+    import re
 
     # Remove directory traversal attempts
     filename = os.path.basename(filename)

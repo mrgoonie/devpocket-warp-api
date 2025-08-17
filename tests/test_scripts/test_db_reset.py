@@ -10,9 +10,10 @@ Tests cover:
 - Help and usage information
 """
 
-import pytest
-from unittest.mock import patch, MagicMock, mock_open, call
 import os
+from unittest.mock import MagicMock, call, mock_open, patch
+
+import pytest
 
 
 @pytest.mark.database
@@ -475,9 +476,8 @@ class TestDbResetScript:
         """Test that scripts are made executable before running."""
         mock_run.return_value = MagicMock(returncode=0)
 
-        with patch("os.chmod") as mock_chmod:
-            with patch.dict(os.environ, mock_env):
-                result = script_runner.run_script("db_reset.sh", ["--force"])
+        with patch("os.chmod") as mock_chmod, patch.dict(os.environ, mock_env):
+            result = script_runner.run_script("db_reset.sh", ["--force"])
 
         # Should have set execute permissions
         assert mock_chmod.called

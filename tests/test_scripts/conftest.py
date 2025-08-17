@@ -2,13 +2,15 @@
 Pytest configuration and fixtures for script testing.
 """
 
+import contextlib
 import os
-import pytest
-import tempfile
-from pathlib import Path
-from unittest.mock import patch, MagicMock
 import subprocess
-from typing import Generator, Dict
+import tempfile
+from collections.abc import Generator
+from pathlib import Path
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 @pytest.fixture(scope="session")
@@ -31,7 +33,7 @@ def temp_dir() -> Generator[Path, None, None]:
 
 
 @pytest.fixture
-def mock_env() -> Generator[Dict[str, str], None, None]:
+def mock_env() -> Generator[dict[str, str], None, None]:
     """Mock environment variables for testing."""
     test_env = {
         "ENVIRONMENT": "test",
@@ -84,8 +86,8 @@ def script_runner():
         def run_script(
             self,
             script_name: str,
-            args: list = None,
-            env: Dict[str, str] = None,
+            args: list | None = None,
+            env: dict[str, str] | None = None,
             capture_output: bool = True,
             timeout: int = 30,
         ) -> subprocess.CompletedProcess:
@@ -230,10 +232,8 @@ def mock_file_operations():
         def cleanup(self):
             """Clean up temporary files."""
             for file_path in self.files_created:
-                try:
+                with contextlib.suppress(FileNotFoundError):
                     os.unlink(file_path)
-                except FileNotFoundError:
-                    pass
             self.files_created.clear()
 
     mock_ops = MockFileOps()
@@ -265,7 +265,7 @@ def   badly_formatted_function(  x,y  ):
 class   BadlyFormattedClass:
     def __init__(self,value):
         self.value=value
-    
+
     def get_value(self):
         return self.value
 
@@ -305,10 +305,10 @@ def well_formatted_function(x: int, y: int) -> int:
 
 class WellFormattedClass:
     """A well-formatted class."""
-    
+
     def __init__(self, value: int) -> None:
         self.value = value
-    
+
     def get_value(self) -> int:
         """Get the stored value."""
         return self.value
@@ -362,7 +362,7 @@ def script_assertions():
         @staticmethod
         def assert_script_failure(
             result: subprocess.CompletedProcess,
-            expected_code: int = None,
+            expected_code: int | None = None,
             message: str = "Script should fail",
         ):
             """Assert that a script failed with expected exit code."""
@@ -386,14 +386,14 @@ def script_assertions():
                 )
 
         @staticmethod
-        def assert_file_exists(file_path: Path, message: str = None):
+        def assert_file_exists(file_path: Path, message: str | None = None):
             """Assert that a file exists."""
             if not file_path.exists():
                 msg = message or f"File should exist: {file_path}"
                 raise AssertionError(msg)
 
         @staticmethod
-        def assert_file_not_exists(file_path: Path, message: str = None):
+        def assert_file_not_exists(file_path: Path, message: str | None = None):
             """Assert that a file does not exist."""
             if file_path.exists():
                 msg = message or f"File should not exist: {file_path}"

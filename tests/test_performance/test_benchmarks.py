@@ -11,11 +11,11 @@ Establishes performance benchmarks for:
 - Concurrent user scenarios
 """
 
-import pytest
 import asyncio
 import time
 from unittest.mock import patch
 
+import pytest
 from httpx import AsyncClient
 
 from app.main import create_application
@@ -219,7 +219,7 @@ class TestWebSocketPerformance:
             start_time = time.time()
 
             # Mock message processing
-            for message in messages:
+            for _message in messages:
                 # Simulate message processing time
                 pass
 
@@ -240,7 +240,7 @@ class TestWebSocketPerformance:
             # Simulate 100 concurrent WebSocket connections
             connection_times = []
 
-            for i in range(100):
+            for _i in range(100):
                 start_time = time.time()
                 # Simulate connection processing
                 time.sleep(0.001)  # 1ms per connection
@@ -442,7 +442,7 @@ class TestLoadTesting:
             ) as client:
                 # Simulate 50 concurrent users making requests
                 tasks = []
-                for i in range(50):
+                for _i in range(50):
                     tasks.append(client.get("/api/auth/profile"))
 
                 responses = await asyncio.gather(*tasks, return_exceptions=True)
@@ -483,15 +483,16 @@ class TestLoadTesting:
         """Test memory usage under load."""
 
         def memory_load_test():
-            import psutil
             import os
+
+            import psutil
 
             process = psutil.Process(os.getpid())
             initial_memory = process.memory_info().rss
 
             # Simulate memory-intensive operations
             large_data = []
-            for i in range(1000):
+            for _i in range(1000):
                 large_data.append({"data": "x" * 1000})  # 1KB per item
 
             final_memory = process.memory_info().rss

@@ -13,8 +13,9 @@ import sys
 sys.path.insert(0, "/app")
 
 from sqlalchemy.ext.asyncio import create_async_engine  # noqa: E402
-from app.models.base import BaseModel  # noqa: E402
+
 from app.core.logging import logger  # noqa: E402
+from app.models.base import BaseModel  # noqa: E402
 
 
 async def init_test_database():
@@ -60,9 +61,9 @@ async def init_test_database():
             result = await conn.execute(
                 text(
                     """
-                SELECT table_name 
-                FROM information_schema.tables 
-                WHERE table_schema = 'public' 
+                SELECT table_name
+                FROM information_schema.tables
+                WHERE table_schema = 'public'
                 ORDER BY table_name;
             """
                 )

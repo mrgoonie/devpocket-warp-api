@@ -2,14 +2,15 @@
 Test SSH management API endpoints.
 """
 
+from unittest.mock import AsyncMock, patch
+
 import pytest
 from fastapi import status
-from unittest.mock import patch, AsyncMock
 
 from tests.factories import (
-    VerifiedUserFactory,
-    SSHProfileFactory,
     SSHKeyFactory,
+    SSHProfileFactory,
+    VerifiedUserFactory,
 )
 
 

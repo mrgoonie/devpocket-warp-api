@@ -6,11 +6,11 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
-from app.models.user import User, UserSettings
-from app.models.session import Session
-from app.models.ssh_profile import SSHProfile, SSHKey
 from app.models.command import Command
+from app.models.session import Session
+from app.models.ssh_profile import SSHKey, SSHProfile
 from app.models.sync import SyncData
+from app.models.user import User, UserSettings
 
 
 @pytest.mark.database

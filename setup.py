@@ -4,18 +4,17 @@ DevPocket API Setup Script
 Automated environment setup and initialization for development and production.
 """
 
-import sys
-import subprocess
-import shutil
 import argparse
+import shutil
+import subprocess
+import sys
 from pathlib import Path
-from typing import Optional
 
 
 class DevPocketSetup:
     """Main setup class for DevPocket API environment."""
 
-    def __init__(self, project_root: Optional[Path] = None):
+    def __init__(self, project_root: Path | None = None):
         self.project_root = project_root or Path(__file__).parent
         self.venv_path = self.project_root / "venv"
         self.requirements_file = self.project_root / "requirements.txt"
@@ -30,7 +29,7 @@ class DevPocketSetup:
         print(f"[{timestamp}] [{level}] {message}")
 
     def run_command(
-        self, command: str, cwd: Optional[Path] = None, check: bool = True
+        self, command: str, cwd: Path | None = None, check: bool = True
     ) -> subprocess.CompletedProcess:
         """Run shell command with error handling."""
         try:
@@ -142,7 +141,7 @@ class DevPocketSetup:
             jwt_secret = secrets.token_hex(32)
 
             # Replace placeholder JWT secret in .env file
-            with open(self.env_file, "r") as f:
+            with open(self.env_file) as f:
                 content = f.read()
 
             content = content.replace(

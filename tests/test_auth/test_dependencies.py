@@ -2,26 +2,27 @@
 Test authentication dependencies and middleware.
 """
 
-import pytest
-from fastapi import Request, HTTPException
-from fastapi.security import HTTPAuthorizationCredentials
 from unittest.mock import Mock
 
+import pytest
+from fastapi import HTTPException, Request
+from fastapi.security import HTTPAuthorizationCredentials
+
 from app.auth.dependencies import (
-    get_token_from_request,
-    get_current_user,
-    get_current_active_user,
-    get_optional_current_user,
-    require_subscription_tier,
-    get_user_from_token,
     AuthenticationError,
     InactiveUserError,
+    get_current_active_user,
+    get_current_user,
+    get_optional_current_user,
+    get_token_from_request,
+    get_user_from_token,
+    require_subscription_tier,
 )
 from app.auth.security import create_access_token, set_redis_client
 from tests.factories import (
+    PremiumUserFactory,
     UserFactory,
     VerifiedUserFactory,
-    PremiumUserFactory,
 )
 
 

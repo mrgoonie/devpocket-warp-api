@@ -6,20 +6,20 @@ token blacklisting, and password reset functionality.
 """
 
 import secrets
-from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
 import redis.asyncio as aioredis
 from jose import JWTError, jwt
 from jose.exceptions import (
     ExpiredSignatureError,
-    JWTClaimsError,
     JWSSignatureError,
+    JWTClaimsError,
 )
 from passlib.context import CryptContext
 
 from app.core.config import settings
 from app.core.logging import logger
-
 
 # Password hashing context
 pwd_context = CryptContext(
@@ -29,7 +29,7 @@ pwd_context = CryptContext(
 )
 
 # Redis client for token blacklisting (will be set during app startup)
-_redis_client: Optional[aioredis.Redis] = None
+_redis_client: aioredis.Redis | None = None
 
 
 def set_redis_client(redis_client: aioredis.Redis) -> None:
@@ -76,7 +76,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 # JWT Token Functions
 def create_access_token(
-    data: Dict[str, Any], expires_delta: Optional[timedelta] = None
+    data: dict[str, Any], expires_delta: timedelta | None = None
 ) -> str:
     """
     Create a JWT access token.
@@ -97,16 +97,14 @@ def create_access_token(
     to_encode = data.copy()
 
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(
-            hours=settings.jwt_expiration_hours
-        )
+        expire = datetime.now(UTC) + timedelta(hours=settings.jwt_expiration_hours)
 
     to_encode.update(
         {
             "exp": int(expire.timestamp()),
-            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "iat": int(datetime.now(UTC).timestamp()),
             "type": "access",
         }
     )
@@ -127,7 +125,7 @@ def create_access_token(
 
 
 def create_refresh_token(
-    data: Dict[str, Any], expires_delta: Optional[timedelta] = None
+    data: dict[str, Any], expires_delta: timedelta | None = None
 ) -> str:
     """
     Create a JWT refresh token.
@@ -148,16 +146,16 @@ def create_refresh_token(
     to_encode = data.copy()
 
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(
+        expire = datetime.now(UTC) + timedelta(
             days=settings.jwt_refresh_expiration_days
         )
 
     to_encode.update(
         {
             "exp": int(expire.timestamp()),
-            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "iat": int(datetime.now(UTC).timestamp()),
             "type": "refresh",
         }
     )
@@ -177,7 +175,7 @@ def create_refresh_token(
         raise ValueError("Failed to create refresh token")
 
 
-def decode_token(token: str) -> Dict[str, Any]:
+def decode_token(token: str) -> dict[str, Any]:
     """
     Decode and verify a JWT token.
 
@@ -210,7 +208,7 @@ def decode_token(token: str) -> Dict[str, Any]:
         raise JWTError("Token decoding failed")
 
 
-def verify_token(token: str) -> Optional[Dict[str, Any]]:
+def verify_token(token: str) -> dict[str, Any] | None:
     """
     Verify a JWT token and return its payload if valid.
 
@@ -272,7 +270,7 @@ def is_token_blacklisted_sync(token: str) -> bool:
     return False
 
 
-async def blacklist_token(token: str, expires_at: Optional[datetime] = None) -> None:
+async def blacklist_token(token: str, expires_at: datetime | None = None) -> None:
     """
     Add a token to the blacklist.
 
@@ -291,15 +289,15 @@ async def blacklist_token(token: str, expires_at: Optional[datetime] = None) -> 
                 payload = decode_token(token)
                 exp_timestamp = payload.get("exp")
                 if exp_timestamp:
-                    expires_at = datetime.fromtimestamp(exp_timestamp, tz=timezone.utc)
+                    expires_at = datetime.fromtimestamp(exp_timestamp, tz=UTC)
             except JWTError:
                 # If we can't decode the token, use a default expiration
-                expires_at = datetime.now(timezone.utc) + timedelta(days=1)
+                expires_at = datetime.now(UTC) + timedelta(days=1)
 
         # Calculate TTL in seconds
         # expires_at is guaranteed to be non-None at this point due to the logic above
         assert expires_at is not None
-        ttl = int((expires_at - datetime.now(timezone.utc)).total_seconds())
+        ttl = int((expires_at - datetime.now(UTC)).total_seconds())
 
         if ttl > 0:
             await _redis_client.setex(f"blacklist:{token}", ttl, "blacklisted")
@@ -323,7 +321,7 @@ def generate_password_reset_token(email: str) -> str:
     if not email:
         raise ValueError("Token data must include 'sub' (subject) field")
 
-    data: Dict[str, Any] = {
+    data: dict[str, Any] = {
         "sub": email,
         "type": "password_reset",
         "reset_id": secrets.token_urlsafe(16),  # Additional security
@@ -331,14 +329,14 @@ def generate_password_reset_token(email: str) -> str:
 
     # Password reset tokens expire in 1 hour
     expires_delta = timedelta(hours=1)
-    expire = datetime.now(timezone.utc) + expires_delta
+    expire = datetime.now(UTC) + expires_delta
 
     # Create the token data
     to_encode = data.copy()
     to_encode.update(
         {
             "exp": int(expire.timestamp()),
-            "iat": int(datetime.now(timezone.utc).timestamp()),
+            "iat": int(datetime.now(UTC).timestamp()),
         }
     )
 
@@ -357,7 +355,7 @@ def generate_password_reset_token(email: str) -> str:
         raise ValueError("Failed to create password reset token")
 
 
-def verify_password_reset_token(token: str) -> Optional[str]:
+def verify_password_reset_token(token: str) -> str | None:
     """
     Verify a password reset token and return the email if valid.
 

@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 
-def run_command(command: str, description: str = None) -> int:
+def run_command(command: str, description: str | None = None) -> int:
     """Run a shell command and return the exit code."""
     if description:
         print(f"🔄 {description}")
@@ -214,7 +214,7 @@ Commands:
   test          Run tests with pytest
   check         Run all checks (format, lint, typecheck, test)
   env           Create .env file from template
-  
+
 Database Commands:
   db            Set up database (create, init, migrate)
   db-create     Create database
@@ -223,7 +223,7 @@ Database Commands:
   db-health     Check database health
   migrate       Run database migrations
   migration     Create new migration
-  
+
 Utility Commands:
   clean         Clean up generated files
   help          Show this help message

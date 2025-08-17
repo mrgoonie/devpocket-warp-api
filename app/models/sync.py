@@ -3,11 +3,13 @@ Sync data model for DevPocket API.
 """
 
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from uuid import UUID as PyUUID
-from sqlalchemy import String, ForeignKey, Boolean, JSON, Integer
+
+from sqlalchemy import JSON, Boolean, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from .base import BaseModel
 
 if TYPE_CHECKING:
@@ -60,11 +62,11 @@ class SyncData(BaseModel):
     )  # ios, android, web
 
     # Conflict resolution
-    conflict_data: Mapped[Optional[dict]] = mapped_column(
+    conflict_data: Mapped[dict | None] = mapped_column(
         JSON, nullable=True
     )  # Store conflicting versions for manual resolution
 
-    resolved_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(nullable=True)
 
     # Sync timestamps
     synced_at: Mapped[datetime] = mapped_column(

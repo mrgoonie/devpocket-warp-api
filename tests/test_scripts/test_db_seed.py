@@ -10,9 +10,10 @@ Tests cover:
 - Help and usage information
 """
 
-import pytest
-from unittest.mock import patch, MagicMock, mock_open
 import os
+from unittest.mock import MagicMock, mock_open, patch
+
+import pytest
 
 
 @pytest.mark.database

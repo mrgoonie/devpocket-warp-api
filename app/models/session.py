@@ -3,16 +3,18 @@ Session model for DevPocket API.
 """
 
 from datetime import datetime, timedelta
-from typing import Optional, List, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from uuid import UUID as PyUUID
-from sqlalchemy import String, ForeignKey, Integer, Text, Boolean
+
+from sqlalchemy import Boolean, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from .base import BaseModel
 
 if TYPE_CHECKING:
-    from .user import User
     from .command import Command
+    from .user import User
 
 
 class Session(BaseModel):
@@ -35,19 +37,19 @@ class Session(BaseModel):
         String(20), nullable=False, index=True
     )  # ios, android, web
 
-    device_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    device_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Session metadata
-    session_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    session_name: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Alias for compatibility with services expecting 'name'
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str | None:
         """Get session name (alias for session_name)."""
         return self.session_name
 
     @name.setter
-    def name(self, value: Optional[str]) -> None:
+    def name(self, value: str | None) -> None:
         """Set session name (alias for session_name)."""
         self.session_name = value
 
@@ -59,11 +61,11 @@ class Session(BaseModel):
     )  # terminal, ssh, pty
 
     # Connection information
-    ip_address: Mapped[Optional[str]] = mapped_column(
+    ip_address: Mapped[str | None] = mapped_column(
         String(45), nullable=True  # IPv6 max length
     )
 
-    user_agent: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Session status
     is_active: Mapped[bool] = mapped_column(
@@ -96,22 +98,20 @@ class Session(BaseModel):
             self.is_active = True
         # For other statuses like "connecting", we just store internally
 
-    last_activity_at: Mapped[Optional[datetime]] = mapped_column(
-        nullable=True, index=True
-    )
+    last_activity_at: Mapped[datetime | None] = mapped_column(nullable=True, index=True)
 
     # Alias for compatibility with services expecting 'last_activity'
     @property
-    def last_activity(self) -> Optional[datetime]:
+    def last_activity(self) -> datetime | None:
         """Get last activity timestamp (alias for last_activity_at)."""
         return self.last_activity_at
 
     @last_activity.setter
-    def last_activity(self, value: Optional[datetime]) -> None:
+    def last_activity(self, value: datetime | None) -> None:
         """Set last activity timestamp (alias for last_activity_at)."""
         self.last_activity_at = value
 
-    ended_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    ended_at: Mapped[datetime | None] = mapped_column(nullable=True)
 
     # Session timing
     @property
@@ -120,35 +120,35 @@ class Session(BaseModel):
         return self.created_at
 
     @property
-    def end_time(self) -> Optional[datetime]:
+    def end_time(self) -> datetime | None:
         """Get session end time (alias for ended_at)."""
         return self.ended_at
 
     @end_time.setter
-    def end_time(self, value: Optional[datetime]) -> None:
+    def end_time(self, value: datetime | None) -> None:
         """Set session end time (alias for ended_at)."""
         self.ended_at = value
 
     @property
-    def duration_seconds(self) -> Optional[int]:
+    def duration_seconds(self) -> int | None:
         """Get session duration in seconds."""
         if not self.ended_at:
             return None
         return int((self.ended_at - self.created_at).total_seconds())
 
     @duration_seconds.setter
-    def duration_seconds(self, value: Optional[int]) -> None:
+    def duration_seconds(self, value: int | None) -> None:
         """Set session duration in seconds (computed field, setter for compatibility)."""
         # This is computed from start/end times, but we provide setter for compatibility
         if value is not None and not self.ended_at:
             self.ended_at = self.created_at + timedelta(seconds=value)
 
     # SSH connection details (if applicable)
-    ssh_host: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    ssh_host: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
-    ssh_port: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    ssh_port: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
-    ssh_username: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    ssh_username: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Terminal configuration
     terminal_cols: Mapped[int] = mapped_column(
@@ -160,17 +160,17 @@ class Session(BaseModel):
     )
 
     # Environment variables (JSON string)
-    environment: Mapped[Optional[str]] = mapped_column(
+    environment: Mapped[str | None] = mapped_column(
         Text, nullable=True
     )  # JSON string of environment variables
 
     # Session error information
-    error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Relationships
     user: Mapped["User"] = relationship("User", back_populates="sessions")
 
-    commands: Mapped[List["Command"]] = relationship(
+    commands: Mapped[list["Command"]] = relationship(
         "Command", back_populates="session", cascade="all, delete-orphan"
     )
 
@@ -181,7 +181,7 @@ class Session(BaseModel):
         return len(self.commands)
 
     @property
-    def duration(self) -> Optional[int]:
+    def duration(self) -> int | None:
         """Get session duration in seconds."""
         if not self.ended_at:
             return None

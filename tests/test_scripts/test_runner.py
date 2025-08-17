@@ -6,10 +6,10 @@ This script can be used to run the script tests even without pytest installed.
 It provides basic test discovery and execution functionality.
 """
 
-import sys
 import importlib.util
-from pathlib import Path
 import subprocess
+import sys
+from pathlib import Path
 
 
 def run_test_function(test_func, test_name):
@@ -81,7 +81,7 @@ def run_test_function(test_func, test_name):
         return True, None
 
     except Exception as e:
-        return False, f"{type(e).__name__}: {str(e)}"
+        return False, f"{type(e).__name__}: {e!s}"
 
 
 def discover_test_functions(module):

@@ -5,7 +5,8 @@ Logging configuration for DevPocket API.
 import logging
 import sys
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Any
+
 from app.core.config import settings
 
 
@@ -49,7 +50,7 @@ def log_request(
     url: str,
     status_code: int,
     duration: float,
-    user_id: Optional[str] = None,
+    user_id: str | None = None,
 ) -> None:
     """
     Log HTTP request information.
@@ -85,7 +86,7 @@ def log_request(
 
 
 def log_websocket_event(
-    event_type: str, session_id: str, user_id: Optional[str] = None, **kwargs: Any
+    event_type: str, session_id: str, user_id: str | None = None, **kwargs: Any
 ) -> None:
     """
     Log WebSocket event information.
@@ -116,8 +117,8 @@ def log_websocket_event(
 
 def log_error(
     error: Exception,
-    context: Optional[Dict[str, Any]] = None,
-    user_id: Optional[str] = None,
+    context: dict[str, Any] | None = None,
+    user_id: str | None = None,
 ) -> None:
     """
     Log error information with context.
@@ -144,7 +145,7 @@ def log_error(
         logger.error(json.dumps(log_data))
     else:
         logger.error(
-            f"Error: {type(error).__name__} - {str(error)}"
+            f"Error: {type(error).__name__} - {error!s}"
             + (f" - User: {user_id}" if user_id else "")
         )
 
@@ -153,7 +154,7 @@ def log_ssh_event(
     event_type: str,
     session_id: str,
     host: str,
-    user_id: Optional[str] = None,
+    user_id: str | None = None,
     **kwargs: Any,
 ) -> None:
     """
@@ -193,8 +194,8 @@ def log_ai_event(
     event_type: str,
     model: str,
     prompt_length: int,
-    response_length: Optional[int] = None,
-    user_id: Optional[str] = None,
+    response_length: int | None = None,
+    user_id: str | None = None,
     **kwargs: Any,
 ) -> None:
     """

@@ -2,11 +2,11 @@
 SQLAlchemy models for DevPocket API.
 """
 
-from .user import User, UserSettings
-from .session import Session
 from .command import Command
-from .ssh_profile import SSHProfile, SSHKey
+from .session import Session
+from .ssh_profile import SSHKey, SSHProfile
 from .sync import SyncData
+from .user import User, UserSettings
 
 __all__ = [
     "User",

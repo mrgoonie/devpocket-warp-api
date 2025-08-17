@@ -2,21 +2,22 @@
 Multi-Device Synchronization API router for DevPocket.
 """
 
-from typing import Annotated, Dict, Any
-from fastapi import APIRouter, Depends, Body
+from typing import Annotated, Any
+
+from fastapi import APIRouter, Body, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_active_user
 from app.db.database import get_db
 from app.models.user import User
+
 from .schemas import (
+    MessageResponse,
     SyncDataRequest,
     SyncDataResponse,
     SyncStats,
-    MessageResponse,
 )
 from .service import SyncService
-
 
 router = APIRouter(
     prefix="/api/sync",
@@ -44,7 +45,7 @@ async def get_sync_data(
 async def upload_sync_data(
     current_user: Annotated[User, Depends(get_current_active_user)],
     db: Annotated[AsyncSession, Depends(get_db)],
-    data: Dict[str, Any] = Body(..., description="Synchronization data"),
+    data: dict[str, Any] = Body(..., description="Synchronization data"),
 ) -> MessageResponse:
     """Upload device synchronization data."""
     service = SyncService(db)

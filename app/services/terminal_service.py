@@ -5,7 +5,8 @@ Provides high-level terminal operations and session management
 for use by other application services.
 """
 
-from typing import Optional, Dict, Any, List, cast
+from typing import Any, cast
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import logger
@@ -28,7 +29,7 @@ class TerminalService:
         self.session_repo = SessionRepository(db)
         self.ssh_profile_repo = SSHProfileRepository(db)
 
-    async def get_active_sessions(self, user_id: str) -> List[Dict[str, Any]]:
+    async def get_active_sessions(self, user_id: str) -> list[dict[str, Any]]:
         """
         Get all active terminal sessions for a user.
 
@@ -66,7 +67,7 @@ class TerminalService:
 
                 # Add SSH information if applicable
                 if session.is_ssh_session():
-                    ssh_info: Dict[str, str | int | None] = {
+                    ssh_info: dict[str, str | int | None] = {
                         "host": session.ssh_host,
                         "port": session.ssh_port,
                         "username": session.ssh_username,
@@ -83,7 +84,7 @@ class TerminalService:
 
     async def get_session_details(
         self, session_id: str, user_id: str
-    ) -> Optional[Dict[str, Any]]:
+    ) -> dict[str, Any] | None:
         """
         Get detailed information about a specific session.
 
@@ -143,7 +144,7 @@ class TerminalService:
 
             # Add SSH information if applicable
             if session.is_ssh_session():
-                ssh_info: Dict[str, str | int | None] = {
+                ssh_info: dict[str, str | int | None] = {
                     "host": session.ssh_host,
                     "port": session.ssh_port,
                     "username": session.ssh_username,
@@ -210,8 +211,8 @@ class TerminalService:
         user_id: str,
         limit: int = 50,
         offset: int = 0,
-        session_type: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        session_type: str | None = None,
+    ) -> dict[str, Any]:
         """
         Get session history for a user.
 
@@ -261,7 +262,7 @@ class TerminalService:
 
                 # Add SSH info if applicable
                 if session.is_ssh_session():
-                    ssh_info: Dict[str, Any] = {
+                    ssh_info: dict[str, Any] = {
                         "host": session.ssh_host,
                         "port": session.ssh_port,
                         "username": session.ssh_username,
@@ -292,7 +293,7 @@ class TerminalService:
                 },
             }
 
-    async def get_connection_stats(self) -> Dict[str, Any]:
+    async def get_connection_stats(self) -> dict[str, Any]:
         """
         Get WebSocket connection and session statistics.
 
@@ -300,7 +301,7 @@ class TerminalService:
             Dictionary with connection statistics
         """
         try:
-            stats: Dict[str, Any] = {
+            stats: dict[str, Any] = {
                 "total_connections": connection_manager.get_connection_count(),
                 "total_sessions": connection_manager.get_session_count(),
                 "connection_details": [],

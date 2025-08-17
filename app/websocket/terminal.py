@@ -6,23 +6,26 @@ between WebSocket connections and terminal handlers.
 """
 
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import logger
-from app.models.session import Session
-from app.models.ssh_profile import SSHProfile
 from app.repositories.session import SessionRepository
 from app.repositories.ssh_profile import SSHProfileRepository
+
 from .protocols import (
+    create_error_message,
     create_output_message,
     create_status_message,
-    create_error_message,
 )
 from .pty_handler import PTYHandler
 from .ssh_handler import SSHHandler
 
 if TYPE_CHECKING:
+    from app.models.session import Session
+    from app.models.ssh_profile import SSHProfile
+
     from .manager import Connection
 
 
@@ -39,8 +42,8 @@ class TerminalSession:
         self,
         session_id: str,
         connection: "Connection",
-        ssh_profile_id: Optional[str] = None,
-        db: Optional[AsyncSession] = None,
+        ssh_profile_id: str | None = None,
+        db: AsyncSession | None = None,
     ):
         """
         Initialize terminal session.
@@ -61,16 +64,16 @@ class TerminalSession:
         self._session_type = "terminal"
 
         # Terminal handlers
-        self.pty_handler: Optional[PTYHandler] = None
-        self.ssh_handler: Optional[SSHHandler] = None
+        self.pty_handler: PTYHandler | None = None
+        self.ssh_handler: SSHHandler | None = None
 
         # Terminal configuration
         self.rows = 24
         self.cols = 80
 
         # Database models
-        self.db_session: Optional[Session] = None
-        self.ssh_profile: Optional[SSHProfile] = None
+        self.db_session: Session | None = None
+        self.ssh_profile: SSHProfile | None = None
 
     async def start(self) -> bool:
         """
@@ -368,7 +371,7 @@ class TerminalSession:
         self,
         status: str,
         message: str = "",
-        server_info: Optional[dict] = None,
+        server_info: dict | None = None,
     ) -> None:
         """Send status message to client."""
         try:

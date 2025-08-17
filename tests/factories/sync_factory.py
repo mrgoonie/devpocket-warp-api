@@ -2,7 +2,8 @@
 Sync data factory for testing.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+
 import factory
 from factory import fuzzy
 from faker import Faker
@@ -42,10 +43,10 @@ class SyncDataFactory(factory.Factory):
 
     # Sync timestamps
     synced_at = factory.LazyFunction(
-        lambda: datetime.now(timezone.utc) - timedelta(hours=1)
+        lambda: datetime.now(UTC) - timedelta(hours=1)
     )
     last_modified_at = factory.LazyFunction(
-        lambda: datetime.now(timezone.utc) - timedelta(minutes=30)
+        lambda: datetime.now(UTC) - timedelta(minutes=30)
     )
 
 
@@ -151,7 +152,7 @@ class ConflictedSyncDataFactory(SyncDataFactory):
         lambda: {
             "current_data": {"terminal_theme": "dark", "font_size": 14},
             "conflicting_data": {"terminal_theme": "light", "font_size": 16},
-            "conflict_created_at": datetime.now(timezone.utc).isoformat(),
+            "conflict_created_at": datetime.now(UTC).isoformat(),
         }
     )
 
@@ -162,7 +163,7 @@ class ResolvedConflictSyncDataFactory(ConflictedSyncDataFactory):
     """Factory for resolved conflict sync data."""
 
     resolved_at = factory.LazyFunction(
-        lambda: datetime.now(timezone.utc) - timedelta(hours=1)
+        lambda: datetime.now(UTC) - timedelta(hours=1)
     )
     conflict_data = None
 
@@ -171,10 +172,10 @@ class RecentSyncDataFactory(SyncDataFactory):
     """Factory for recently synced data."""
 
     synced_at = factory.LazyFunction(
-        lambda: datetime.now(timezone.utc) - timedelta(minutes=5)
+        lambda: datetime.now(UTC) - timedelta(minutes=5)
     )
     last_modified_at = factory.LazyFunction(
-        lambda: datetime.now(timezone.utc) - timedelta(minutes=2)
+        lambda: datetime.now(UTC) - timedelta(minutes=2)
     )
 
 
@@ -182,10 +183,10 @@ class OldSyncDataFactory(SyncDataFactory):
     """Factory for old sync data."""
 
     synced_at = factory.LazyFunction(
-        lambda: datetime.now(timezone.utc) - timedelta(days=7)
+        lambda: datetime.now(UTC) - timedelta(days=7)
     )
     last_modified_at = factory.LazyFunction(
-        lambda: datetime.now(timezone.utc) - timedelta(days=5)
+        lambda: datetime.now(UTC) - timedelta(days=5)
     )
     version = fuzzy.FuzzyInteger(5, 15)
 
@@ -216,7 +217,7 @@ class HighVersionSyncDataFactory(SyncDataFactory):
 
     version = fuzzy.FuzzyInteger(10, 50)
     last_modified_at = factory.LazyFunction(
-        lambda: datetime.now(timezone.utc) - timedelta(minutes=1)
+        lambda: datetime.now(UTC) - timedelta(minutes=1)
     )
 
 

@@ -3,11 +3,13 @@ Command model for DevPocket API.
 """
 
 from datetime import datetime
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 from uuid import UUID as PyUUID
-from sqlalchemy import String, ForeignKey, Integer, Text, Float, Boolean, Index
+
+from sqlalchemy import Boolean, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from .base import BaseModel
 
 if TYPE_CHECKING:
@@ -33,11 +35,11 @@ class Command(BaseModel):
     )
 
     # Command execution results
-    output: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    output: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    error_output: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    error_output: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    exit_code: Mapped[Optional[int]] = mapped_column(
+    exit_code: Mapped[int | None] = mapped_column(
         Integer, nullable=True, index=True  # For filtering by success/failure
     )
 
@@ -51,26 +53,26 @@ class Command(BaseModel):
     )  # pending, running, success, error, cancelled, timeout
 
     # Execution timing
-    started_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(nullable=True)
 
-    completed_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(nullable=True)
 
-    execution_time: Mapped[Optional[float]] = mapped_column(
+    execution_time: Mapped[float | None] = mapped_column(
         Float, nullable=True
     )  # Execution time in seconds
 
     # Command metadata
-    working_directory: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    working_directory: Mapped[str | None] = mapped_column(String(500), nullable=True)
 
-    environment_vars: Mapped[Optional[str]] = mapped_column(
+    environment_vars: Mapped[str | None] = mapped_column(
         Text, nullable=True
     )  # JSON string of environment variables
 
     # Additional command execution details
-    environment: Mapped[Optional[str]] = mapped_column(
+    environment: Mapped[str | None] = mapped_column(
         Text, nullable=True
     )  # Alias for environment_vars
-    timeout_seconds: Mapped[Optional[int]] = mapped_column(
+    timeout_seconds: Mapped[int | None] = mapped_column(
         Integer, nullable=True, default=30
     )
     capture_output: Mapped[bool] = mapped_column(
@@ -78,10 +80,8 @@ class Command(BaseModel):
     )
 
     # Output details
-    stdout: Mapped[Optional[str]] = mapped_column(
-        Text, nullable=True
-    )  # Alias for output
-    stderr: Mapped[Optional[str]] = mapped_column(
+    stdout: Mapped[str | None] = mapped_column(Text, nullable=True)  # Alias for output
+    stderr: Mapped[str | None] = mapped_column(
         Text, nullable=True
     )  # Alias for error_output
     output_truncated: Mapped[bool] = mapped_column(
@@ -89,16 +89,16 @@ class Command(BaseModel):
     )
 
     # Execution details
-    executed_at: Mapped[Optional[datetime]] = mapped_column(
+    executed_at: Mapped[datetime | None] = mapped_column(
         nullable=True
     )  # Alias for started_at
     is_dangerous: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false"
     )
-    pid: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    signal: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
-    sequence_number: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    parent_command_id: Mapped[Optional[PyUUID]] = mapped_column(
+    pid: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    signal: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    sequence_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    parent_command_id: Mapped[PyUUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True
     )
 
@@ -107,10 +107,10 @@ class Command(BaseModel):
         nullable=False, default=False, server_default="false", index=True
     )
 
-    ai_explanation: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    ai_explanation: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Command classification
-    command_type: Mapped[Optional[str]] = mapped_column(
+    command_type: Mapped[str | None] = mapped_column(
         String(50), nullable=True, index=True
     )  # file_operation, network, system, git, etc.
 
@@ -124,7 +124,7 @@ class Command(BaseModel):
 
     # Computed properties
     @property
-    def user_id(self) -> Optional[PyUUID]:
+    def user_id(self) -> PyUUID | None:
         """Get user ID through session relationship."""
         return self.session.user_id if self.session else None
 
@@ -139,7 +139,7 @@ class Command(BaseModel):
         return self.exit_code != 0 or self.status == "error"
 
     @property
-    def duration_ms(self) -> Optional[int]:
+    def duration_ms(self) -> int | None:
         """Get execution duration in milliseconds."""
         if self.execution_time is not None:
             return int(self.execution_time * 1000)
@@ -153,8 +153,8 @@ class Command(BaseModel):
     def complete_execution(
         self,
         exit_code: int,
-        output: Optional[str] = None,
-        error_output: Optional[str] = None,
+        output: str | None = None,
+        error_output: str | None = None,
     ) -> None:
         """Mark command as completed with results."""
         self.completed_at = datetime.now()

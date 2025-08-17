@@ -5,21 +5,22 @@ Provides reusable dependency functions for protecting routes,
 extracting user information, and handling authentication.
 """
 
-from typing import Optional, Annotated, Callable
-from fastapi import Depends, HTTPException, status, Request
+from collections.abc import Callable
+from typing import Annotated
+
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import (
-    OAuth2PasswordBearer,
-    HTTPBearer,
     HTTPAuthorizationCredentials,
+    HTTPBearer,
+    OAuth2PasswordBearer,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.security import verify_token, is_token_blacklisted
+from app.auth.security import is_token_blacklisted, verify_token
 from app.core.logging import logger
 from app.db.database import get_db
 from app.models.user import User
 from app.repositories.user import UserRepository
-
 
 # OAuth2 scheme configuration
 oauth2_scheme = OAuth2PasswordBearer(
@@ -52,11 +53,11 @@ class InactiveUserError(HTTPException):
 
 async def get_token_from_request(
     request: Request,
-    oauth2_token: Annotated[Optional[str], Depends(oauth2_scheme)] = None,
+    oauth2_token: Annotated[str | None, Depends(oauth2_scheme)] = None,
     bearer_token: Annotated[
-        Optional[HTTPAuthorizationCredentials], Depends(http_bearer)
+        HTTPAuthorizationCredentials | None, Depends(http_bearer)
     ] = None,
-) -> Optional[str]:
+) -> str | None:
     """
     Extract JWT token from request using multiple methods.
 
@@ -91,7 +92,7 @@ async def get_token_from_request(
 
 async def get_current_user(
     db: Annotated[AsyncSession, Depends(get_db)],
-    token: Annotated[Optional[str], Depends(get_token_from_request)],
+    token: Annotated[str | None, Depends(get_token_from_request)],
 ) -> User:
     """
     Get the current authenticated user from JWT token.
@@ -178,8 +179,8 @@ async def get_current_active_user(
 
 async def get_optional_current_user(
     db: Annotated[AsyncSession, Depends(get_db)],
-    token: Annotated[Optional[str], Depends(get_token_from_request)],
-) -> Optional[User]:
+    token: Annotated[str | None, Depends(get_token_from_request)],
+) -> User | None:
     """
     Get the current user if authenticated, None if not.
 
@@ -265,7 +266,7 @@ def require_enterprise_tier() -> Callable:
     return _require_enterprise
 
 
-async def get_user_from_token(token: str, db: AsyncSession) -> Optional[User]:
+async def get_user_from_token(token: str, db: AsyncSession) -> User | None:
     """
     Utility function to get user from a token directly.
 

@@ -6,8 +6,8 @@ import factory
 import factory.fuzzy
 from faker import Faker
 
-from app.models.user import User, UserRole, UserSettings
 from app.auth.security import hash_password
+from app.models.user import User, UserRole, UserSettings
 
 fake = Faker()
 

@@ -5,37 +5,38 @@ Handles all AI-powered endpoints using BYOK model with OpenRouter integration.
 """
 
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_active_user
 from app.core.logging import logger
 from app.db.database import get_db
 from app.models.user import User
+
 from .schemas import (
-    # API Key schemas
-    APIKeyValidation,
-    APIKeyValidationResponse,
-    AIUsageStats,
-    # Command AI schemas
-    CommandSuggestionRequest,
-    CommandSuggestionResponse,
-    CommandExplanationRequest,
-    CommandExplanationResponse,
-    ErrorAnalysisRequest,
-    ErrorAnalysisResponse,
-    CommandOptimizationRequest,
-    CommandOptimizationResponse,
     # Settings and models
     AISettings,
     AISettingsResponse,
+    AIUsageStats,
+    # API Key schemas
+    APIKeyValidation,
+    APIKeyValidationResponse,
     AvailableModelsResponse,
     # Batch processing
     BatchAIRequest,
     BatchAIResponse,
+    CommandExplanationRequest,
+    CommandExplanationResponse,
+    CommandOptimizationRequest,
+    CommandOptimizationResponse,
+    # Command AI schemas
+    CommandSuggestionRequest,
+    CommandSuggestionResponse,
+    ErrorAnalysisRequest,
+    ErrorAnalysisResponse,
 )
 from .service import AIService
-
 
 # Create router instance
 router = APIRouter(
@@ -137,7 +138,7 @@ async def suggest_command(
         logger.error(f"Command suggestion error for user {current_user.username}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to generate command suggestions: {str(e)}",
+            detail=f"Failed to generate command suggestions: {e!s}",
         )
 
 
@@ -164,7 +165,7 @@ async def explain_command(
         logger.error(f"Command explanation error for user {current_user.username}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to explain command: {str(e)}",
+            detail=f"Failed to explain command: {e!s}",
         )
 
 
@@ -191,7 +192,7 @@ async def explain_error(
         logger.error(f"Error analysis error for user {current_user.username}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to analyze error: {str(e)}",
+            detail=f"Failed to analyze error: {e!s}",
         )
 
 
@@ -220,7 +221,7 @@ async def optimize_command(
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to optimize command: {str(e)}",
+            detail=f"Failed to optimize command: {e!s}",
         )
 
 
@@ -253,7 +254,7 @@ async def process_batch_requests(
         logger.error(f"Batch AI processing error for user {current_user.username}: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to process batch requests: {str(e)}",
+            detail=f"Failed to process batch requests: {e!s}",
         )
 
 
@@ -403,7 +404,7 @@ async def quick_suggest(
         logger.error(f"Quick suggest error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Quick suggestion failed: {str(e)}",
+            detail=f"Quick suggestion failed: {e!s}",
         )
 
 

@@ -7,29 +7,31 @@ and session monitoring.
 
 import asyncio
 import uuid
-from datetime import datetime, timedelta, timezone
-from typing import List, Dict, Any, Tuple
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.exc import IntegrityError
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import logger
-from app.models.user import User
 from app.models.session import Session
+from app.models.user import User
 from app.repositories.session import SessionRepository
 from app.repositories.ssh_profile import SSHProfileRepository
+
 from .schemas import (
-    SessionCreate,
-    SessionUpdate,
-    SessionResponse,
     SessionCommand,
     SessionCommandResponse,
+    SessionCreate,
+    SessionHealthCheck,
+    SessionHistoryEntry,
+    SessionHistoryResponse,
+    SessionResponse,
     SessionSearchRequest,
     SessionStats,
-    SessionHistoryResponse,
-    SessionHistoryEntry,
-    SessionHealthCheck,
     SessionStatus,
+    SessionUpdate,
 )
 
 
@@ -40,7 +42,7 @@ class SessionService:
         self.session = session
         self.session_repo = SessionRepository(session)
         self.ssh_profile_repo = SSHProfileRepository(session)
-        self._active_sessions: Dict[str, Dict[str, Any]] = {}
+        self._active_sessions: dict[str, dict[str, Any]] = {}
 
     async def create_session(
         self, user: User, session_data: SessionCreate
@@ -146,7 +148,7 @@ class SessionService:
         active_only: bool = False,
         offset: int = 0,
         limit: int = 50,
-    ) -> Tuple[List[SessionResponse], int]:
+    ) -> tuple[list[SessionResponse], int]:
         """Get terminal sessions for a user with pagination."""
         try:
             sessions = await self.session_repo.get_user_sessions(
@@ -232,7 +234,7 @@ class SessionService:
             for field, value in update_dict.items():
                 setattr(session_obj, field, value)
 
-            session_obj.updated_at = datetime.now(timezone.utc)
+            session_obj.updated_at = datetime.now(UTC)
             updated_session = await self.session_repo.update(session_obj)
             await self.session.commit()
 
@@ -293,7 +295,7 @@ class SessionService:
 
             # Update database
             session_obj.status = "terminated"
-            session_obj.end_time = datetime.now(timezone.utc)
+            session_obj.end_time = datetime.now(UTC)
             session_obj.is_active = False
 
             if session_obj.start_time:
@@ -447,11 +449,11 @@ class SessionService:
 
     async def search_sessions(
         self, user: User, search_request: SessionSearchRequest
-    ) -> Tuple[List[SessionResponse], int]:
+    ) -> tuple[list[SessionResponse], int]:
         """Search terminal sessions with filters."""
         try:
             # Build search criteria
-            criteria: Dict[str, Any] = {"user_id": user.id}
+            criteria: dict[str, Any] = {"user_id": user.id}
 
             if search_request.session_type:
                 criteria["session_type"] = search_request.session_type.value
@@ -518,7 +520,7 @@ class SessionService:
             )
 
             # Get sessions created today and this week
-            today = datetime.now(timezone.utc).date()
+            today = datetime.now(UTC).date()
             week_ago = today - timedelta(days=7)
 
             sessions_today = len(
@@ -569,9 +571,7 @@ class SessionService:
             uptime = 0
             if session_obj.start_time:
                 uptime = int(
-                    (
-                        datetime.now(timezone.utc) - session_obj.start_time
-                    ).total_seconds()
+                    (datetime.now(UTC) - session_obj.start_time).total_seconds()
                 )
 
             # Convert string status to SessionStatus enum
@@ -606,7 +606,7 @@ class SessionService:
         self._active_sessions[str(session.id)] = {
             "status": "connecting",
             "created_at": session.created_at,
-            "last_activity": datetime.now(timezone.utc),
+            "last_activity": datetime.now(UTC),
             "command_count": 0,
             "terminal_cols": session.terminal_cols,
             "terminal_rows": session.terminal_rows,
@@ -625,7 +625,7 @@ class SessionService:
 
             # Update session status
             session.status = "active"
-            session.last_activity = datetime.now(timezone.utc)
+            session.last_activity = datetime.now(UTC)
 
             await self.session_repo.update(session)
             await self.session.commit()
@@ -675,7 +675,7 @@ class SessionService:
         # In production, this would interact with the actual terminal process
 
         command_id = str(uuid.uuid4())
-        start_time = datetime.now(timezone.utc)
+        start_time = datetime.now(UTC)
 
         try:
             # Simulate command execution
@@ -691,7 +691,7 @@ class SessionService:
             stderr = str(e)
             exit_code = 1
 
-        end_time = datetime.now(timezone.utc)
+        end_time = datetime.now(UTC)
         duration_ms = int((end_time - start_time).total_seconds() * 1000)
 
         return SessionCommandResponse(
@@ -711,9 +711,7 @@ class SessionService:
     async def _update_session_activity(self, session_id: str) -> None:
         """Update session activity timestamp."""
         if session_id in self._active_sessions:
-            self._active_sessions[session_id]["last_activity"] = datetime.now(
-                timezone.utc
-            )
+            self._active_sessions[session_id]["last_activity"] = datetime.now(UTC)
             self._active_sessions[session_id]["command_count"] += 1
 
     async def _check_session_health(self, session_id: str) -> bool:
@@ -726,7 +724,7 @@ class SessionService:
         # Check if session is recent enough
         last_activity = memory_session.get("last_activity")
         if last_activity:
-            time_since_activity = datetime.now(timezone.utc) - last_activity
+            time_since_activity = datetime.now(UTC) - last_activity
             return bool(time_since_activity.total_seconds() < 3600)  # 1 hour threshold
 
         return memory_session.get("status") == "active"

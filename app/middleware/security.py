@@ -5,7 +5,8 @@ Adds security headers to all responses to protect against common web vulnerabili
 and improve the overall security posture of the application.
 """
 
-from typing import Any, Dict, Optional
+from typing import Any
+
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -24,7 +25,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     - Information disclosure
     """
 
-    def __init__(self, app: Any, headers: Optional[Dict[str, str]] = None) -> None:
+    def __init__(self, app: Any, headers: dict[str, str] | None = None) -> None:
         """
         Initialize security headers middleware.
 
@@ -256,7 +257,7 @@ class SecurityConfig:
                 )
 
     @staticmethod
-    def get_headers_for_environment(debug: bool = False) -> Dict[str, str]:
+    def get_headers_for_environment(debug: bool = False) -> dict[str, str]:
         """
         Get security headers appropriate for environment.
 

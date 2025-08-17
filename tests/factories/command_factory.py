@@ -2,11 +2,12 @@
 Command factory for testing.
 """
 
-from datetime import datetime, timedelta, timezone
+import json
+from datetime import UTC, datetime, timedelta
+
 import factory
 from factory import fuzzy
 from faker import Faker
-import json
 
 from app.models.command import Command
 
@@ -55,10 +56,10 @@ class CommandFactory(factory.Factory):
 
     # Execution timing
     started_at = factory.LazyFunction(
-        lambda: datetime.now(timezone.utc) - timedelta(seconds=5)
+        lambda: datetime.now(UTC) - timedelta(seconds=5)
     )
     completed_at = factory.LazyFunction(
-        lambda: datetime.now(timezone.utc) - timedelta(seconds=1)
+        lambda: datetime.now(UTC) - timedelta(seconds=1)
     )
     execution_time = factory.LazyAttribute(
         lambda obj: (
@@ -147,7 +148,7 @@ class CancelledCommandFactory(CommandFactory):
 
     status = "cancelled"
     started_at = factory.LazyFunction(
-        lambda: datetime.now(timezone.utc) - timedelta(seconds=2)
+        lambda: datetime.now(UTC) - timedelta(seconds=2)
     )
     completed_at = factory.LazyFunction(datetime.utcnow)
     execution_time = factory.LazyAttribute(
@@ -162,7 +163,7 @@ class TimeoutCommandFactory(CommandFactory):
 
     status = "timeout"
     started_at = factory.LazyFunction(
-        lambda: datetime.now(timezone.utc) - timedelta(minutes=5)
+        lambda: datetime.now(UTC) - timedelta(minutes=5)
     )
     completed_at = factory.LazyFunction(datetime.utcnow)
     execution_time = 300.0  # 5 minutes
@@ -308,7 +309,7 @@ class LongRunningCommandFactory(CommandFactory):
     )
     execution_time = fuzzy.FuzzyFloat(30.0, 300.0)  # 30 seconds to 5 minutes
     started_at = factory.LazyFunction(
-        lambda: datetime.now(timezone.utc) - timedelta(minutes=2)
+        lambda: datetime.now(UTC) - timedelta(minutes=2)
     )
     completed_at = factory.LazyAttribute(
         lambda obj: obj.started_at + timedelta(seconds=obj.execution_time)

@@ -2,14 +2,16 @@
 Command repository for DevPocket API.
 """
 
-from typing import Optional, List, Any, Dict, Union
 from datetime import datetime, timedelta
+from typing import Any
 from uuid import UUID as PyUUID
-from sqlalchemy import select, and_, func, desc, or_
+
+from sqlalchemy import and_, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.command import Command
+
 from .base import BaseRepository
 
 
@@ -24,8 +26,8 @@ class CommandRepository(BaseRepository[Command]):
         session_id: str,
         offset: int = 0,
         limit: int = 100,
-        status_filter: Optional[str] = None,
-    ) -> List[Command]:
+        status_filter: str | None = None,
+    ) -> list[Command]:
         """Get commands for a specific session."""
         query = select(Command).where(Command.session_id == session_id)
 
@@ -42,8 +44,8 @@ class CommandRepository(BaseRepository[Command]):
         user_id: str,
         offset: int = 0,
         limit: int = 100,
-        search_term: Optional[str] = None,
-    ) -> List[Command]:
+        search_term: str | None = None,
+    ) -> list[Command]:
         """Get command history for a user across all sessions."""
         # This requires a join with Session table
         from app.models.session import Session
@@ -65,10 +67,10 @@ class CommandRepository(BaseRepository[Command]):
     async def get_commands_by_status(
         self,
         status: str,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
         offset: int = 0,
         limit: int = 100,
-    ) -> List[Command]:
+    ) -> list[Command]:
         """Get commands by status."""
         query = select(Command).where(Command.status == status)
 
@@ -85,8 +87,8 @@ class CommandRepository(BaseRepository[Command]):
         return list(result.scalars().all())
 
     async def get_running_commands(
-        self, user_id: Optional[str] = None, session_id: Optional[str] = None
-    ) -> List[Command]:
+        self, user_id: str | None = None, session_id: str | None = None
+    ) -> list[Command]:
         """Get currently running commands."""
         query = select(Command).where(Command.status == "running")
 
@@ -118,7 +120,7 @@ class CommandRepository(BaseRepository[Command]):
 
         return cmd
 
-    async def start_command_execution(self, command_id: str) -> Optional[Command]:
+    async def start_command_execution(self, command_id: str) -> Command | None:
         """Mark command as started."""
         command = await self.get_by_id(command_id)
         if command:
@@ -131,9 +133,9 @@ class CommandRepository(BaseRepository[Command]):
         self,
         command_id: str,
         exit_code: int,
-        output: Optional[str] = None,
-        error_output: Optional[str] = None,
-    ) -> Optional[Command]:
+        output: str | None = None,
+        error_output: str | None = None,
+    ) -> Command | None:
         """Complete command execution with results."""
         command = await self.get_by_id(command_id)
         if command:
@@ -142,7 +144,7 @@ class CommandRepository(BaseRepository[Command]):
             await self.session.refresh(command)
         return command
 
-    async def cancel_command(self, command_id: str) -> Optional[Command]:
+    async def cancel_command(self, command_id: str) -> Command | None:
         """Cancel a command."""
         command = await self.get_by_id(command_id)
         if command:
@@ -151,7 +153,7 @@ class CommandRepository(BaseRepository[Command]):
             await self.session.refresh(command)
         return command
 
-    async def timeout_command(self, command_id: str) -> Optional[Command]:
+    async def timeout_command(self, command_id: str) -> Command | None:
         """Mark command as timed out."""
         command = await self.get_by_id(command_id)
         if command:
@@ -162,23 +164,23 @@ class CommandRepository(BaseRepository[Command]):
 
     async def search_commands(
         self,
-        criteria: Optional[Dict[str, Any]] = None,
-        query: Optional[str] = None,
-        executed_after: Optional[datetime] = None,
-        executed_before: Optional[datetime] = None,
-        min_duration_ms: Optional[int] = None,
-        max_duration_ms: Optional[int] = None,
-        has_output: Optional[bool] = None,
-        has_error: Optional[bool] = None,
-        output_contains: Optional[str] = None,
-        working_directory: Optional[str] = None,
+        criteria: dict[str, Any] | None = None,
+        query: str | None = None,
+        executed_after: datetime | None = None,
+        executed_before: datetime | None = None,
+        min_duration_ms: int | None = None,
+        max_duration_ms: int | None = None,
+        has_output: bool | None = None,
+        has_error: bool | None = None,
+        output_contains: str | None = None,
+        working_directory: str | None = None,
         include_dangerous: bool = True,
         only_dangerous: bool = False,
         sort_by: str = "created_at",
         sort_order: str = "desc",
         offset: int = 0,
         limit: int = 100,
-    ) -> List[Command]:
+    ) -> list[Command]:
         """Search commands with comprehensive criteria."""
         from app.models.session import Session
 
@@ -245,9 +247,9 @@ class CommandRepository(BaseRepository[Command]):
 
         # Apply dangerous command filters
         if only_dangerous:
-            cmd_query = cmd_query.where(Command.is_dangerous == True)
+            cmd_query = cmd_query.where(Command.is_dangerous is True)
         elif not include_dangerous:
-            cmd_query = cmd_query.where(Command.is_dangerous == False)
+            cmd_query = cmd_query.where(Command.is_dangerous is False)
 
         # Apply sorting
         if sort_order.lower() == "desc":
@@ -262,11 +264,11 @@ class CommandRepository(BaseRepository[Command]):
 
     async def get_user_commands_with_session(
         self,
-        user_id: Union[str, PyUUID],
+        user_id: str | PyUUID,
         offset: int = 0,
         limit: int = 100,
         include_session_info: bool = True,
-    ) -> List[Command]:
+    ) -> list[Command]:
         """Get user commands with session information."""
         from app.models.session import Session
 
@@ -284,7 +286,7 @@ class CommandRepository(BaseRepository[Command]):
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def count_user_commands(self, user_id: Union[str, PyUUID]) -> int:
+    async def count_user_commands(self, user_id: str | PyUUID) -> int:
         """Count total commands for a user."""
         from app.models.session import Session
 
@@ -297,7 +299,7 @@ class CommandRepository(BaseRepository[Command]):
         result = await self.session.execute(query)
         return result.scalar() or 0
 
-    async def count_commands_with_criteria(self, criteria: Dict[str, Any]) -> int:
+    async def count_commands_with_criteria(self, criteria: dict[str, Any]) -> int:
         """Count commands matching criteria."""
         from app.models.session import Session
 
@@ -320,10 +322,10 @@ class CommandRepository(BaseRepository[Command]):
 
     async def get_user_commands(
         self,
-        user_id: Union[str, PyUUID],
+        user_id: str | PyUUID,
         offset: int = 0,
         limit: int = 100,
-    ) -> List[Command]:
+    ) -> list[Command]:
         """Get all commands for a user."""
         from app.models.session import Session
 
@@ -340,8 +342,8 @@ class CommandRepository(BaseRepository[Command]):
         return list(result.scalars().all())
 
     async def get_session_command_stats(
-        self, user_id: Union[str, PyUUID]
-    ) -> List[Dict[str, Any]]:
+        self, user_id: str | PyUUID
+    ) -> list[dict[str, Any]]:
         """Get command statistics by session."""
         from app.models.session import Session
 
@@ -370,10 +372,10 @@ class CommandRepository(BaseRepository[Command]):
 
     async def get_user_commands_since(
         self,
-        user_id: Union[str, PyUUID],
+        user_id: str | PyUUID,
         since: datetime,
         limit: int = 100,
-    ) -> List[Command]:
+    ) -> list[Command]:
         """Get user commands since a specific date."""
         from app.models.session import Session
 
@@ -390,9 +392,9 @@ class CommandRepository(BaseRepository[Command]):
 
     async def get_user_recent_commands(
         self,
-        user_id: Union[str, PyUUID],
+        user_id: str | PyUUID,
         limit: int = 10,
-    ) -> List[Command]:
+    ) -> list[Command]:
         """Get recent commands for a user."""
         return await self.get_user_commands_since(
             user_id, datetime.now() - timedelta(days=7), limit
@@ -401,10 +403,10 @@ class CommandRepository(BaseRepository[Command]):
     async def get_commands_by_type(
         self,
         command_type: str,
-        user_id: Optional[str] = None,
+        user_id: str | None = None,
         offset: int = 0,
         limit: int = 100,
-    ) -> List[Command]:
+    ) -> list[Command]:
         """Get commands by type."""
         query = select(Command).where(Command.command_type == command_type)
 
@@ -421,10 +423,10 @@ class CommandRepository(BaseRepository[Command]):
         return list(result.scalars().all())
 
     async def get_ai_suggested_commands(
-        self, user_id: Optional[str] = None, offset: int = 0, limit: int = 100
-    ) -> List[Command]:
+        self, user_id: str | None = None, offset: int = 0, limit: int = 100
+    ) -> list[Command]:
         """Get commands that were AI-suggested."""
-        query = select(Command).where(Command.was_ai_suggested == True)
+        query = select(Command).where(Command.was_ai_suggested is True)
 
         if user_id:
             from app.models.session import Session
@@ -440,11 +442,11 @@ class CommandRepository(BaseRepository[Command]):
 
     async def get_failed_commands(
         self,
-        user_id: Optional[str] = None,
-        session_id: Optional[str] = None,
+        user_id: str | None = None,
+        session_id: str | None = None,
         offset: int = 0,
         limit: int = 100,
-    ) -> List[Command]:
+    ) -> list[Command]:
         """Get commands that failed (non-zero exit code or error status)."""
         query = select(Command).where(
             or_(Command.exit_code != 0, Command.status == "error")
@@ -464,7 +466,7 @@ class CommandRepository(BaseRepository[Command]):
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_command_stats(self, user_id: Optional[str] = None) -> dict:
+    async def get_command_stats(self, user_id: str | None = None) -> dict:
         """Get command execution statistics."""
         from app.models.session import Session
 
@@ -498,7 +500,7 @@ class CommandRepository(BaseRepository[Command]):
         ai_commands = await self.session.execute(
             select(func.count(Command.id))
             .select_from(base_query.subquery())
-            .where(Command.was_ai_suggested == True)
+            .where(Command.was_ai_suggested is True)
         )
 
         # Average execution time
@@ -517,8 +519,8 @@ class CommandRepository(BaseRepository[Command]):
         }
 
     async def get_top_commands(
-        self, user_id: Optional[str] = None, limit: int = 10
-    ) -> List[dict]:
+        self, user_id: str | None = None, limit: int = 10
+    ) -> list[dict]:
         """Get most frequently used commands."""
         from app.models.session import Session
 
@@ -559,7 +561,7 @@ class CommandRepository(BaseRepository[Command]):
 
     async def get_recent_commands(
         self, user_id: str, hours: int = 24, limit: int = 50
-    ) -> List[Command]:
+    ) -> list[Command]:
         """Get recent commands for a user."""
         from app.models.session import Session
 

@@ -5,9 +5,10 @@ Contains request and response models for AI-powered features using BYOK model.
 """
 
 from datetime import datetime
-from typing import Optional, List, Dict, Any, Annotated
-from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
+from typing import Annotated, Any
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AIModel(str, Enum):
@@ -47,16 +48,12 @@ class APIKeyValidationResponse(BaseModel):
     """Schema for API key validation response."""
 
     valid: bool = Field(..., description="Whether the API key is valid")
-    account_info: Optional[Dict[str, Any]] = Field(
-        None, description="Account information"
-    )
-    models_available: Optional[int] = Field(
-        None, description="Number of available models"
-    )
-    recommended_models: Optional[List[str]] = Field(
+    account_info: dict[str, Any] | None = Field(None, description="Account information")
+    models_available: int | None = Field(None, description="Number of available models")
+    recommended_models: list[str] | None = Field(
         None, description="Recommended models for DevPocket"
     )
-    error: Optional[str] = Field(
+    error: str | None = Field(
         default=None, description="Error message if validation failed"
     )
     timestamp: datetime = Field(..., description="Validation timestamp")
@@ -66,12 +63,12 @@ class AIUsageStats(BaseModel):
     """Schema for AI usage statistics."""
 
     usage: float = Field(..., description="Current usage amount")
-    limit: Optional[float] = Field(default=None, description="Usage limit")
+    limit: float | None = Field(default=None, description="Usage limit")
     is_free_tier: bool = Field(..., description="Whether using free tier")
     requests_today: int = Field(default=0, description="Requests made today")
     tokens_used: int = Field(default=0, description="Total tokens used")
-    cost_estimate: Optional[float] = Field(default=None, description="Estimated cost")
-    rate_limit: Dict[str, Any] = Field(..., description="Rate limit information")
+    cost_estimate: float | None = Field(default=None, description="Estimated cost")
+    rate_limit: dict[str, Any] = Field(..., description="Rate limit information")
     timestamp: datetime = Field(..., description="Stats timestamp")
 
 
@@ -88,24 +85,20 @@ class CommandSuggestionRequest(BaseModel):
     )
 
     # Context information
-    working_directory: Optional[str] = Field(
-        None, description="Current working directory"
-    )
-    previous_commands: Optional[Annotated[List[str], Field(max_length=10)]] = Field(
+    working_directory: str | None = Field(None, description="Current working directory")
+    previous_commands: Annotated[list[str], Field(max_length=10)] | None = Field(
         None, description="Recent commands"
     )
-    operating_system: Optional[str] = Field(
-        default=None, description="Operating system"
-    )
-    shell_type: Optional[str] = Field(
+    operating_system: str | None = Field(default=None, description="Operating system")
+    shell_type: str | None = Field(
         default="bash", description="Shell type (bash, zsh, fish, etc.)"
     )
-    user_level: Optional[str] = Field(
+    user_level: str | None = Field(
         default="intermediate", description="User experience level"
     )
 
     # AI settings
-    model: Optional[AIModel] = Field(default=None, description="Specific model to use")
+    model: AIModel | None = Field(default=None, description="Specific model to use")
     max_suggestions: int = Field(
         default=5, ge=1, le=10, description="Maximum number of suggestions"
     )
@@ -125,14 +118,14 @@ class CommandSuggestion(BaseModel):
     )
 
     # Additional details
-    examples: Optional[List[str]] = Field(default=[], description="Usage examples")
-    alternatives: Optional[List[str]] = Field(
+    examples: list[str] | None = Field(default=[], description="Usage examples")
+    alternatives: list[str] | None = Field(
         default=[], description="Alternative commands"
     )
-    prerequisites: Optional[List[str]] = Field(
+    prerequisites: list[str] | None = Field(
         default=[], description="Prerequisites or dependencies"
     )
-    warnings: Optional[List[str]] = Field(default=[], description="Safety warnings")
+    warnings: list[str] | None = Field(default=[], description="Safety warnings")
 
     # Metadata
     category: str = Field(default="general", description="Command category")
@@ -145,24 +138,24 @@ class CommandSuggestion(BaseModel):
 class CommandSuggestionResponse(BaseModel):
     """Schema for command suggestion response."""
 
-    suggestions: List[CommandSuggestion] = Field(
+    suggestions: list[CommandSuggestion] = Field(
         ..., description="List of command suggestions"
     )
 
     # Request context
     query_description: str = Field(..., description="Original query description")
-    context_used: Dict[str, Any] = Field(..., description="Context information used")
+    context_used: dict[str, Any] = Field(..., description="Context information used")
 
     # AI metadata
     model_used: str = Field(..., description="AI model used")
     response_time_ms: int = Field(..., description="Response time in milliseconds")
-    tokens_used: Dict[str, int] = Field(..., description="Token usage breakdown")
+    tokens_used: dict[str, int] = Field(..., description="Token usage breakdown")
 
     # Quality indicators
     confidence_score: float = Field(
         ..., ge=0, le=1, description="Overall confidence score"
     )
-    processing_notes: Optional[List[str]] = Field(
+    processing_notes: list[str] | None = Field(
         None, description="Processing notes or warnings"
     )
 
@@ -179,10 +172,8 @@ class CommandExplanationRequest(BaseModel):
     )
 
     # Context
-    working_directory: Optional[str] = Field(
-        None, description="Command context directory"
-    )
-    user_level: Optional[str] = Field(
+    working_directory: str | None = Field(None, description="Command context directory")
+    user_level: str | None = Field(
         default="intermediate", description="User experience level"
     )
     include_examples: bool = Field(default=True, description="Include usage examples")
@@ -191,7 +182,7 @@ class CommandExplanationRequest(BaseModel):
     )
 
     # AI settings
-    model: Optional[AIModel] = Field(default=None, description="Specific model to use")
+    model: AIModel | None = Field(default=None, description="Specific model to use")
     detail_level: str = Field(
         default="medium", description="Detail level (basic, medium, detailed)"
     )
@@ -205,28 +196,28 @@ class CommandExplanation(BaseModel):
     detailed_explanation: str = Field(..., description="Detailed explanation")
 
     # Command breakdown
-    components: List[Dict[str, str]] = Field(
+    components: list[dict[str, str]] = Field(
         default=[], description="Command components breakdown"
     )
-    parameters: List[Dict[str, Any]] = Field(
+    parameters: list[dict[str, Any]] = Field(
         default=[], description="Parameters and flags explanation"
     )
 
     # Additional information
-    examples: List[Dict[str, str]] = Field(
+    examples: list[dict[str, str]] = Field(
         default=[], description="Usage examples with descriptions"
     )
-    alternatives: List[Dict[str, str]] = Field(
+    alternatives: list[dict[str, str]] = Field(
         default=[], description="Alternative commands"
     )
-    related_commands: List[str] = Field(default=[], description="Related commands")
+    related_commands: list[str] = Field(default=[], description="Related commands")
 
     # Safety and best practices
-    safety_notes: List[str] = Field(default=[], description="Safety considerations")
-    best_practices: List[str] = Field(
+    safety_notes: list[str] = Field(default=[], description="Safety considerations")
+    best_practices: list[str] = Field(
         default=[], description="Best practice recommendations"
     )
-    common_mistakes: List[str] = Field(
+    common_mistakes: list[str] = Field(
         default=[], description="Common mistakes to avoid"
     )
 
@@ -239,7 +230,7 @@ class CommandExplanationResponse(BaseModel):
     # AI metadata
     model_used: str = Field(..., description="AI model used")
     response_time_ms: int = Field(..., description="Response time in milliseconds")
-    tokens_used: Dict[str, int] = Field(..., description="Token usage breakdown")
+    tokens_used: dict[str, int] = Field(..., description="Token usage breakdown")
     confidence_score: float = Field(
         ..., ge=0, le=1, description="Explanation confidence score"
     )
@@ -258,16 +249,12 @@ class ErrorAnalysisRequest(BaseModel):
     error_output: str = Field(..., description="Error output from command")
 
     # Context
-    exit_code: Optional[int] = Field(default=None, description="Command exit code")
-    working_directory: Optional[str] = Field(
-        default=None, description="Working directory"
-    )
-    environment_info: Optional[Dict[str, str]] = Field(
+    exit_code: int | None = Field(default=None, description="Command exit code")
+    working_directory: str | None = Field(default=None, description="Working directory")
+    environment_info: dict[str, str] | None = Field(
         None, description="Environment variables"
     )
-    system_info: Optional[Dict[str, str]] = Field(
-        None, description="System information"
-    )
+    system_info: dict[str, str] | None = Field(None, description="System information")
 
     # Analysis preferences
     include_solutions: bool = Field(
@@ -278,7 +265,7 @@ class ErrorAnalysisRequest(BaseModel):
     )
 
     # AI settings
-    model: Optional[AIModel] = Field(default=None, description="Specific model to use")
+    model: AIModel | None = Field(default=None, description="Specific model to use")
 
 
 class ErrorAnalysis(BaseModel):
@@ -293,27 +280,27 @@ class ErrorAnalysis(BaseModel):
     )
 
     # Solutions
-    immediate_fixes: List[Dict[str, str]] = Field(
+    immediate_fixes: list[dict[str, str]] = Field(
         default=[], description="Immediate fix suggestions"
     )
-    alternative_approaches: List[Dict[str, str]] = Field(
+    alternative_approaches: list[dict[str, str]] = Field(
         default=[], description="Alternative approaches"
     )
-    troubleshooting_steps: List[str] = Field(
+    troubleshooting_steps: list[str] = Field(
         default=[], description="Step-by-step troubleshooting"
     )
 
     # Prevention
-    prevention_tips: List[str] = Field(
+    prevention_tips: list[str] = Field(
         default=[], description="Prevention recommendations"
     )
-    best_practices: List[str] = Field(
+    best_practices: list[str] = Field(
         default=[], description="Best practices to avoid similar errors"
     )
 
     # Additional context
-    related_errors: List[str] = Field(default=[], description="Related error patterns")
-    resources: List[Dict[str, str]] = Field(
+    related_errors: list[str] = Field(default=[], description="Related error patterns")
+    resources: list[dict[str, str]] = Field(
         default=[], description="Additional resources or documentation"
     )
 
@@ -336,7 +323,7 @@ class ErrorAnalysisResponse(BaseModel):
     # AI metadata
     model_used: str = Field(..., description="AI model used")
     response_time_ms: int = Field(..., description="Response time in milliseconds")
-    tokens_used: Dict[str, int] = Field(..., description="Token usage breakdown")
+    tokens_used: dict[str, int] = Field(..., description="Token usage breakdown")
     confidence_score: float = Field(
         ..., ge=0, le=1, description="Analysis confidence score"
     )
@@ -354,14 +341,14 @@ class CommandOptimizationRequest(BaseModel):
     )
 
     # Context
-    usage_frequency: Optional[str] = Field(
+    usage_frequency: str | None = Field(
         None, description="How often the command is used"
     )
-    performance_issues: Optional[str] = Field(
+    performance_issues: str | None = Field(
         None, description="Specific performance concerns"
     )
-    environment: Optional[str] = Field(default=None, description="Target environment")
-    constraints: Optional[List[str]] = Field(
+    environment: str | None = Field(default=None, description="Target environment")
+    constraints: list[str] | None = Field(
         None, description="Any constraints or limitations"
     )
 
@@ -375,41 +362,41 @@ class CommandOptimizationRequest(BaseModel):
     )
 
     # AI settings
-    model: Optional[AIModel] = Field(default=None, description="Specific model to use")
+    model: AIModel | None = Field(default=None, description="Specific model to use")
 
 
 class CommandOptimization(BaseModel):
     """Schema for command optimization."""
 
     original_command: str = Field(..., description="Original command")
-    optimized_commands: List[Dict[str, Any]] = Field(
+    optimized_commands: list[dict[str, Any]] = Field(
         ..., description="Optimized alternatives"
     )
 
     # Analysis
-    performance_analysis: Dict[str, Any] = Field(
+    performance_analysis: dict[str, Any] = Field(
         ..., description="Performance analysis"
     )
-    bottlenecks_identified: List[str] = Field(
+    bottlenecks_identified: list[str] = Field(
         default=[], description="Identified bottlenecks"
     )
-    improvements_made: List[str] = Field(
+    improvements_made: list[str] = Field(
         default=[], description="Improvements in optimized versions"
     )
 
     # Recommendations
-    best_practices: List[str] = Field(
+    best_practices: list[str] = Field(
         default=[], description="Best practice recommendations"
     )
-    modern_alternatives: List[Dict[str, str]] = Field(
+    modern_alternatives: list[dict[str, str]] = Field(
         default=[], description="Modern tool alternatives"
     )
 
     # Trade-offs
-    trade_offs: List[Dict[str, str]] = Field(
+    trade_offs: list[dict[str, str]] = Field(
         default=[], description="Trade-offs to consider"
     )
-    compatibility_notes: List[str] = Field(
+    compatibility_notes: list[str] = Field(
         default=[], description="Compatibility considerations"
     )
 
@@ -422,7 +409,7 @@ class CommandOptimizationResponse(BaseModel):
     # AI metadata
     model_used: str = Field(..., description="AI model used")
     response_time_ms: int = Field(..., description="Response time in milliseconds")
-    tokens_used: Dict[str, int] = Field(..., description="Token usage breakdown")
+    tokens_used: dict[str, int] = Field(..., description="Token usage breakdown")
     confidence_score: float = Field(
         ..., ge=0, le=1, description="Optimization confidence score"
     )
@@ -434,10 +421,10 @@ class CommandOptimizationResponse(BaseModel):
 class AISettings(BaseModel):
     """Schema for AI service settings."""
 
-    preferred_models: Dict[str, str] = Field(
+    preferred_models: dict[str, str] = Field(
         default={}, description="Preferred models for different tasks"
     )
-    default_model: Optional[str] = Field(default=None, description="Default model")
+    default_model: str | None = Field(default=None, description="Default model")
 
     # Response preferences
     max_suggestions: int = Field(
@@ -482,16 +469,16 @@ class AIModelInfo(BaseModel):
     supports_vision: bool = Field(default=False, description="Supports image analysis")
 
     # Pricing
-    pricing: Dict[str, str] = Field(..., description="Pricing information")
+    pricing: dict[str, str] = Field(..., description="Pricing information")
 
     # Provider info
     provider: str = Field(..., description="Model provider")
-    architecture: Dict[str, Any] = Field(
+    architecture: dict[str, Any] = Field(
         default={}, description="Architecture information"
     )
 
     # Usage recommendations
-    recommended_for: List[str] = Field(default=[], description="Recommended use cases")
+    recommended_for: list[str] = Field(default=[], description="Recommended use cases")
     performance_tier: str = Field(
         ..., description="Performance tier (fast, balanced, powerful)"
     )
@@ -500,9 +487,9 @@ class AIModelInfo(BaseModel):
 class AvailableModelsResponse(BaseModel):
     """Schema for available models response."""
 
-    models: List[AIModelInfo] = Field(..., description="Available models")
+    models: list[AIModelInfo] = Field(..., description="Available models")
     total_models: int = Field(..., description="Total number of models")
-    recommended_models: List[str] = Field(
+    recommended_models: list[str] = Field(
         ..., description="Recommended models for DevPocket"
     )
     timestamp: datetime = Field(..., description="Response timestamp")
@@ -523,10 +510,8 @@ class AIErrorResponse(BaseModel):
 
     error: str = Field(..., description="Error type")
     message: str = Field(..., description="Error message")
-    details: Optional[Dict[str, Any]] = Field(
-        None, description="Additional error details"
-    )
-    suggestions: Optional[List[str]] = Field(
+    details: dict[str, Any] | None = Field(None, description="Additional error details")
+    suggestions: list[str] | None = Field(
         None, description="Suggestions to fix the error"
     )
     timestamp: datetime = Field(..., description="Error timestamp")
@@ -538,11 +523,11 @@ class BatchAIRequest(BaseModel):
 
     api_key: str = Field(..., min_length=10, description="User's OpenRouter API key")
     requests: Annotated[
-        List[Dict[str, Any]],
+        list[dict[str, Any]],
         Field(min_length=1, max_length=10, description="Batch requests"),
     ]
     service_type: AIServiceType = Field(..., description="Type of AI service")
-    model: Optional[AIModel] = Field(
+    model: AIModel | None = Field(
         default=None, description="Model to use for all requests"
     )
 
@@ -550,7 +535,7 @@ class BatchAIRequest(BaseModel):
 class BatchAIResponse(BaseModel):
     """Schema for batch AI processing response."""
 
-    results: List[Dict[str, Any]] = Field(..., description="Batch results")
+    results: list[dict[str, Any]] = Field(..., description="Batch results")
     success_count: int = Field(..., description="Number of successful requests")
     error_count: int = Field(..., description="Number of failed requests")
     total_tokens_used: int = Field(..., description="Total tokens used")

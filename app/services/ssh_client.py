@@ -7,15 +7,16 @@ Handles SSH connections, key management, and connection testing.
 import asyncio
 import io
 import socket
-from typing import Optional, Dict, Any
+from typing import Any
+
 import paramiko
 from paramiko import (
-    SSHClient,
     AutoAddPolicy,
-    RSAKey,
+    DSSKey,
     ECDSAKey,
     Ed25519Key,
-    DSSKey,
+    RSAKey,
+    SSHClient,
 )
 
 from app.core.logging import logger
@@ -39,10 +40,10 @@ class SSHClientService:
         host: str,
         port: int,
         username: str,
-        ssh_key: Optional[SSHKey] = None,
-        password: Optional[str] = None,
+        ssh_key: SSHKey | None = None,
+        password: str | None = None,
         timeout: int = 30,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Test SSH connection to a remote host.
 
@@ -60,7 +61,7 @@ class SSHClientService:
         client = SSHClient()
         client.set_missing_host_key_policy(AutoAddPolicy())
 
-        result: Dict[str, Any] = {
+        result: dict[str, Any] = {
             "success": False,
             "message": "",
             "details": {},
@@ -87,7 +88,7 @@ class SSHClientService:
                     auth_method = "publickey"
                 except Exception as e:
                     logger.error(f"Failed to load SSH key: {e}")
-                    result["message"] = f"Failed to load SSH key: {str(e)}"
+                    result["message"] = f"Failed to load SSH key: {e!s}"
                     return result
 
             elif password:
@@ -148,12 +149,12 @@ class SSHClientService:
 
         except paramiko.AuthenticationException as e:
             logger.warning(f"SSH authentication failed for {username}@{host}: {e}")
-            result["message"] = f"Authentication failed: {str(e)}"
+            result["message"] = f"Authentication failed: {e!s}"
             result["details"]["error_type"] = "authentication"
 
         except paramiko.SSHException as e:
             logger.warning(f"SSH connection failed for {host}: {e}")
-            result["message"] = f"SSH connection failed: {str(e)}"
+            result["message"] = f"SSH connection failed: {e!s}"
             result["details"]["error_type"] = "ssh_protocol"
 
         except socket.timeout:
@@ -175,7 +176,7 @@ class SSHClientService:
 
         except Exception as e:
             logger.error(f"Unexpected error testing SSH connection: {e}")
-            result["message"] = f"Connection test failed: {str(e)}"
+            result["message"] = f"Connection test failed: {e!s}"
             result["details"]["error_type"] = "unknown"
             result["details"]["error"] = str(e)
 
@@ -188,7 +189,7 @@ class SSHClientService:
         return result
 
     def _load_private_key(
-        self, ssh_key: SSHKey, passphrase: Optional[str] = None
+        self, ssh_key: SSHKey, passphrase: str | None = None
     ) -> paramiko.PKey:
         """
         Load a private key from SSHKey model.
@@ -226,7 +227,7 @@ class SSHClientService:
 
     async def get_host_key(
         self, host: str, port: int = 22, timeout: int = 10
-    ) -> Optional[Dict[str, str]]:
+    ) -> dict[str, str] | None:
         """
         Get the host key for a remote SSH server.
 
@@ -261,8 +262,8 @@ class SSHClientService:
         self,
         key_type: str = "rsa",
         key_size: int = 2048,
-        comment: Optional[str] = None,
-    ) -> Dict[str, str]:
+        comment: str | None = None,
+    ) -> dict[str, str]:
         """
         Generate a new SSH key pair.
 
@@ -306,7 +307,7 @@ class SSHClientService:
 
         except Exception as e:
             logger.error(f"Failed to generate {key_type} key pair: {e}")
-            raise Exception(f"Key generation failed: {str(e)}")
+            raise Exception(f"Key generation failed: {e!s}")
 
     def validate_public_key(self, public_key: str) -> bool:
         """
@@ -348,7 +349,7 @@ class SSHClientService:
         except Exception:
             return False
 
-    def get_key_fingerprint(self, public_key: str) -> Optional[str]:
+    def get_key_fingerprint(self, public_key: str) -> str | None:
         """
         Get fingerprint for a public key.
 

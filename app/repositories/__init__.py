@@ -2,11 +2,11 @@
 Repository patterns for DevPocket API data access.
 """
 
-from .user import UserRepository
-from .session import SessionRepository
 from .command import CommandRepository
+from .session import SessionRepository
 from .ssh_profile import SSHProfileRepository
 from .sync import SyncDataRepository
+from .user import UserRepository
 
 __all__ = [
     "UserRepository",

@@ -2,15 +2,20 @@
 Session repository for DevPocket API.
 """
 
-from typing import Optional, List, Any, Dict, Union
-from uuid import UUID as PyUUID
 from datetime import datetime, timedelta
-from sqlalchemy import select, and_, func, desc
+from typing import TYPE_CHECKING, Any
+from uuid import UUID as PyUUID
+
+from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.session import Session
+
 from .base import BaseRepository
+
+if TYPE_CHECKING:
+    from sqlalchemy.sql.elements import BinaryExpression
 
 
 class SessionRepository(BaseRepository[Session]):
@@ -21,18 +26,18 @@ class SessionRepository(BaseRepository[Session]):
 
     async def get_user_sessions(
         self,
-        user_id: Union[str, PyUUID],
+        user_id: str | PyUUID,
         active_only: bool = False,
         offset: int = 0,
         limit: int = 100,
-        session_type: Optional[str] = None,
+        session_type: str | None = None,
         include_inactive: bool = False,
-    ) -> List[Session]:
+    ) -> list[Session]:
         """Get all sessions for a user."""
         query = select(Session).where(Session.user_id == user_id)
 
         if active_only and not include_inactive:
-            query = query.where(Session.is_active == True)
+            query = query.where(Session.is_active is True)
 
         if session_type:
             query = query.where(Session.session_type == session_type)
@@ -42,14 +47,12 @@ class SessionRepository(BaseRepository[Session]):
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def get_user_active_sessions(
-        self, user_id: Union[str, PyUUID]
-    ) -> List[Session]:
+    async def get_user_active_sessions(self, user_id: str | PyUUID) -> list[Session]:
         """Get all active sessions for a user."""
         return await self.get_user_sessions(user_id, active_only=True)
 
     async def get_user_session_count(
-        self, user_id: Union[str, PyUUID], session_type: Optional[str] = None
+        self, user_id: str | PyUUID, session_type: str | None = None
     ) -> int:
         """Get total session count for a user."""
         query = select(func.count(Session.id)).where(Session.user_id == user_id)
@@ -63,12 +66,12 @@ class SessionRepository(BaseRepository[Session]):
 
     async def get_active_sessions(
         self,
-        user_id: Optional[Union[str, PyUUID]] = None,
+        user_id: str | PyUUID | None = None,
         offset: int = 0,
         limit: int = 100,
-    ) -> List[Session]:
+    ) -> list[Session]:
         """Get all active sessions, optionally filtered by user."""
-        query = select(Session).where(Session.is_active == True)
+        query = select(Session).where(Session.is_active is True)
 
         if user_id:
             query = query.where(Session.user_id == user_id)
@@ -82,15 +85,15 @@ class SessionRepository(BaseRepository[Session]):
 
     async def search_sessions(
         self,
-        criteria: Dict[str, Any],
-        search_term: Optional[str] = None,
-        created_after: Optional[datetime] = None,
-        created_before: Optional[datetime] = None,
+        criteria: dict[str, Any],
+        search_term: str | None = None,
+        created_after: datetime | None = None,
+        created_before: datetime | None = None,
         sort_by: str = "created_at",
         sort_order: str = "desc",
         offset: int = 0,
         limit: int = 100,
-    ) -> List[Session]:
+    ) -> list[Session]:
         """Search sessions with criteria."""
         query = select(Session)
 
@@ -121,7 +124,7 @@ class SessionRepository(BaseRepository[Session]):
         result = await self.session.execute(query)
         return list(result.scalars().all())
 
-    async def count_sessions_with_criteria(self, criteria: Dict[str, Any]) -> int:
+    async def count_sessions_with_criteria(self, criteria: dict[str, Any]) -> int:
         """Count sessions matching criteria."""
         query = select(func.count(Session.id))
 
@@ -133,13 +136,11 @@ class SessionRepository(BaseRepository[Session]):
         result = await self.session.execute(query)
         return result.scalar() or 0
 
-    async def get_user_session_stats(
-        self, user_id: Union[str, PyUUID]
-    ) -> Dict[str, Any]:
+    async def get_user_session_stats(self, user_id: str | PyUUID) -> dict[str, Any]:
         """Get session statistics for a user."""
         total_query = select(func.count(Session.id)).where(Session.user_id == user_id)
         active_query = select(func.count(Session.id)).where(
-            and_(Session.user_id == user_id, Session.is_active == True)
+            and_(Session.user_id == user_id, Session.is_active is True)
         )
 
         total_result = await self.session.execute(total_query)
@@ -152,7 +153,7 @@ class SessionRepository(BaseRepository[Session]):
 
     async def get_session_with_commands(
         self, session_id: str, command_limit: int = 50
-    ) -> Optional[Session]:
+    ) -> Session | None:
         """Get session with its commands loaded."""
         result = await self.session.execute(
             select(Session)
@@ -163,11 +164,11 @@ class SessionRepository(BaseRepository[Session]):
 
     async def get_sessions_by_device(
         self,
-        user_id: Union[str, PyUUID],
+        user_id: str | PyUUID,
         device_id: str,
         offset: int = 0,
         limit: int = 100,
-    ) -> List[Session]:
+    ) -> list[Session]:
         """Get sessions for a specific device."""
         result = await self.session.execute(
             select(Session)
@@ -180,11 +181,11 @@ class SessionRepository(BaseRepository[Session]):
 
     async def get_sessions_by_type(
         self,
-        user_id: Union[str, PyUUID],
+        user_id: str | PyUUID,
         session_type: str,
         offset: int = 0,
         limit: int = 100,
-    ) -> List[Session]:
+    ) -> list[Session]:
         """Get sessions by type (terminal, ssh, pty)."""
         result = await self.session.execute(
             select(Session)
@@ -202,15 +203,14 @@ class SessionRepository(BaseRepository[Session]):
 
     async def get_ssh_sessions(
         self,
-        user_id: Optional[Union[str, PyUUID]] = None,
-        host: Optional[str] = None,
+        user_id: str | PyUUID | None = None,
+        host: str | None = None,
         offset: int = 0,
         limit: int = 100,
-    ) -> List[Session]:
+    ) -> list[Session]:
         """Get SSH sessions, optionally filtered by user or host."""
-        from sqlalchemy.sql.elements import BinaryExpression
 
-        conditions: List[BinaryExpression[bool]] = [Session.ssh_host.is_not(None)]
+        conditions: list[BinaryExpression[bool]] = [Session.ssh_host.is_not(None)]
 
         if user_id:
             conditions.append(Session.user_id == user_id)  # type: ignore
@@ -229,7 +229,7 @@ class SessionRepository(BaseRepository[Session]):
 
     async def create_session(
         self,
-        user_id: Union[str, PyUUID],
+        user_id: str | PyUUID,
         device_id: str,
         device_type: str,
         **kwargs: Any,
@@ -251,7 +251,7 @@ class SessionRepository(BaseRepository[Session]):
 
     async def create_ssh_session(
         self,
-        user_id: Union[str, PyUUID],
+        user_id: str | PyUUID,
         device_id: str,
         device_type: str,
         ssh_host: str,
@@ -271,17 +271,17 @@ class SessionRepository(BaseRepository[Session]):
             **kwargs,
         )
 
-    async def update_activity(self, session_id: str) -> Optional[Session]:
+    async def update_activity(self, session_id: str) -> Session | None:
         """Update session's last activity timestamp."""
         return await self.update(session_id, last_activity_at=datetime.now())
 
-    async def end_session(self, session_id: str) -> Optional[Session]:
+    async def end_session(self, session_id: str) -> Session | None:
         """End a session."""
         return await self.update(session_id, is_active=False, ended_at=datetime.now())
 
     async def resize_terminal(
         self, session_id: str, cols: int, rows: int
-    ) -> Optional[Session]:
+    ) -> Session | None:
         """Update terminal dimensions."""
         return await self.update(
             session_id,
@@ -297,7 +297,7 @@ class SessionRepository(BaseRepository[Session]):
         result = await self.session.execute(
             select(Session).where(
                 and_(
-                    Session.is_active == True,
+                    Session.is_active is True,
                     Session.last_activity_at < threshold_time,
                 )
             )
@@ -311,9 +311,7 @@ class SessionRepository(BaseRepository[Session]):
 
         return len(inactive_sessions)
 
-    async def get_session_stats(
-        self, user_id: Optional[Union[str, PyUUID]] = None
-    ) -> dict:
+    async def get_session_stats(self, user_id: str | PyUUID | None = None) -> dict:
         """Get session statistics."""
         base_query = select(Session)
 
@@ -329,7 +327,7 @@ class SessionRepository(BaseRepository[Session]):
         active_sessions = await self.session.execute(
             select(func.count(Session.id)).where(
                 and_(
-                    Session.is_active == True,
+                    Session.is_active is True,
                     Session.user_id == user_id
                     if user_id
                     else Session.user_id.is_not(None),
@@ -366,7 +364,7 @@ class SessionRepository(BaseRepository[Session]):
         }
 
     async def get_user_device_sessions(
-        self, user_id: Union[str, PyUUID], device_type: Optional[str] = None
+        self, user_id: str | PyUUID, device_type: str | None = None
     ) -> dict:
         """Get user sessions grouped by device."""
         query = select(Session).where(Session.user_id == user_id)
@@ -378,7 +376,7 @@ class SessionRepository(BaseRepository[Session]):
         sessions = list(result.scalars().all())
 
         # Group by device_id
-        devices: Dict[str, Dict[str, Any]] = {}
+        devices: dict[str, dict[str, Any]] = {}
         for session in sessions:
             device_key = f"{session.device_id}_{session.device_type}"
             if device_key not in devices:
@@ -409,8 +407,8 @@ class SessionRepository(BaseRepository[Session]):
         return devices
 
     async def get_user_session_by_name(
-        self, user_id: Union[str, PyUUID], session_name: str
-    ) -> Optional[Session]:
+        self, user_id: str | PyUUID, session_name: str
+    ) -> Session | None:
         """Get session by name for a user."""
         result = await self.session.execute(
             select(Session).where(
@@ -420,20 +418,20 @@ class SessionRepository(BaseRepository[Session]):
         return result.scalar_one_or_none()
 
     async def count_user_sessions(
-        self, user_id: Union[str, PyUUID], session_type: Optional[str] = None
+        self, user_id: str | PyUUID, session_type: str | None = None
     ) -> int:
         """Count total sessions for a user."""
         return await self.get_user_session_count(user_id, session_type)
 
     async def get_session_commands(
-        self, session_id: Union[str, PyUUID], offset: int = 0, limit: int = 100
-    ) -> List[Any]:
+        self, session_id: str | PyUUID, offset: int = 0, limit: int = 100
+    ) -> list[Any]:
         """Get commands for a session."""
         # This would need the Command model imported, for now return empty list
         # as the actual implementation would depend on the Command model
         return []
 
-    async def count_session_commands(self, session_id: Union[str, PyUUID]) -> int:
+    async def count_session_commands(self, session_id: str | PyUUID) -> int:
         """Count commands for a session."""
         # This would need the Command model imported, for now return 0
         # as the actual implementation would depend on the Command model
@@ -445,12 +443,10 @@ class SessionRepository(BaseRepository[Session]):
         """Delete old sessions to save space."""
         cutoff_date = datetime.now() - timedelta(days=days_old)
 
-        from sqlalchemy.sql.elements import BinaryExpression
-
-        conditions: List[BinaryExpression[bool]] = [Session.created_at < cutoff_date]  # type: ignore
+        conditions: list[BinaryExpression[bool]] = [Session.created_at < cutoff_date]  # type: ignore
 
         if keep_active:
-            conditions.append(Session.is_active == False)  # type: ignore
+            conditions.append(Session.is_active is False)  # type: ignore
 
         result = await self.session.execute(select(Session).where(and_(*conditions)))
 

@@ -6,47 +6,47 @@ login, token management, and password operations.
 """
 
 from datetime import datetime
-from typing import Annotated, Dict, Any, Optional
+from typing import Annotated, Any
+
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     Depends,
     HTTPException,
-    status,
-    BackgroundTasks,
     Request,
+    status,
 )
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_active_user, get_current_user
 from app.auth.schemas import (
-    UserCreate,
-    UserResponse,
+    AccountLockInfo,
+    ForgotPassword,
+    MessageResponse,
+    PasswordChange,
+    ResetPassword,
     Token,
     TokenRefreshResponse,
-    MessageResponse,
-    ForgotPassword,
-    ResetPassword,
-    PasswordChange,
-    AccountLockInfo,
+    UserCreate,
+    UserResponse,
 )
 from app.auth.security import (
-    hash_password,
-    verify_password,
+    blacklist_token,
     create_access_token,
     create_refresh_token,
-    blacklist_token,
-    generate_password_reset_token,
-    verify_password_reset_token,
     decode_token,
+    generate_password_reset_token,
+    hash_password,
+    verify_password,
+    verify_password_reset_token,
 )
 from app.core.config import settings
 from app.core.logging import logger
 from app.db.database import get_db
 from app.models.user import User
 from app.repositories.user import UserRepository
-
 
 # Create router instance
 router = APIRouter(
@@ -61,7 +61,7 @@ router = APIRouter(
 
 
 # Rate limiting storage (in production, use Redis)
-_rate_limit_storage: Dict[str, Any] = {}
+_rate_limit_storage: dict[str, Any] = {}
 
 
 def check_rate_limit(
@@ -219,7 +219,7 @@ async def register_user(
 )
 async def login_user(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    request: Optional[Request] = None,
+    request: Request | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> Token:
     """Authenticate user and return JWT tokens."""

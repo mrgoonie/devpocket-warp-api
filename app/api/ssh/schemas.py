@@ -5,9 +5,10 @@ Contains request and response models for SSH profiles, keys, and related operati
 """
 
 from datetime import datetime
-from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict, validator
 from enum import Enum
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field, validator
 
 
 class SSHKeyType(str, Enum):
@@ -41,7 +42,7 @@ class SSHProfileBase(BaseModel):
     )
     port: int = Field(default=22, ge=1, le=65535, description="SSH server port")
     username: str = Field(..., min_length=1, max_length=100, description="SSH username")
-    description: Optional[str] = Field(
+    description: str | None = Field(
         None, max_length=500, description="Profile description"
     )
 
@@ -60,7 +61,7 @@ class SSHProfileBase(BaseModel):
     terminal_type: str = Field(
         default="xterm-256color", max_length=50, description="Terminal type"
     )
-    environment: Optional[Dict[str, str]] = Field(
+    environment: dict[str, str] | None = Field(
         default=None, description="Environment variables"
     )
 
@@ -81,55 +82,47 @@ class SSHProfileCreate(SSHProfileBase):
 class SSHProfileUpdate(BaseModel):
     """Schema for updating SSH profile."""
 
-    name: Optional[str] = Field(
+    name: str | None = Field(
         None, min_length=1, max_length=100, description="Profile name"
     )
-    host: Optional[str] = Field(
+    host: str | None = Field(
         None,
         min_length=1,
         max_length=255,
         description="SSH server hostname or IP",
     )
-    port: Optional[int] = Field(
+    port: int | None = Field(
         default=None, ge=1, le=65535, description="SSH server port"
     )
-    username: Optional[str] = Field(
+    username: str | None = Field(
         None, min_length=1, max_length=100, description="SSH username"
     )
-    description: Optional[str] = Field(
+    description: str | None = Field(
         None, max_length=500, description="Profile description"
     )
 
     # Connection settings
-    connect_timeout: Optional[int] = Field(
+    connect_timeout: int | None = Field(
         None, ge=5, le=300, description="Connection timeout in seconds"
     )
-    keepalive_interval: Optional[int] = Field(
+    keepalive_interval: int | None = Field(
         None, ge=0, le=3600, description="Keep alive interval in seconds"
     )
-    max_retries: Optional[int] = Field(
+    max_retries: int | None = Field(
         None, ge=0, le=10, description="Maximum connection retry attempts"
     )
 
     # Environment settings
-    terminal_type: Optional[str] = Field(
-        None, max_length=50, description="Terminal type"
-    )
-    environment: Optional[Dict[str, str]] = Field(
+    terminal_type: str | None = Field(None, max_length=50, description="Terminal type")
+    environment: dict[str, str] | None = Field(
         None, description="Environment variables"
     )
 
     # Advanced settings
-    compression: Optional[bool] = Field(
-        default=None, description="Enable SSH compression"
-    )
-    forward_agent: Optional[bool] = Field(
-        None, description="Enable SSH agent forwarding"
-    )
-    forward_x11: Optional[bool] = Field(
-        default=None, description="Enable X11 forwarding"
-    )
-    is_active: Optional[bool] = Field(default=None, description="Profile active status")
+    compression: bool | None = Field(default=None, description="Enable SSH compression")
+    forward_agent: bool | None = Field(None, description="Enable SSH agent forwarding")
+    forward_x11: bool | None = Field(default=None, description="Enable X11 forwarding")
+    is_active: bool | None = Field(default=None, description="Profile active status")
 
 
 class SSHProfileResponse(SSHProfileBase):
@@ -142,25 +135,25 @@ class SSHProfileResponse(SSHProfileBase):
     # Statistics
     connection_count: int = Field(..., description="Total connection attempts")
     successful_connections: int = Field(..., description="Successful connections")
-    last_connection_at: Optional[datetime] = Field(
+    last_connection_at: datetime | None = Field(
         None, description="Last connection attempt"
     )
-    last_successful_connection_at: Optional[datetime] = Field(
+    last_successful_connection_at: datetime | None = Field(
         None, description="Last successful connection"
     )
 
     # Status
-    last_connection_status: Optional[SSHProfileStatus] = Field(
+    last_connection_status: SSHProfileStatus | None = Field(
         None, description="Last connection status"
     )
-    last_error_message: Optional[str] = Field(
+    last_error_message: str | None = Field(
         default=None, description="Last error message"
     )
 
     # Timestamps
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
-    last_used_at: Optional[datetime] = Field(
+    last_used_at: datetime | None = Field(
         default=None, description="Last used timestamp"
     )
 
@@ -170,7 +163,7 @@ class SSHProfileResponse(SSHProfileBase):
 class SSHProfileListResponse(BaseModel):
     """Schema for SSH profile list response."""
 
-    profiles: List[SSHProfileResponse]
+    profiles: list[SSHProfileResponse]
     total: int
     offset: int
     limit: int
@@ -182,9 +175,7 @@ class SSHKeyBase(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=100, description="Key name")
     key_type: SSHKeyType = Field(..., description="SSH key type")
-    comment: Optional[str] = Field(
-        default=None, max_length=200, description="Key comment"
-    )
+    comment: str | None = Field(default=None, max_length=200, description="Key comment")
     passphrase_protected: bool = Field(
         default=False, description="Whether key is passphrase protected"
     )
@@ -199,7 +190,7 @@ class SSHKeyCreate(SSHKeyBase):
         description="Private key content (will be encrypted)",
     )
     public_key: str = Field(..., min_length=1, description="Public key content")
-    passphrase: Optional[str] = Field(
+    passphrase: str | None = Field(
         default=None, description="Key passphrase for encryption"
     )
 
@@ -221,13 +212,9 @@ class SSHKeyCreate(SSHKeyBase):
 class SSHKeyUpdate(BaseModel):
     """Schema for updating SSH key."""
 
-    name: Optional[str] = Field(
-        None, min_length=1, max_length=100, description="Key name"
-    )
-    comment: Optional[str] = Field(
-        default=None, max_length=200, description="Key comment"
-    )
-    is_active: Optional[bool] = Field(default=None, description="Key active status")
+    name: str | None = Field(None, min_length=1, max_length=100, description="Key name")
+    comment: str | None = Field(default=None, max_length=200, description="Key comment")
+    is_active: bool | None = Field(default=None, description="Key active status")
 
 
 class SSHKeyResponse(SSHKeyBase):
@@ -241,7 +228,7 @@ class SSHKeyResponse(SSHKeyBase):
 
     # Statistics
     usage_count: int = Field(..., description="Usage count")
-    last_used_at: Optional[datetime] = Field(
+    last_used_at: datetime | None = Field(
         default=None, description="Last used timestamp"
     )
 
@@ -255,7 +242,7 @@ class SSHKeyResponse(SSHKeyBase):
 class SSHKeyListResponse(BaseModel):
     """Schema for SSH key list response."""
 
-    keys: List[SSHKeyResponse]
+    keys: list[SSHKeyResponse]
     total: int
     offset: int
     limit: int
@@ -265,21 +252,21 @@ class SSHKeyListResponse(BaseModel):
 class SSHConnectionTestRequest(BaseModel):
     """Schema for SSH connection test request."""
 
-    profile_id: Optional[str] = Field(
+    profile_id: str | None = Field(
         default=None, description="Existing profile ID to test"
     )
 
     # Temporary connection details (if not using existing profile)
-    host: Optional[str] = Field(
+    host: str | None = Field(
         None,
         min_length=1,
         max_length=255,
         description="SSH server hostname or IP",
     )
-    port: Optional[int] = Field(
+    port: int | None = Field(
         default=None, ge=1, le=65535, description="SSH server port"
     )
-    username: Optional[str] = Field(
+    username: str | None = Field(
         None, min_length=1, max_length=100, description="SSH username"
     )
 
@@ -287,12 +274,10 @@ class SSHConnectionTestRequest(BaseModel):
     auth_method: str = Field(
         default="key", description="Authentication method: 'key' or 'password'"
     )
-    ssh_key_id: Optional[str] = Field(
+    ssh_key_id: str | None = Field(
         default=None, description="SSH key ID for key-based auth"
     )
-    password: Optional[str] = Field(
-        None, description="Password for password-based auth"
-    )
+    password: str | None = Field(None, description="Password for password-based auth")
 
     # Connection settings
     connect_timeout: int = Field(
@@ -300,7 +285,7 @@ class SSHConnectionTestRequest(BaseModel):
     )
 
     @validator("profile_id", "host")
-    def validate_profile_or_host(cls, v: Optional[str], values: dict) -> Optional[str]:
+    def validate_profile_or_host(cls, v: str | None, values: dict) -> str | None:
         """Ensure either profile_id or host is provided."""
         if "profile_id" in values and not values.get("profile_id") and not v:
             raise ValueError("Either profile_id or host must be provided")
@@ -312,11 +297,9 @@ class SSHConnectionTestResponse(BaseModel):
 
     success: bool = Field(..., description="Connection test result")
     message: str = Field(..., description="Test result message")
-    details: Optional[Dict[str, Any]] = Field(
-        None, description="Additional test details"
-    )
+    details: dict[str, Any] | None = Field(None, description="Additional test details")
     duration_ms: int = Field(..., description="Test duration in milliseconds")
-    server_info: Optional[Dict[str, str]] = Field(
+    server_info: dict[str, str] | None = Field(
         None, description="SSH server information"
     )
     timestamp: datetime = Field(..., description="Test timestamp")
@@ -351,13 +334,11 @@ class ProfileKeyAssociationResponse(BaseModel):
 class SSHProfileSearchRequest(BaseModel):
     """Schema for SSH profile search request."""
 
-    search_term: Optional[str] = Field(
+    search_term: str | None = Field(
         None, min_length=1, max_length=100, description="Search term"
     )
-    host_filter: Optional[str] = Field(default=None, description="Filter by host")
-    status_filter: Optional[SSHProfileStatus] = Field(
-        None, description="Filter by status"
-    )
+    host_filter: str | None = Field(default=None, description="Filter by host")
+    status_filter: SSHProfileStatus | None = Field(None, description="Filter by status")
     active_only: bool = Field(default=True, description="Show only active profiles")
     sort_by: str = Field(
         default="last_used",
@@ -371,12 +352,10 @@ class SSHProfileSearchRequest(BaseModel):
 class SSHKeySearchRequest(BaseModel):
     """Schema for SSH key search request."""
 
-    search_term: Optional[str] = Field(
+    search_term: str | None = Field(
         None, min_length=1, max_length=100, description="Search term"
     )
-    key_type_filter: Optional[SSHKeyType] = Field(
-        None, description="Filter by key type"
-    )
+    key_type_filter: SSHKeyType | None = Field(None, description="Filter by key type")
     active_only: bool = Field(default=True, description="Show only active keys")
     sort_by: str = Field(
         default="last_used",
@@ -393,13 +372,13 @@ class SSHProfileStats(BaseModel):
 
     total_profiles: int = Field(..., description="Total number of profiles")
     active_profiles: int = Field(..., description="Number of active profiles")
-    profiles_by_status: Dict[str, int] = Field(
+    profiles_by_status: dict[str, int] = Field(
         ..., description="Profile count by status"
     )
-    most_used_profiles: List[SSHProfileResponse] = Field(
+    most_used_profiles: list[SSHProfileResponse] = Field(
         ..., description="Most frequently used profiles"
     )
-    recent_connections: List[Dict[str, Any]] = Field(
+    recent_connections: list[dict[str, Any]] = Field(
         ..., description="Recent connection attempts"
     )
 
@@ -409,8 +388,8 @@ class SSHKeyStats(BaseModel):
 
     total_keys: int = Field(..., description="Total number of keys")
     active_keys: int = Field(..., description="Number of active keys")
-    keys_by_type: Dict[str, int] = Field(..., description="Key count by type")
-    most_used_keys: List[SSHKeyResponse] = Field(
+    keys_by_type: dict[str, int] = Field(..., description="Key count by type")
+    most_used_keys: list[SSHKeyResponse] = Field(
         ..., description="Most frequently used keys"
     )
 
@@ -421,9 +400,7 @@ class SSHErrorResponse(BaseModel):
 
     error: str = Field(..., description="Error type")
     message: str = Field(..., description="Error message")
-    details: Optional[Dict[str, Any]] = Field(
-        None, description="Additional error details"
-    )
+    details: dict[str, Any] | None = Field(None, description="Additional error details")
     timestamp: datetime = Field(..., description="Error timestamp")
 
 
@@ -442,7 +419,7 @@ class BulkOperationResponse(BaseModel):
 
     success_count: int = Field(..., description="Number of successful operations")
     error_count: int = Field(..., description="Number of failed operations")
-    errors: Optional[List[Dict[str, str]]] = Field(
+    errors: list[dict[str, str]] | None = Field(
         None, description="Error details for failed operations"
     )
     message: str = Field(..., description="Overall operation message")

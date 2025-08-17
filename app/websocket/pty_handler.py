@@ -5,16 +5,20 @@ Handles terminal emulation, PTY processes, and terminal I/O streaming.
 """
 
 import asyncio
-import os
-import signal
-import subprocess
-from typing import Optional, Callable, Awaitable, NoReturn
-import pty
-import termios
-import struct
+import contextlib
 import fcntl
+import os
+import pty
+import signal
+import struct
+import termios
+from collections.abc import Awaitable, Callable
+from typing import TYPE_CHECKING, NoReturn
 
 from app.core.logging import logger
+
+if TYPE_CHECKING:
+    import subprocess
 
 
 class PTYHandler:
@@ -45,22 +49,22 @@ class PTYHandler:
         self.cols = cols
 
         # PTY file descriptors
-        self.master_fd: Optional[int] = None
-        self.slave_fd: Optional[int] = None
+        self.master_fd: int | None = None
+        self.slave_fd: int | None = None
 
         # Process management
-        self.process: Optional[subprocess.Popen] = None
-        self.shell_pid: Optional[int] = None
+        self.process: subprocess.Popen | None = None
+        self.shell_pid: int | None = None
 
         # Async tasks
-        self._output_task: Optional[asyncio.Task] = None
+        self._output_task: asyncio.Task | None = None
         self._running = False
 
         # Buffer for output processing
         self._output_buffer = bytearray()
         self._max_buffer_size = 8192
 
-    async def start(self, command: Optional[str] = None) -> bool:
+    async def start(self, command: str | None = None) -> bool:
         """
         Start the PTY session.
 
@@ -118,10 +122,8 @@ class PTYHandler:
         # Cancel output task
         if self._output_task and not self._output_task.done():
             self._output_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._output_task
-            except asyncio.CancelledError:
-                pass
 
         # Terminate shell process
         if self.shell_pid:
@@ -174,7 +176,7 @@ class PTYHandler:
 
             return True
 
-        except (OSError, IOError) as e:
+        except OSError as e:
             logger.error(f"Failed to write to PTY: {e}")
             return False
 
@@ -349,7 +351,7 @@ class PTYHandler:
                         # No data available, short wait
                         await asyncio.sleep(0.01)
 
-                except (OSError, IOError) as e:
+                except OSError as e:
                     if e.errno == 5:  # EIO - process ended
                         logger.info("PTY process ended")
                         break
@@ -365,13 +367,13 @@ class PTYHandler:
 
         self._running = False
 
-    def _read_master_fd(self) -> Optional[bytes]:
+    def _read_master_fd(self) -> bytes | None:
         """Read data from master FD (blocking operation for executor)."""
         if self.master_fd is None:
             return None
         try:
             return os.read(self.master_fd, 1024)
-        except (OSError, IOError) as e:
+        except OSError as e:
             if e.errno == 11:  # EAGAIN - no data available
                 return None
             else:

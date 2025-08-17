@@ -2,11 +2,13 @@
 Base repository class with common database operations.
 """
 
-from typing import Generic, TypeVar, Type, List, Optional, Dict, Any, Union
+from typing import Any, Generic, TypeVar
 from uuid import UUID as PyUUID
+
+from sqlalchemy import and_, delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, func, and_, or_
 from sqlalchemy.orm import selectinload
+
 from app.models.base import BaseModel
 
 ModelType = TypeVar("ModelType", bound=BaseModel)
@@ -15,12 +17,12 @@ ModelType = TypeVar("ModelType", bound=BaseModel)
 class BaseRepository(Generic[ModelType]):
     """Base repository class with common CRUD operations."""
 
-    def __init__(self, model: Type[ModelType], session: AsyncSession):
+    def __init__(self, model: type[ModelType], session: AsyncSession):
         self.model = model
         self.session = session
 
     async def create(
-        self, data: Union[Dict[str, Any], ModelType, None] = None, **kwargs: Any
+        self, data: dict[str, Any] | ModelType | None = None, **kwargs: Any
     ) -> ModelType:
         """Create a new model instance."""
         if isinstance(data, dict):
@@ -44,7 +46,7 @@ class BaseRepository(Generic[ModelType]):
         await self.session.refresh(instance)
         return instance
 
-    async def get_by_id(self, id: Union[str, PyUUID]) -> Optional[ModelType]:
+    async def get_by_id(self, id: str | PyUUID) -> ModelType | None:
         """Get model instance by ID."""
         result = await self.session.execute(
             select(self.model).where(self.model.id == id)
@@ -52,7 +54,7 @@ class BaseRepository(Generic[ModelType]):
         return result.scalar_one_or_none()
 
     # Alias for compatibility
-    async def get(self, id: Union[str, PyUUID]) -> Optional[ModelType]:
+    async def get(self, id: str | PyUUID) -> ModelType | None:
         """Get model instance by ID (alias for get_by_id)."""
         return await self.get_by_id(id)
 
@@ -62,7 +64,7 @@ class BaseRepository(Generic[ModelType]):
         limit: int = 100,
         order_by: str = "created_at",
         order_desc: bool = True,
-    ) -> List[ModelType]:
+    ) -> list[ModelType]:
         """Get all model instances with pagination."""
         order_column = getattr(self.model, order_by, self.model.created_at)
 
@@ -74,7 +76,7 @@ class BaseRepository(Generic[ModelType]):
         )
         return list(result.scalars().all())
 
-    async def get_by_field(self, field: str, value: Any) -> Optional[ModelType]:
+    async def get_by_field(self, field: str, value: Any) -> ModelType | None:
         """Get model instance by a specific field."""
         if not hasattr(self.model, field):
             raise ValueError(
@@ -88,7 +90,7 @@ class BaseRepository(Generic[ModelType]):
 
     async def get_many_by_field(
         self, field: str, value: Any, offset: int = 0, limit: int = 100
-    ) -> List[ModelType]:
+    ) -> list[ModelType]:
         """Get multiple model instances by a specific field."""
         if not hasattr(self.model, field):
             raise ValueError(
@@ -104,10 +106,10 @@ class BaseRepository(Generic[ModelType]):
         return list(result.scalars().all())
 
     async def update(
-        self, id_or_instance: Union[str, PyUUID, ModelType], **kwargs: Any
-    ) -> Optional[ModelType]:
+        self, id_or_instance: str | PyUUID | ModelType, **kwargs: Any
+    ) -> ModelType | None:
         """Update model instance by ID or instance."""
-        if isinstance(id_or_instance, (str, PyUUID)):
+        if isinstance(id_or_instance, str | PyUUID):
             # Original behavior: update by ID
             # Remove None values and protected fields
             update_data = {
@@ -145,7 +147,7 @@ class BaseRepository(Generic[ModelType]):
             await self.session.refresh(instance)
             return instance
 
-    async def delete(self, id: Union[str, PyUUID]) -> bool:
+    async def delete(self, id: str | PyUUID) -> bool:
         """Delete model instance by ID."""
         result = await self.session.execute(
             delete(self.model).where(self.model.id == id)
@@ -178,11 +180,11 @@ class BaseRepository(Generic[ModelType]):
 
     async def search(
         self,
-        search_fields: List[str],
+        search_fields: list[str],
         search_term: str,
         offset: int = 0,
         limit: int = 100,
-    ) -> List[ModelType]:
+    ) -> list[ModelType]:
         """Search model instances across multiple fields."""
         conditions = []
         for field in search_fields:
@@ -199,8 +201,8 @@ class BaseRepository(Generic[ModelType]):
         return list(result.scalars().all())
 
     async def bulk_create(
-        self, instances_data: List[Dict[str, Any]]
-    ) -> List[ModelType]:
+        self, instances_data: list[dict[str, Any]]
+    ) -> list[ModelType]:
         """Create multiple model instances."""
         instances = [self.model(**data) for data in instances_data]
         self.session.add_all(instances)
@@ -213,7 +215,7 @@ class BaseRepository(Generic[ModelType]):
         return instances
 
     async def bulk_update(
-        self, updates: List[Dict[str, Any]], id_field: str = "id"
+        self, updates: list[dict[str, Any]], id_field: str = "id"
     ) -> int:
         """Update multiple model instances."""
         updated_count = 0
@@ -232,7 +234,7 @@ class BaseRepository(Generic[ModelType]):
 
         return updated_count
 
-    async def bulk_delete(self, ids: List[str]) -> int:
+    async def bulk_delete(self, ids: list[str]) -> int:
         """Delete multiple model instances by IDs."""
         if not ids:
             return 0
@@ -243,8 +245,8 @@ class BaseRepository(Generic[ModelType]):
         return result.rowcount
 
     async def get_with_relationships(
-        self, id: str, relationships: List[str]
-    ) -> Optional[ModelType]:
+        self, id: str, relationships: list[str]
+    ) -> ModelType | None:
         """Get model instance with eagerly loaded relationships."""
         stmt = select(self.model).where(self.model.id == id)
 

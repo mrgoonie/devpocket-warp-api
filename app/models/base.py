@@ -3,8 +3,10 @@ Base model classes for DevPocket API.
 """
 
 from datetime import datetime
-from typing import Any, Dict
-from uuid import uuid4, UUID as PyUUID
+from typing import Any
+from uuid import UUID as PyUUID
+from uuid import uuid4
+
 from sqlalchemy import DateTime, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
@@ -51,13 +53,13 @@ class BaseModel(Base, UUIDMixin, TimestampMixin):
 
     __abstract__ = True
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert model instance to dictionary."""
         return {
             column.name: getattr(self, column.name) for column in self.__table__.columns
         }
 
-    def update_from_dict(self, data: Dict[str, Any]) -> None:
+    def update_from_dict(self, data: dict[str, Any]) -> None:
         """Update model instance from dictionary."""
         for key, value in data.items():
             if hasattr(self, key):

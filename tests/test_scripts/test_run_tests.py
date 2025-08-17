@@ -11,9 +11,10 @@ Tests cover:
 - Help and usage information
 """
 
-import pytest
-from unittest.mock import patch, MagicMock, mock_open
 import os
+from unittest.mock import MagicMock, mock_open, patch
+
+import pytest
 
 
 @pytest.mark.unit
@@ -297,10 +298,9 @@ class TestRunTestsScript:
     @patch("subprocess.run")
     def test_clean_artifacts_only(self, mock_run, script_runner):
         """Test cleaning artifacts only."""
-        with patch("os.path.exists", return_value=True):
-            with patch("shutil.rmtree"):
-                with patch("os.remove"):
-                    result = script_runner.run_script("run_tests.sh", ["--clean-only"])
+        with patch("os.path.exists", return_value=True), patch("shutil.rmtree"):
+            with patch("os.remove"):
+                result = script_runner.run_script("run_tests.sh", ["--clean-only"])
 
         assert result.returncode == 0
 

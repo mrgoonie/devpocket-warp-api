@@ -5,31 +5,33 @@ Contains business logic for command history, analytics, search, and related oper
 """
 
 import re
-from datetime import datetime, timedelta, timezone
-from typing import Optional, List, Dict, Any, Tuple, cast
 from collections import Counter, defaultdict
-from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import UTC, datetime, timedelta
+from typing import Any, cast
+
 from fastapi import HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import logger
-from app.models.user import User
 from app.models.command import Command
+from app.models.user import User
 from app.repositories.command import CommandRepository
 from app.repositories.session import SessionRepository
+
 from .schemas import (
+    CommandHistoryEntry,
+    CommandHistoryResponse,
+    CommandMetrics,
     CommandResponse,
     CommandSearchRequest,
-    CommandHistoryResponse,
-    CommandHistoryEntry,
-    CommandUsageStats,
-    SessionCommandStats,
-    FrequentCommand,
-    FrequentCommandsResponse,
+    CommandStatus,
     CommandSuggestion,
     CommandSuggestionRequest,
-    CommandMetrics,
     CommandType,
-    CommandStatus,
+    CommandUsageStats,
+    FrequentCommand,
+    FrequentCommandsResponse,
+    SessionCommandStats,
 )
 
 
@@ -88,7 +90,7 @@ class CommandService:
     async def get_command_history(
         self,
         user: User,
-        session_id: Optional[str] = None,
+        session_id: str | None = None,
         offset: int = 0,
         limit: int = 100,
     ) -> CommandHistoryResponse:
@@ -151,11 +153,11 @@ class CommandService:
 
     async def search_commands(
         self, user: User, search_request: CommandSearchRequest
-    ) -> Tuple[List[CommandResponse], int]:
+    ) -> tuple[list[CommandResponse], int]:
         """Search commands with advanced filters."""
         try:
             # Build search criteria
-            criteria: Dict[str, Any] = {"user_id": user.id}
+            criteria: dict[str, Any] = {"user_id": user.id}
 
             if search_request.session_id:
                 criteria["session_id"] = search_request.session_id
@@ -342,7 +344,7 @@ class CommandService:
 
             # Basic counts
             total_commands = len(all_commands)
-            unique_commands = len(set(cmd.command for cmd in all_commands))
+            unique_commands = len({cmd.command for cmd in all_commands})
             successful_commands = len(
                 [cmd for cmd in all_commands if cmd.exit_code == 0]
             )
@@ -361,7 +363,7 @@ class CommandService:
             status_counter = Counter(cmd.status for cmd in all_commands)
 
             # Time-based counts
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             today = now.date()
             week_ago = now - timedelta(days=7)
             month_ago = now - timedelta(days=30)
@@ -440,8 +442,8 @@ class CommandService:
             )
 
     async def get_session_command_stats(
-        self, user: User, session_id: Optional[str] = None
-    ) -> List[SessionCommandStats]:
+        self, user: User, session_id: str | None = None
+    ) -> list[SessionCommandStats]:
         """Get command statistics grouped by session."""
         try:
             # Get sessions with command counts
@@ -476,7 +478,7 @@ class CommandService:
         """Get frequently used commands with analysis."""
         try:
             # Get commands from the specified time period
-            cutoff_date = datetime.now(timezone.utc) - timedelta(days=days)
+            cutoff_date = datetime.now(UTC) - timedelta(days=days)
             commands = await self.command_repo.get_user_commands_since(
                 user.id, since=cutoff_date
             )
@@ -486,7 +488,7 @@ class CommandService:
                     commands=[],
                     total_analyzed=0,
                     analysis_period_days=days,
-                    generated_at=datetime.now(timezone.utc),
+                    generated_at=datetime.now(UTC),
                 )
 
             # Analyze command patterns
@@ -497,11 +499,11 @@ class CommandService:
                 if data["count"] >= min_usage:
                     # Calculate sessions used
                     sessions_used = len(
-                        set(
+                        {
                             cmd.session_id
                             for cmd in commands
                             if self._matches_pattern(cmd.command, pattern)
-                        )
+                        }
                     )
 
                     frequent_cmd = FrequentCommand(
@@ -523,7 +525,7 @@ class CommandService:
                 commands=frequent_commands[:50],  # Limit to top 50
                 total_analyzed=len(commands),
                 analysis_period_days=days,
-                generated_at=datetime.now(timezone.utc),
+                generated_at=datetime.now(UTC),
             )
 
         except Exception as e:
@@ -535,7 +537,7 @@ class CommandService:
 
     async def get_command_suggestions(
         self, user: User, request: CommandSuggestionRequest
-    ) -> List[CommandSuggestion]:
+    ) -> list[CommandSuggestion]:
         """Get command suggestions based on context."""
         try:
             suggestions = []
@@ -597,7 +599,7 @@ class CommandService:
     async def get_command_metrics(self, user: User) -> CommandMetrics:
         """Get real-time command execution metrics."""
         try:
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             today = now.date()
             yesterday = now - timedelta(days=1)
 
@@ -699,7 +701,7 @@ class CommandService:
                 success_rate_24h=round(success_rate_24h, 2),
                 total_cpu_time_ms=sum(cmd.duration_ms or 0 for cmd in recent_commands),
                 peak_memory_usage_mb=None,  # Would need system monitoring
-                top_error_types=cast(List[Dict[str, int]], top_errors),
+                top_error_types=cast(list[dict[str, int]], top_errors),
                 timestamp=now,
             )
 
@@ -728,10 +730,10 @@ class CommandService:
         return False
 
     def _analyze_command_patterns(
-        self, commands: List[Command], min_usage: int
-    ) -> Dict[str, Dict[str, Any]]:
+        self, commands: list[Command], min_usage: int
+    ) -> dict[str, dict[str, Any]]:
         """Analyze commands to find patterns and templates."""
-        pattern_data: defaultdict[str, Dict[str, Any]] = defaultdict(
+        pattern_data: defaultdict[str, dict[str, Any]] = defaultdict(
             lambda: {
                 "count": 0,
                 "variations": [],
@@ -802,7 +804,7 @@ class CommandService:
         cmd_pattern = self._create_command_pattern(command)
         return cmd_pattern == pattern
 
-    def _get_file_operation_suggestions(self, context: str) -> List[CommandSuggestion]:
+    def _get_file_operation_suggestions(self, context: str) -> list[CommandSuggestion]:
         """Generate file operation command suggestions."""
         suggestions = []
 
@@ -833,7 +835,7 @@ class CommandService:
 
     def _get_system_monitoring_suggestions(
         self, context: str
-    ) -> List[CommandSuggestion]:
+    ) -> list[CommandSuggestion]:
         """Generate system monitoring suggestions."""
         suggestions = []
 
@@ -863,7 +865,7 @@ class CommandService:
 
         return suggestions
 
-    def _get_network_suggestions(self, context: str) -> List[CommandSuggestion]:
+    def _get_network_suggestions(self, context: str) -> list[CommandSuggestion]:
         """Generate network-related suggestions."""
         suggestions = []
 
@@ -881,7 +883,7 @@ class CommandService:
 
         return suggestions
 
-    def _get_git_suggestions(self, context: str) -> List[CommandSuggestion]:
+    def _get_git_suggestions(self, context: str) -> list[CommandSuggestion]:
         """Generate git-related suggestions."""
         suggestions = []
 
@@ -899,8 +901,8 @@ class CommandService:
         return suggestions
 
     def _get_personalized_suggestions(
-        self, recent_commands: List[Command], context: str
-    ) -> List[CommandSuggestion]:
+        self, recent_commands: list[Command], context: str
+    ) -> list[CommandSuggestion]:
         """Generate personalized suggestions based on user history."""
         suggestions = []
 

@@ -2,24 +2,25 @@
 Test JWT and password security functionality.
 """
 
+from datetime import UTC, datetime, timedelta
+
 import pytest
-from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 
 from app.auth.security import (
-    hash_password,
-    verify_password,
+    blacklist_token,
     create_access_token,
     create_refresh_token,
     decode_token,
-    verify_token,
-    blacklist_token,
-    is_token_blacklisted,
     generate_password_reset_token,
-    verify_password_reset_token,
     generate_secure_token,
+    hash_password,
     is_password_strong,
+    is_token_blacklisted,
     set_redis_client,
+    verify_password,
+    verify_password_reset_token,
+    verify_token,
 )
 from app.core.config import settings
 
@@ -140,8 +141,8 @@ class TestJWTTokens:
         payload = decode_token(token)
 
         # Check expiration is approximately 30 minutes from now
-        exp_time = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
-        expected_exp = datetime.now(timezone.utc) + custom_expiry
+        exp_time = datetime.fromtimestamp(payload["exp"], tz=UTC)
+        expected_exp = datetime.now(UTC) + custom_expiry
 
         # Allow 10 second tolerance
         assert abs((exp_time - expected_exp).total_seconds()) < 10
@@ -250,7 +251,7 @@ class TestTokenBlacklisting:
         set_redis_client(mock_redis)
 
         token = "test.jwt.token"
-        custom_expiry = datetime.now(timezone.utc) + timedelta(hours=2)
+        custom_expiry = datetime.now(UTC) + timedelta(hours=2)
 
         await blacklist_token(token, expires_at=custom_expiry)
 
@@ -326,8 +327,8 @@ class TestPasswordReset:
         assert "reset_id" in payload
 
         # Check expiration is approximately 1 hour
-        exp_time = datetime.fromtimestamp(payload["exp"], tz=timezone.utc)
-        expected_exp = datetime.now(timezone.utc) + timedelta(hours=1)
+        exp_time = datetime.fromtimestamp(payload["exp"], tz=UTC)
+        expected_exp = datetime.now(UTC) + timedelta(hours=1)
         assert abs((exp_time - expected_exp).total_seconds()) < 10
 
     def test_verify_password_reset_token_valid(self):
@@ -366,9 +367,9 @@ class TestPasswordReset:
             "sub": email,
             "type": "password_reset",
             "reset_id": "test123",
-            "exp": datetime.now(timezone.utc)
+            "exp": datetime.now(UTC)
             + timedelta(seconds=-1),  # Already expired
-            "iat": datetime.now(timezone.utc),
+            "iat": datetime.now(UTC),
         }
 
         expired_token = jwt.encode(
@@ -433,7 +434,7 @@ class TestSecurityEdgeCases:
 
         payload = {
             "sub": "test@example.com",
-            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+            "exp": datetime.now(UTC) + timedelta(hours=1),
         }
         wrong_algo_token = jose_jwt.encode(payload, "wrong_secret", algorithm="HS512")
 
@@ -447,7 +448,7 @@ class TestSecurityEdgeCases:
 
         payload = {
             "sub": "test@example.com",
-            "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+            "exp": datetime.now(UTC) + timedelta(hours=1),
         }
         wrong_secret_token = jose_jwt.encode(
             payload, "wrong_secret", algorithm=settings.jwt_algorithm

@@ -5,6 +5,7 @@ Global test configuration and fixtures for DevPocket API tests.
 import asyncio
 import os
 import sys
+
 import pytest
 import pytest_asyncio
 
@@ -13,8 +14,8 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
-from datetime import datetime, timedelta, timezone  # noqa: E402
-from typing import AsyncGenerator, Generator  # noqa: E402
+from collections.abc import AsyncGenerator, Generator  # noqa: E402
+from datetime import UTC, datetime, timedelta  # noqa: E402
 from unittest.mock import AsyncMock, MagicMock  # noqa: E402
 
 import redis.asyncio as aioredis  # noqa: E402
@@ -26,15 +27,16 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine  # noqa: E4
 from sqlalchemy.orm import sessionmaker  # noqa: E402
 from sqlalchemy.pool import StaticPool  # noqa: E402
 
-from main import create_application  # noqa: E402
-from app.auth.security import create_access_token  # noqa: E402
+from app.auth.security import (
+    create_access_token,
+    set_redis_client,
+)
 from app.db.database import get_db  # noqa: E402
 from app.models.base import Base  # noqa: E402
 from app.models.user import User  # noqa: E402
 from app.repositories.user import UserRepository  # noqa: E402
-from app.auth.security import set_redis_client  # noqa: E402
 from app.websocket.manager import connection_manager  # noqa: E402
-
+from main import create_application  # noqa: E402
 
 # Test database configuration
 # Use environment DATABASE_URL if available, otherwise fall back to localhost
@@ -56,8 +58,8 @@ async def _cleanup_test_data(engine):
         result = await conn.execute(
             text(
                 """
-            SELECT tablename FROM pg_tables 
-            WHERE schemaname = 'public' 
+            SELECT tablename FROM pg_tables
+            WHERE schemaname = 'public'
             AND tablename != 'alembic_version'
             ORDER BY tablename
         """
@@ -266,7 +268,7 @@ async def verified_user(user_repository, user_data) -> User:
         **create_data,
         hashed_password=hashed_password,
         is_verified=True,
-        verified_at=datetime.now(timezone.utc),
+        verified_at=datetime.now(UTC),
     )
     return user
 
@@ -282,9 +284,9 @@ async def premium_user(user_repository, user_data) -> User:
         **create_data,
         hashed_password=hashed_password,
         is_verified=True,
-        verified_at=datetime.now(timezone.utc),
+        verified_at=datetime.now(UTC),
         subscription_tier="premium",
-        subscription_expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+        subscription_expires_at=datetime.now(UTC) + timedelta(days=30),
     )
     return user
 

@@ -6,35 +6,36 @@ command execution, and session monitoring.
 """
 
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import get_current_active_user
 from app.core.logging import logger
 from app.db.database import get_db
 from app.models.user import User
+
 from .schemas import (
-    # Session schemas
-    SessionCreate,
-    SessionUpdate,
-    SessionResponse,
-    SessionListResponse,
-    SessionSearchRequest,
-    SessionStats,
-    SessionHealthCheck,
-    # Command schemas
-    SessionCommand,
-    SessionCommandResponse,
-    # History schemas
-    SessionHistoryResponse,
     # WebSocket schemas
     BatchSessionOperation,
     BatchSessionResponse,
     # Common schemas
     MessageResponse,
+    # Command schemas
+    SessionCommand,
+    SessionCommandResponse,
+    # Session schemas
+    SessionCreate,
+    SessionHealthCheck,
+    # History schemas
+    SessionHistoryResponse,
+    SessionListResponse,
+    SessionResponse,
+    SessionSearchRequest,
+    SessionStats,
+    SessionUpdate,
 )
 from .service import SessionService
-
 
 # Create router instance
 router = APIRouter(

@@ -2,15 +2,17 @@
 Multi-device synchronization service for DevPocket API.
 """
 
-from datetime import datetime, timezone
-from typing import Dict, Any, List
-from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import UTC, datetime
+from typing import Any
+
 from fastapi import HTTPException, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import logger
-from app.models.user import User
 from app.models.sync import SyncData
+from app.models.user import User
 from app.repositories.sync import SyncDataRepository
+
 from .schemas import SyncDataRequest, SyncDataResponse, SyncStats
 
 
@@ -25,25 +27,23 @@ class SyncService:
         """Synchronize data across devices."""
         try:
             # Get data based on last sync timestamp
-            last_sync = request.last_sync_timestamp or datetime.min.replace(
-                tzinfo=timezone.utc
-            )
+            last_sync = request.last_sync_timestamp or datetime.min.replace(tzinfo=UTC)
             sync_data = await self.sync_repo.get_sync_changes_since(user.id, last_sync)
 
             # Organize data by type
-            organized_data: Dict[str, Any] = {}
+            organized_data: dict[str, Any] = {}
             for data_type in request.data_types:
                 organized_data[data_type.value] = []
 
             total_items = len(sync_data)
-            conflicts: List[Dict[str, Any]] = []  # Would detect conflicts here
+            conflicts: list[dict[str, Any]] = []  # Would detect conflicts here
 
             # Get device count
             device_count = await self.sync_repo.count_user_devices(user.id)
 
             return SyncDataResponse(
                 data=organized_data,
-                sync_timestamp=datetime.now(timezone.utc),
+                sync_timestamp=datetime.now(UTC),
                 total_items=total_items,
                 conflicts=conflicts,
                 device_count=device_count,
@@ -56,7 +56,7 @@ class SyncService:
                 detail="Failed to synchronize data",
             )
 
-    async def upload_sync_data(self, user: User, data: Dict[str, Any]) -> bool:
+    async def upload_sync_data(self, user: User, data: dict[str, Any]) -> bool:
         """Upload synchronization data from device."""
         try:
             # Process and store sync data
@@ -64,7 +64,7 @@ class SyncService:
                 user_id=user.id,
                 data_type="upload",
                 data_content=data,
-                sync_timestamp=datetime.now(timezone.utc),
+                sync_timestamp=datetime.now(UTC),
             )
 
             await self.sync_repo.create(sync_record)

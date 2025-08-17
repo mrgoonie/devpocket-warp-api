@@ -3,8 +3,9 @@ Pydantic schemas for user profile and settings endpoints.
 """
 
 from datetime import datetime
-from typing import Optional, Dict, Any
-from pydantic import BaseModel, Field, ConfigDict
+from typing import Any
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class UserProfileResponse(BaseModel):
@@ -13,7 +14,7 @@ class UserProfileResponse(BaseModel):
     id: str = Field(..., description="User ID")
     username: str = Field(..., description="Username")
     email: str = Field(..., description="Email address")
-    display_name: Optional[str] = Field(default=None, description="Display name")
+    display_name: str | None = Field(default=None, description="Display name")
     subscription_tier: str = Field(..., description="Subscription tier")
     created_at: datetime = Field(..., description="Account creation date")
     updated_at: datetime = Field(..., description="Last update timestamp")
@@ -24,10 +25,8 @@ class UserProfileResponse(BaseModel):
 class UserProfileUpdate(BaseModel):
     """Schema for updating user profile."""
 
-    display_name: Optional[str] = Field(
-        None, max_length=100, description="Display name"
-    )
-    email: Optional[str] = Field(default=None, description="Email address")
+    display_name: str | None = Field(None, max_length=100, description="Display name")
+    email: str | None = Field(default=None, description="Email address")
 
 
 class UserSettings(BaseModel):
@@ -36,10 +35,10 @@ class UserSettings(BaseModel):
     theme: str = Field(default="dark", description="UI theme preference")
     timezone: str = Field(default="UTC", description="User timezone")
     language: str = Field(default="en", description="Language preference")
-    terminal_preferences: Dict[str, Any] = Field(
+    terminal_preferences: dict[str, Any] = Field(
         default={}, description="Terminal preferences"
     )
-    ai_preferences: Dict[str, Any] = Field(
+    ai_preferences: dict[str, Any] = Field(
         default={}, description="AI service preferences"
     )
     sync_enabled: bool = Field(default=True, description="Multi-device sync enabled")

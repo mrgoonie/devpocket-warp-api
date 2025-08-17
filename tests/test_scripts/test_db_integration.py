@@ -9,11 +9,12 @@ Tests cover:
 - Error recovery scenarios
 """
 
-import pytest
 import os
-from unittest.mock import patch
-import asyncpg
 import time
+from unittest.mock import patch
+
+import asyncpg
+import pytest
 
 
 @pytest.mark.integration
@@ -79,7 +80,7 @@ class TestDatabaseIntegration:
         # Get all tables
         tables = await db_connection.fetch(
             """
-            SELECT table_name FROM information_schema.tables 
+            SELECT table_name FROM information_schema.tables
             WHERE table_schema = 'public'
             ORDER BY table_name
         """
@@ -109,14 +110,14 @@ class TestDatabaseIntegration:
         # Get foreign key constraints
         constraints = await db_connection.fetch(
             """
-            SELECT 
+            SELECT
                 tc.table_name,
                 tc.constraint_name,
                 kcu.column_name,
                 ccu.table_name AS foreign_table_name,
                 ccu.column_name AS foreign_column_name
-            FROM 
-                information_schema.table_constraints AS tc 
+            FROM
+                information_schema.table_constraints AS tc
                 JOIN information_schema.key_column_usage AS kcu
                   ON tc.constraint_name = kcu.constraint_name
                 JOIN information_schema.constraint_column_usage AS ccu
@@ -285,7 +286,7 @@ class TestDatabaseIntegration:
             # Get initial state
             initial_tables = await db_connection.fetch(
                 """
-                SELECT table_name FROM information_schema.tables 
+                SELECT table_name FROM information_schema.tables
                 WHERE table_schema = 'public'
                 ORDER BY table_name
             """
@@ -299,7 +300,7 @@ class TestDatabaseIntegration:
             # Check final state
             final_tables = await db_connection.fetch(
                 """
-                SELECT table_name FROM information_schema.tables 
+                SELECT table_name FROM information_schema.tables
                 WHERE table_schema = 'public'
                 ORDER BY table_name
             """
