@@ -157,6 +157,7 @@ def setup_middleware(app: FastAPI) -> None:
     # Trusted host middleware (for production)
     # Don't add trusted host middleware in debug mode or testing
     import os
+
     is_testing = os.getenv("TESTING", "false").lower() == "true"
     if not settings.app_debug and not is_testing:
         app.add_middleware(
