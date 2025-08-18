@@ -83,8 +83,9 @@ class TestSessionServiceIsolated:
              patch('app.api.sessions.service.SSHProfileRepository') as mock_ssh_repo:
             
             service = SessionService(mock_db_session)
-            service.session_repo = mock_session_repo.return_value
-            service.ssh_profile_repo = mock_ssh_repo.return_value
+            # Configure repositories as AsyncMocks to avoid 'await' issues
+            service.session_repo = AsyncMock()
+            service.ssh_profile_repo = AsyncMock()
             service._active_sessions = {}
             service._background_tasks = set()
             return service
