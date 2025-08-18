@@ -505,3 +505,580 @@ NhAAAAAwEAAQAAAQEA1234567890
         assert ssh_service.supported_key_types["dsa"] == paramiko.DSSKey
         assert ssh_service.supported_key_types["ecdsa"] == paramiko.ECDSAKey
         assert ssh_service.supported_key_types["ed25519"] == paramiko.Ed25519Key
+
+
+class TestSSHClientServiceComprehensive:
+    """Comprehensive tests for SSH client service to achieve 80% coverage."""
+
+    @pytest.fixture
+    def ssh_service(self):
+        """Create SSH client service instance."""
+        return SSHClientService()
+
+    @pytest.fixture
+    def mock_ecdsa_key(self):
+        """Create mock ECDSA SSH key."""
+        ssh_key = MagicMock(spec=SSHKey)
+        ssh_key.key_type = "ecdsa"
+        ssh_key.encrypted_private_key = b"""-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAaAAAABNlY2RzYS
+-----END OPENSSH PRIVATE KEY-----"""
+        return ssh_key
+
+    @pytest.fixture
+    def mock_ed25519_key(self):
+        """Create mock Ed25519 SSH key."""
+        ssh_key = MagicMock(spec=SSHKey)
+        ssh_key.key_type = "ed25519"
+        ssh_key.encrypted_private_key = b"""-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
+-----END OPENSSH PRIVATE KEY-----"""
+        return ssh_key
+
+    @pytest.fixture
+    def mock_dsa_key(self):
+        """Create mock DSA SSH key."""
+        ssh_key = MagicMock(spec=SSHKey)
+        ssh_key.key_type = "dsa"
+        ssh_key.encrypted_private_key = b"""-----BEGIN OPENSSH PRIVATE KEY-----
+b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAiAAAABVzc2gtZH
+-----END OPENSSH PRIVATE KEY-----"""
+        return ssh_key
+
+    # Test Connection Scenarios with Different Auth Methods
+    @pytest.mark.asyncio
+    async def test_test_connection_with_ecdsa_key_success(self, ssh_service, mock_ecdsa_key):
+        """Test successful SSH connection with ECDSA key authentication."""
+        mock_client = MagicMock(spec=paramiko.SSHClient)
+        mock_stdout = MagicMock()
+        mock_stdout.read.return_value = b"connection_test"
+        mock_client.exec_command.return_value = (None, mock_stdout, None)
+        
+        mock_transport = MagicMock()
+        mock_transport.remote_version = "OpenSSH_8.9"
+        mock_transport.get_cipher.return_value = ("chacha20-poly1305@openssh.com", "umac-128-etm@openssh.com")
+        mock_host_key = MagicMock()
+        mock_host_key.get_name.return_value = "ecdsa-sha2-nistp256"
+        mock_transport.get_host_key.return_value = mock_host_key
+        mock_client.get_transport.return_value = mock_transport
+
+        mock_ecdsa_pkey = MagicMock(spec=paramiko.ECDSAKey)
+        
+        with (
+            patch("paramiko.SSHClient", return_value=mock_client),
+            patch.object(ssh_service, "_load_private_key", return_value=mock_ecdsa_pkey),
+            patch("asyncio.get_event_loop") as mock_loop
+        ):
+            mock_loop.return_value.run_in_executor.return_value = asyncio.Future()
+            mock_loop.return_value.run_in_executor.return_value.set_result(None)
+            
+            result = await ssh_service.test_connection(
+                host="ecdsa.example.com",
+                port=2222,
+                username="ecdsa_user",
+                ssh_key=mock_ecdsa_key,
+                timeout=15
+            )
+
+            assert result["success"] is True
+            assert "Connection successful" in result["message"]
+            assert result["details"]["command_test"] == "passed"
+            assert result["server_info"]["version"] == "OpenSSH_8.9"
+            assert result["server_info"]["cipher"] == "chacha20-poly1305@openssh.com"
+            assert result["server_info"]["host_key_type"] == "ecdsa-sha2-nistp256"
+
+    @pytest.mark.asyncio
+    async def test_test_connection_with_ed25519_key_success(self, ssh_service, mock_ed25519_key):
+        """Test successful SSH connection with Ed25519 key authentication."""
+        mock_client = MagicMock(spec=paramiko.SSHClient)
+        mock_stdout = MagicMock()
+        mock_stdout.read.return_value = b"connection_test"
+        mock_client.exec_command.return_value = (None, mock_stdout, None)
+        
+        mock_transport = MagicMock()
+        mock_transport.remote_version = "OpenSSH_9.0"
+        mock_transport.get_cipher.return_value = ("aes256-gcm@openssh.com", "hmac-sha2-256-etm@openssh.com")
+        mock_host_key = MagicMock()
+        mock_host_key.get_name.return_value = "ssh-ed25519"
+        mock_transport.get_host_key.return_value = mock_host_key
+        mock_client.get_transport.return_value = mock_transport
+
+        mock_ed25519_pkey = MagicMock(spec=paramiko.Ed25519Key)
+        
+        with (
+            patch("paramiko.SSHClient", return_value=mock_client),
+            patch.object(ssh_service, "_load_private_key", return_value=mock_ed25519_pkey),
+            patch("asyncio.get_event_loop") as mock_loop
+        ):
+            mock_loop.return_value.run_in_executor.return_value = asyncio.Future()
+            mock_loop.return_value.run_in_executor.return_value.set_result(None)
+            
+            result = await ssh_service.test_connection(
+                host="ed25519.example.com",
+                port=22,
+                username="ed25519_user",
+                ssh_key=mock_ed25519_key
+            )
+
+            assert result["success"] is True
+            assert "Connection successful" in result["message"]
+            assert result["details"]["command_test"] == "passed"
+            assert result["server_info"]["host_key_type"] == "ssh-ed25519"
+
+    @pytest.mark.asyncio
+    async def test_test_connection_command_execution_success(self, ssh_service):
+        """Test SSH connection with successful command execution."""
+        mock_client = MagicMock(spec=paramiko.SSHClient)
+        mock_stdout = MagicMock()
+        mock_stdout.read.return_value = b"connection_test"
+        mock_client.exec_command.return_value = (None, mock_stdout, None)
+        
+        mock_transport = MagicMock()
+        mock_transport.remote_version = "OpenSSH_8.0"
+        mock_transport.get_cipher.return_value = ("aes128-ctr", "hmac-sha2-256")
+        mock_host_key = MagicMock()
+        mock_host_key.get_name.return_value = "ssh-rsa"
+        mock_transport.get_host_key.return_value = mock_host_key
+        mock_client.get_transport.return_value = mock_transport
+
+        with (
+            patch("paramiko.SSHClient", return_value=mock_client),
+            patch("asyncio.get_event_loop") as mock_loop
+        ):
+            mock_loop.return_value.run_in_executor.return_value = asyncio.Future()
+            mock_loop.return_value.run_in_executor.return_value.set_result(None)
+            
+            result = await ssh_service.test_connection(
+                host="test.example.com",
+                port=22,
+                username="testuser",
+                password="testpass"
+            )
+
+            assert result["success"] is True
+            assert "Connection successful" in result["message"]
+            assert result["details"]["command_test"] == "passed"
+
+    @pytest.mark.asyncio
+    async def test_test_connection_command_execution_failure(self, ssh_service):
+        """Test SSH connection with failed command execution."""
+        mock_client = MagicMock(spec=paramiko.SSHClient)
+        mock_stdout = MagicMock()
+        mock_stdout.read.return_value = b"unexpected_output"
+        mock_client.exec_command.return_value = (None, mock_stdout, None)
+        
+        mock_transport = MagicMock()
+        mock_transport.remote_version = "OpenSSH_8.0"
+        mock_transport.get_cipher.return_value = ("aes128-ctr", "hmac-sha2-256")
+        mock_host_key = MagicMock()
+        mock_host_key.get_name.return_value = "ssh-rsa"
+        mock_transport.get_host_key.return_value = mock_host_key
+        mock_client.get_transport.return_value = mock_transport
+
+        with (
+            patch("paramiko.SSHClient", return_value=mock_client),
+            patch("asyncio.get_event_loop") as mock_loop
+        ):
+            mock_loop.return_value.run_in_executor.return_value = asyncio.Future()
+            mock_loop.return_value.run_in_executor.return_value.set_result(None)
+            
+            result = await ssh_service.test_connection(
+                host="test.example.com",
+                port=22,
+                username="testuser",
+                password="testpass"
+            )
+
+            assert result["success"] is False
+            assert "command execution failed" in result["message"]
+            assert result["details"]["command_test"] == "failed"
+            assert result["details"]["command_output"] == "unexpected_output"
+
+    @pytest.mark.asyncio
+    async def test_test_connection_command_exception(self, ssh_service):
+        """Test SSH connection with command execution exception."""
+        mock_client = MagicMock(spec=paramiko.SSHClient)
+        mock_client.exec_command.side_effect = Exception("Command failed")
+        
+        mock_transport = MagicMock()
+        mock_transport.remote_version = "OpenSSH_8.0"
+        mock_transport.get_cipher.return_value = ("aes128-ctr", "hmac-sha2-256")
+        mock_host_key = MagicMock()
+        mock_host_key.get_name.return_value = "ssh-rsa"
+        mock_transport.get_host_key.return_value = mock_host_key
+        mock_client.get_transport.return_value = mock_transport
+
+        with (
+            patch("paramiko.SSHClient", return_value=mock_client),
+            patch("asyncio.get_event_loop") as mock_loop
+        ):
+            mock_loop.return_value.run_in_executor.return_value = asyncio.Future()
+            mock_loop.return_value.run_in_executor.return_value.set_result(None)
+            
+            result = await ssh_service.test_connection(
+                host="test.example.com",
+                port=22,
+                username="testuser",
+                password="testpass"
+            )
+
+            assert result["success"] is True  # Connection successful but command failed
+            assert "Connection successful (command test failed)" in result["message"]
+            assert result["details"]["command_test"] == "failed"
+            assert "Command failed" in result["details"]["command_error"]
+
+    @pytest.mark.asyncio
+    async def test_test_connection_no_transport(self, ssh_service):
+        """Test SSH connection with no transport available."""
+        mock_client = MagicMock(spec=paramiko.SSHClient)
+        mock_client.get_transport.return_value = None
+        mock_stdout = MagicMock()
+        mock_stdout.read.return_value = b"connection_test"
+        mock_client.exec_command.return_value = (None, mock_stdout, None)
+
+        with (
+            patch("paramiko.SSHClient", return_value=mock_client),
+            patch("asyncio.get_event_loop") as mock_loop
+        ):
+            mock_loop.return_value.run_in_executor.return_value = asyncio.Future()
+            mock_loop.return_value.run_in_executor.return_value.set_result(None)
+            
+            result = await ssh_service.test_connection(
+                host="test.example.com",
+                port=22,
+                username="testuser",
+                password="testpass"
+            )
+
+            assert result["success"] is True
+            assert "server_info" not in result or not result["server_info"]
+
+    @pytest.mark.asyncio
+    async def test_test_connection_ssh_exception(self, ssh_service):
+        """Test SSH connection with SSH protocol exception."""
+        mock_client = MagicMock(spec=paramiko.SSHClient)
+        
+        with (
+            patch("paramiko.SSHClient", return_value=mock_client),
+            patch("asyncio.get_event_loop") as mock_loop
+        ):
+            future = asyncio.Future()
+            future.set_exception(paramiko.SSHException("Protocol error"))
+            mock_loop.return_value.run_in_executor.return_value = future
+            
+            result = await ssh_service.test_connection(
+                host="test.example.com",
+                port=22,
+                username="testuser",
+                password="testpass"
+            )
+
+            assert result["success"] is False
+            assert "SSH connection failed: Protocol error" in result["message"]
+            assert result["details"]["error_type"] == "ssh_protocol"
+
+    @pytest.mark.asyncio
+    async def test_test_connection_unknown_exception(self, ssh_service):
+        """Test SSH connection with unknown exception."""
+        mock_client = MagicMock(spec=paramiko.SSHClient)
+        
+        with (
+            patch("paramiko.SSHClient", return_value=mock_client),
+            patch("asyncio.get_event_loop") as mock_loop
+        ):
+            future = asyncio.Future()
+            future.set_exception(ValueError("Unknown error"))
+            mock_loop.return_value.run_in_executor.return_value = future
+            
+            result = await ssh_service.test_connection(
+                host="test.example.com",
+                port=22,
+                username="testuser",
+                password="testpass"
+            )
+
+            assert result["success"] is False
+            assert "Connection test failed: Unknown error" in result["message"]
+            assert result["details"]["error_type"] == "unknown"
+            assert result["details"]["error"] == "Unknown error"
+
+    # Test SSH Key Loading with Different Key Types
+    def test_load_private_key_ecdsa(self, ssh_service, mock_ecdsa_key):
+        """Test loading ECDSA private key."""
+        mock_ecdsa_pkey = MagicMock(spec=paramiko.ECDSAKey)
+        
+        with patch("paramiko.ECDSAKey.from_private_key", return_value=mock_ecdsa_pkey):
+            result = ssh_service._load_private_key(mock_ecdsa_key)
+            assert result == mock_ecdsa_pkey
+
+    def test_load_private_key_ed25519(self, ssh_service, mock_ed25519_key):
+        """Test loading Ed25519 private key."""
+        mock_ed25519_pkey = MagicMock(spec=paramiko.Ed25519Key)
+        
+        with patch("paramiko.Ed25519Key.from_private_key", return_value=mock_ed25519_pkey):
+            result = ssh_service._load_private_key(mock_ed25519_key)
+            assert result == mock_ed25519_pkey
+
+    def test_load_private_key_dsa(self, ssh_service, mock_dsa_key):
+        """Test loading DSA private key."""
+        mock_dsa_pkey = MagicMock(spec=paramiko.DSSKey)
+        
+        with patch("paramiko.DSSKey.from_private_key", return_value=mock_dsa_pkey):
+            result = ssh_service._load_private_key(mock_dsa_key)
+            assert result == mock_dsa_pkey
+
+    def test_load_private_key_with_passphrase(self, ssh_service):
+        """Test loading private key with passphrase."""
+        ssh_key = MagicMock(spec=SSHKey)
+        ssh_key.key_type = "rsa"
+        ssh_key.encrypted_private_key = b"encrypted key data"
+        mock_rsa_pkey = MagicMock(spec=paramiko.RSAKey)
+        
+        with patch("paramiko.RSAKey.from_private_key", return_value=mock_rsa_pkey) as mock_from_key:
+            result = ssh_service._load_private_key(ssh_key, passphrase="secret")
+            
+            assert result == mock_rsa_pkey
+            mock_from_key.assert_called_once()
+            call_args = mock_from_key.call_args
+            assert call_args[1]["password"] == "secret"
+
+    def test_load_private_key_case_insensitive(self, ssh_service):
+        """Test loading private key with case-insensitive key type."""
+        ssh_key = MagicMock(spec=SSHKey)
+        ssh_key.key_type = "RSA"  # Uppercase
+        ssh_key.encrypted_private_key = b"key data"
+        mock_rsa_pkey = MagicMock(spec=paramiko.RSAKey)
+        
+        with patch("paramiko.RSAKey.from_private_key", return_value=mock_rsa_pkey):
+            result = ssh_service._load_private_key(ssh_key)
+            assert result == mock_rsa_pkey
+
+    # Test Key Pair Generation with Different Parameters
+    def test_generate_key_pair_ecdsa(self, ssh_service):
+        """Test ECDSA key pair generation."""
+        mock_key = MagicMock()
+        mock_key.get_name.return_value = "ecdsa-sha2-nistp256"
+        mock_key.get_base64.return_value = "AAAAE2VjZHNhLXNoYTItbmlzdHAyNTY"
+        mock_key.get_fingerprint.return_value = bytes.fromhex("fedcba98")
+        
+        def mock_write_private_key(file_obj):
+            file_obj.write("-----BEGIN EC PRIVATE KEY-----\ntest\n-----END EC PRIVATE KEY-----")
+        
+        mock_key.write_private_key = mock_write_private_key
+        
+        with patch("paramiko.ECDSAKey.generate", return_value=mock_key):
+            result = ssh_service.generate_key_pair("ecdsa", comment="test@ecdsa.com")
+
+            assert result["key_type"] == "ecdsa"
+            assert result["public_key"] == "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTY test@ecdsa.com"
+            assert result["fingerprint"] == "fedcba98"
+            assert "BEGIN EC PRIVATE KEY" in result["private_key"]
+
+    def test_generate_key_pair_rsa_custom_size(self, ssh_service):
+        """Test RSA key pair generation with custom size."""
+        mock_key = MagicMock()
+        mock_key.get_name.return_value = "ssh-rsa"
+        mock_key.get_base64.return_value = "AAAAB3NzaC1yc2EAAAADAQABAAACAQ"
+        mock_key.get_fingerprint.return_value = bytes.fromhex("12345678")
+        
+        def mock_write_private_key(file_obj):
+            file_obj.write("-----BEGIN RSA PRIVATE KEY-----\ntest\n-----END RSA PRIVATE KEY-----")
+        
+        mock_key.write_private_key = mock_write_private_key
+        
+        with patch("paramiko.RSAKey.generate", return_value=mock_key) as mock_generate:
+            result = ssh_service.generate_key_pair("rsa", key_size=4096)
+
+            mock_generate.assert_called_once_with(4096)
+            assert result["key_type"] == "rsa"
+            assert result["fingerprint"] == "12345678"
+
+    def test_generate_key_pair_no_comment(self, ssh_service):
+        """Test key pair generation without comment."""
+        mock_key = MagicMock()
+        mock_key.get_name.return_value = "ssh-ed25519"
+        mock_key.get_base64.return_value = "AAAAC3NzaC1lZDI1NTE5AAAAINtNVNOy"
+        mock_key.get_fingerprint.return_value = bytes.fromhex("abcdef01")
+        
+        def mock_write_private_key(file_obj):
+            file_obj.write("-----BEGIN OPENSSH PRIVATE KEY-----\ntest\n-----END OPENSSH PRIVATE KEY-----")
+        
+        mock_key.write_private_key = mock_write_private_key
+        
+        with patch("paramiko.Ed25519Key.generate", return_value=mock_key):
+            result = ssh_service.generate_key_pair("ed25519")
+
+            assert result["public_key"] == "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINtNVNOy"
+            assert " " not in result["public_key"].split(" ", 2)[2:] # No comment
+
+    def test_generate_key_pair_exception_handling(self, ssh_service):
+        """Test key pair generation exception handling."""
+        with patch("paramiko.RSAKey.generate", side_effect=ValueError("Invalid key size")):
+            with pytest.raises(Exception, match="Key generation failed: Invalid key size"):
+                ssh_service.generate_key_pair("rsa", key_size=-1)
+
+    # Test Public Key Validation Edge Cases
+    def test_validate_public_key_all_supported_types(self, ssh_service):
+        """Test validation of all supported public key types."""
+        test_keys = [
+            "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC7 user@example.com",
+            "ssh-dss AAAAB3NzaC1kc3MAAACBAOmkqtUNmIGrjwKjKcU user@example.com",
+            "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTY user@example.com",
+            "ecdsa-sha2-nistp384 AAAAE2VjZHNhLXNoYTItbmlzdHAzODQ user@example.com",
+            "ecdsa-sha2-nistp521 AAAAE2VjZHNhLXNoYTItbmlzdHA1MjE user@example.com",
+            "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHzpNHFOH9nK user@example.com"
+        ]
+        
+        for key in test_keys:
+            assert ssh_service.validate_public_key(key) is True
+
+    def test_validate_public_key_missing_parts(self, ssh_service):
+        """Test validation of public key with missing parts."""
+        invalid_keys = [
+            "ssh-rsa",  # Missing key data
+            "AAAAB3NzaC1yc2EAAAADAQABAAABAQC7",  # Missing key type
+            "",  # Empty string
+            "   ",  # Whitespace only
+        ]
+        
+        for key in invalid_keys:
+            assert ssh_service.validate_public_key(key) is False
+
+    def test_validate_public_key_with_whitespace(self, ssh_service):
+        """Test validation of public key with extra whitespace."""
+        key_with_whitespace = "  ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC7 user@example.com  "
+        assert ssh_service.validate_public_key(key_with_whitespace) is True
+
+    def test_validate_public_key_base64_decode_exception(self, ssh_service):
+        """Test validation handling base64 decode exceptions."""
+        with patch("base64.b64decode", side_effect=Exception("Decode error")):
+            result = ssh_service.validate_public_key("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC7")
+            assert result is False
+
+    # Test Key Fingerprint Generation Edge Cases
+    def test_get_key_fingerprint_ecdsa_variants(self, ssh_service):
+        """Test getting fingerprint for different ECDSA variants."""
+        test_cases = [
+            ("ecdsa-sha2-nistp256", paramiko.ECDSAKey),
+            ("ecdsa-sha2-nistp384", paramiko.ECDSAKey),
+            ("ecdsa-sha2-nistp521", paramiko.ECDSAKey),
+        ]
+        
+        for key_type, key_class in test_cases:
+            public_key = f"{key_type} AAAAE2VjZHNhLXNoYTItbmlzdHAyNTY user@example.com"
+            mock_key = MagicMock()
+            mock_key.get_fingerprint.return_value = bytes.fromhex("deadbeef")
+
+            with (
+                patch.object(key_class, "__new__", return_value=mock_key),
+                patch("base64.b64decode", return_value=b"mock_key_data")
+            ):
+                result = ssh_service.get_key_fingerprint(public_key)
+                assert result == "deadbeef"
+
+    def test_get_key_fingerprint_dsa(self, ssh_service):
+        """Test getting fingerprint for DSA public key."""
+        public_key = "ssh-dss AAAAB3NzaC1kc3MAAACBAOmkqtUNmIGrjwKjKcU user@example.com"
+        mock_key = MagicMock()
+        mock_key.get_fingerprint.return_value = bytes.fromhex("beefdead")
+
+        with (
+            patch("paramiko.DSSKey", return_value=mock_key),
+            patch("base64.b64decode", return_value=b"mock_key_data")
+        ):
+            result = ssh_service.get_key_fingerprint(public_key)
+            assert result == "beefdead"
+
+    def test_get_key_fingerprint_base64_decode_exception(self, ssh_service):
+        """Test fingerprint generation with base64 decode exception."""
+        public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC7 user@example.com"
+        
+        with patch("base64.b64decode", side_effect=Exception("Decode error")):
+            result = ssh_service.get_key_fingerprint(public_key)
+            assert result is None
+
+    def test_get_key_fingerprint_key_creation_exception(self, ssh_service):
+        """Test fingerprint generation with key creation exception."""
+        public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC7 user@example.com"
+        
+        with (
+            patch("base64.b64decode", return_value=b"mock_key_data"),
+            patch("paramiko.RSAKey", side_effect=Exception("Key creation failed"))
+        ):
+            result = ssh_service.get_key_fingerprint(public_key)
+            assert result is None
+
+    # Test Host Key Retrieval with Different Scenarios
+    @pytest.mark.asyncio
+    async def test_get_host_key_custom_port(self, ssh_service):
+        """Test host key retrieval with custom port."""
+        mock_transport = MagicMock()
+        mock_host_key = MagicMock()
+        mock_host_key.get_name.return_value = "ecdsa-sha2-nistp256"
+        mock_host_key.get_fingerprint.return_value = bytes.fromhex("fedcba98")
+        mock_host_key.get_base64.return_value = "AAAAE2VjZHNhLXNoYTI"
+        
+        mock_transport.get_remote_server_key.return_value = mock_host_key
+        mock_transport.connect = MagicMock()
+        mock_transport.close = MagicMock()
+
+        with patch("paramiko.Transport", return_value=mock_transport) as mock_transport_class:
+            result = await ssh_service.get_host_key("custom.example.com", port=2222, timeout=5)
+
+            mock_transport_class.assert_called_once_with(("custom.example.com", 2222))
+            mock_transport.connect.assert_called_once_with(timeout=5)
+            assert result is not None
+            assert result["type"] == "ecdsa-sha2-nistp256"
+            assert result["fingerprint"] == "fedcba98"
+
+    @pytest.mark.asyncio
+    async def test_get_host_key_connection_exception(self, ssh_service):
+        """Test host key retrieval with connection exception."""
+        with patch("paramiko.Transport", side_effect=ConnectionRefusedError("Connection refused")):
+            result = await ssh_service.get_host_key("unreachable.example.com")
+            assert result is None
+
+    @pytest.mark.asyncio
+    async def test_get_host_key_transport_exception(self, ssh_service):
+        """Test host key retrieval with transport exception."""
+        mock_transport = MagicMock()
+        mock_transport.connect.side_effect = socket.timeout("Connection timeout")
+        
+        with patch("paramiko.Transport", return_value=mock_transport):
+            result = await ssh_service.get_host_key("timeout.example.com", timeout=1)
+            assert result is None
+
+    # Test Additional Edge Cases and Error Handling
+    @pytest.mark.asyncio
+    async def test_test_connection_key_loading_failure(self, ssh_service):
+        """Test connection with key loading failure."""
+        ssh_key = MagicMock(spec=SSHKey)
+        ssh_key.key_type = "rsa"
+        
+        with patch.object(ssh_service, "_load_private_key", side_effect=Exception("Key load failed")):
+            result = await ssh_service.test_connection(
+                host="test.example.com",
+                port=22,
+                username="testuser",
+                ssh_key=ssh_key
+            )
+
+            assert result["success"] is False
+            assert "Failed to load SSH key: Key load failed" in result["message"]
+
+    def test_load_private_key_various_exceptions(self, ssh_service):
+        """Test private key loading with various exception types."""
+        ssh_key = MagicMock(spec=SSHKey)
+        ssh_key.key_type = "rsa"
+        ssh_key.encrypted_private_key = b"invalid key"
+        
+        exception_types = [
+            (paramiko.PasswordRequiredException("Password required"), "Invalid rsa key format or incorrect passphrase"),
+            (paramiko.SSHException("SSH error"), "Invalid rsa key format or incorrect passphrase"),
+            (ValueError("Value error"), "Invalid rsa key format or incorrect passphrase"),
+        ]
+        
+        for exception, expected_message in exception_types:
+            with patch("paramiko.RSAKey.from_private_key", side_effect=exception):
+                with pytest.raises(Exception, match=expected_message):
+                    ssh_service._load_private_key(ssh_key)

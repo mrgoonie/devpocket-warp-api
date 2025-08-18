@@ -172,6 +172,7 @@ addopts = [
     "--disable-warnings",
 ]
 testpaths = ["tests"]
+asyncio_mode = "auto"
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
