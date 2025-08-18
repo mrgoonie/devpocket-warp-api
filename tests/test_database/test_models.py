@@ -660,6 +660,8 @@ class TestModelRelationships:
             sync_type="settings",
             sync_key="test",
             data={"test": "data"},
+            source_device_id="test_device_123",
+            source_device_type="web",
         )
 
         test_session.add_all([session, ssh_profile, ssh_key, sync_data])

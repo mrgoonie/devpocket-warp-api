@@ -3,6 +3,7 @@ Command model for DevPocket API.
 """
 
 from datetime import datetime
+from datetime import timezone as tz
 from typing import TYPE_CHECKING
 from uuid import UUID as PyUUID
 
@@ -152,7 +153,7 @@ class Command(BaseModel):
     def start_execution(self) -> None:
         """Mark command as started."""
         self.status = "running"
-        self.started_at = datetime.now()
+        self.started_at = datetime.now(tz.utc)
 
     def complete_execution(
         self,
@@ -161,7 +162,7 @@ class Command(BaseModel):
         error_output: str | None = None,
     ) -> None:
         """Mark command as completed with results."""
-        self.completed_at = datetime.now()
+        self.completed_at = datetime.now(tz.utc)
         self.exit_code = exit_code
         self.output = output
         self.error_output = error_output
@@ -177,7 +178,7 @@ class Command(BaseModel):
     def cancel_execution(self) -> None:
         """Mark command as cancelled."""
         self.status = "cancelled"
-        self.completed_at = datetime.now()
+        self.completed_at = datetime.now(tz.utc)
 
         if self.started_at:
             duration = self.completed_at - self.started_at
@@ -186,7 +187,7 @@ class Command(BaseModel):
     def timeout_execution(self) -> None:
         """Mark command as timed out."""
         self.status = "timeout"
-        self.completed_at = datetime.now()
+        self.completed_at = datetime.now(tz.utc)
 
         if self.started_at:
             duration = self.completed_at - self.started_at

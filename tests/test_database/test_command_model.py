@@ -33,7 +33,7 @@ class TestCommandModel:
     async def sample_session(self, test_session, sample_user):
         """Create a sample session for testing."""
         from app.models.session import Session
-        user = await sample_user
+        user = sample_user
         session = Session(
             user_id=user.id,
             device_id="test_device_123",
@@ -49,7 +49,7 @@ class TestCommandModel:
     @pytest.mark.asyncio
     async def test_command_creation(self, test_session, sample_session):
         """Test command creation with basic attributes."""
-        session = await sample_session
+        session = sample_session
         command = Command(
             session_id=session.id,
             command="ls -la",
@@ -70,7 +70,7 @@ class TestCommandModel:
     @pytest.mark.asyncio
     async def test_command_model_attributes(self, test_session, sample_session):
         """Test that command model has expected attributes."""
-        session = await sample_session
+        session = sample_session
         command = Command(
             session_id=session.id,
             command="ls -la",
@@ -98,7 +98,7 @@ class TestCommandModel:
     @pytest.mark.asyncio
     async def test_command_defaults(self, test_session, sample_session):
         """Test command default values."""
-        session = await sample_session
+        session = sample_session
         command = Command(
             session_id=session.id,
             command="ls -la",
@@ -119,7 +119,7 @@ class TestCommandModel:
     @pytest.mark.asyncio
     async def test_command_methods(self, test_session, sample_session):
         """Test command methods."""
-        session = await sample_session
+        session = sample_session
         command = Command(
             session_id=session.id,
             command="ls -la",
@@ -151,7 +151,7 @@ class TestCommandModel:
     @pytest.mark.asyncio
     async def test_command_properties(self, test_session, sample_session):
         """Test command properties."""
-        session = await sample_session
+        session = sample_session
         command = Command(
             session_id=session.id,
             command="ls -la",
@@ -180,7 +180,7 @@ class TestCommandModel:
     @pytest.mark.asyncio
     async def test_command_classify_method(self, test_session, sample_session):
         """Test command classification method."""
-        session = await sample_session
+        session = sample_session
         
         # Test git command
         git_command = Command(
@@ -213,7 +213,7 @@ class TestCommandModel:
     @pytest.mark.asyncio
     async def test_command_sensitive_check(self, test_session, sample_session):
         """Test command sensitive content check."""
-        session = await sample_session
+        session = sample_session
         
         # Test regular command
         regular_command = Command(
@@ -239,7 +239,7 @@ class TestCommandModel:
     @pytest.mark.asyncio
     async def test_command_string_representation(self, test_session, sample_session):
         """Test command string representation."""
-        session = await sample_session
+        session = sample_session
         command = Command(
             session_id=session.id,
             command="ls -la /very/long/directory/path/that/exceeds/fifty/characters",
@@ -255,7 +255,7 @@ class TestCommandModel:
     @pytest.mark.asyncio
     async def test_command_execution_methods(self, test_session, sample_session):
         """Test command execution control methods."""
-        session = await sample_session
+        session = sample_session
         command = Command(
             session_id=session.id,
             command="sleep 10",
@@ -285,7 +285,7 @@ class TestCommandModel:
     @pytest.mark.asyncio
     async def test_command_additional_properties(self, test_session, sample_session):
         """Test additional command properties and methods."""
-        session = await sample_session
+        session = sample_session
         
         # Test duration_ms property
         command = Command(

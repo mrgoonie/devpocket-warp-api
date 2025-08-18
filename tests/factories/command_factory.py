@@ -50,6 +50,8 @@ class CommandFactory(factory.Factory):
     output = factory.LazyAttribute(lambda obj: _generate_command_output(obj.command))
     error_output = None
     exit_code = 0
+    stdout = factory.SelfAttribute("output")  # Alias for output  
+    stderr = factory.SelfAttribute("error_output")  # Alias for error_output
 
     # Command status
     status = "success"
@@ -66,6 +68,7 @@ class CommandFactory(factory.Factory):
             else None
         )
     )
+    executed_at = factory.SelfAttribute("started_at")  # Alias for started_at
 
     # Command metadata
     working_directory = factory.LazyFunction(

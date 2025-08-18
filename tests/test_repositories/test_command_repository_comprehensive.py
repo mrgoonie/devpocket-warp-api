@@ -56,9 +56,9 @@ class TestCommandRepositoryComprehensive:
         """Create a test session."""
         session = Session(
             user_id=test_user.id,
-            session_name="test_session",
-            shell="/bin/bash",
-            environment="test"
+            device_id="test_device_123",
+            device_type="web",
+            session_name="test_session"
         )
         test_session.add(session)
         await test_session.commit()
@@ -70,9 +70,9 @@ class TestCommandRepositoryComprehensive:
         """Create a second test session."""
         session = Session(
             user_id=test_user.id,
-            session_name="test_session_2",
-            shell="/bin/zsh",
-            environment="production"
+            device_id="test_device_456",
+            device_type="mobile",
+            session_name="test_session_2"
         )
         test_session.add(session)
         await test_session.commit()
@@ -121,10 +121,10 @@ class TestCommandRepositoryComprehensive:
         assert command.is_sensitive is not None
 
     @pytest.mark.asyncio
-    async def test_create_command_with_kwargs(self, command_repository, test_session):
+    async def test_create_command_with_kwargs(self, command_repository, test_session, test_session_1):
         """Test command creation with additional kwargs."""
         command = await command_repository.create_command(
-            session_id=str(uuid4()),
+            session_id=str(test_session_1.id),
             command="cat secret.txt",
             working_directory="/home/user",
             priority=5,
@@ -138,7 +138,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_get_session_commands(self, command_repository, sample_commands):
         """Test retrieving commands for a specific session."""
-        commands = await sample_commands
+        commands = sample_commands
         session_id = commands[0].session_id
         
         commands = await command_repository.get_session_commands(session_id)
@@ -150,7 +150,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_get_session_commands_with_status_filter(self, command_repository, sample_commands):
         """Test retrieving commands with status filter."""
-        commands = await sample_commands
+        commands = sample_commands
         session_id = commands[0].session_id
         
         success_commands = await command_repository.get_session_commands(
@@ -164,7 +164,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_get_session_commands_pagination(self, command_repository, sample_commands):
         """Test pagination for session commands."""
-        commands = await sample_commands
+        commands = sample_commands
         session_id = commands[0].session_id
         
         page1 = await command_repository.get_session_commands(
@@ -182,7 +182,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_get_user_command_history(self, command_repository, test_user, sample_commands):
         """Test retrieving command history for a user."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         commands = await command_repository.get_user_command_history(str(test_user.id))
         
         assert len(commands) >= 5  # All sample commands
@@ -192,7 +192,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_get_user_command_history_with_search(self, command_repository, test_user, sample_commands):
         """Test searching user command history."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         commands = await command_repository.get_user_command_history(
             str(test_user.id), search_term="docker"
         )
@@ -204,7 +204,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_get_commands_by_status(self, command_repository, sample_commands):
         """Test retrieving commands by status."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         running_commands = await command_repository.get_commands_by_status("running")
         success_commands = await command_repository.get_commands_by_status("success")
         
@@ -219,7 +219,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_get_commands_by_status_with_user_filter(self, command_repository, test_user, sample_commands):
         """Test retrieving commands by status filtered by user."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         commands = await command_repository.get_commands_by_status(
             "success", user_id=str(test_user.id)
         )
@@ -231,7 +231,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_get_running_commands(self, command_repository, sample_commands):
         """Test retrieving currently running commands."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         running_commands = await command_repository.get_running_commands()
         
         assert len(running_commands) >= 1
@@ -241,7 +241,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_get_running_commands_by_session(self, command_repository, sample_commands):
         """Test retrieving running commands for specific session."""
-        commands = await sample_commands
+        commands = sample_commands
         session_id = commands[2].session_id  # running command is in session 2
         
         running_commands = await command_repository.get_running_commands(
@@ -255,7 +255,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_get_running_commands_by_user(self, command_repository, test_user, sample_commands):
         """Test retrieving running commands for specific user."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         running_commands = await command_repository.get_running_commands(
             user_id=str(test_user.id)
         )
@@ -265,11 +265,11 @@ class TestCommandRepositoryComprehensive:
             assert cmd.status == "running"
 
     @pytest.mark.asyncio
-    async def test_start_command_execution(self, command_repository, test_session):
+    async def test_start_command_execution(self, command_repository, test_session, test_session_1):
         """Test starting command execution."""
         # Create a pending command
         command = await command_repository.create_command(
-            session_id=str(uuid4()),
+            session_id=str(test_session_1.id),
             command="sleep 5"
         )
         
@@ -287,11 +287,11 @@ class TestCommandRepositoryComprehensive:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_complete_command_execution(self, command_repository, test_session):
+    async def test_complete_command_execution(self, command_repository, test_session, test_session_1):
         """Test completing command execution."""
         # Create and start a command
         command = await command_repository.create_command(
-            session_id=str(uuid4()),
+            session_id=str(test_session_1.id),
             command="echo hello"
         )
         await command_repository.start_command_execution(command.id)
@@ -312,10 +312,10 @@ class TestCommandRepositoryComprehensive:
         assert updated_command.execution_time is not None
 
     @pytest.mark.asyncio
-    async def test_complete_command_execution_with_error(self, command_repository, test_session):
+    async def test_complete_command_execution_with_error(self, command_repository, test_session, test_session_1):
         """Test completing command execution with error."""
         command = await command_repository.create_command(
-            session_id=str(uuid4()),
+            session_id=str(test_session_1.id),
             command="false"
         )
         await command_repository.start_command_execution(command.id)
@@ -332,10 +332,10 @@ class TestCommandRepositoryComprehensive:
         assert updated_command.error_output == "command failed"
 
     @pytest.mark.asyncio
-    async def test_cancel_command(self, command_repository, test_session):
+    async def test_cancel_command(self, command_repository, test_session, test_session_1):
         """Test cancelling a command."""
         command = await command_repository.create_command(
-            session_id=str(uuid4()),
+            session_id=str(test_session_1.id),
             command="sleep 60"
         )
         await command_repository.start_command_execution(command.id)
@@ -347,10 +347,10 @@ class TestCommandRepositoryComprehensive:
         assert cancelled_command.completed_at is not None
 
     @pytest.mark.asyncio
-    async def test_timeout_command(self, command_repository, test_session):
+    async def test_timeout_command(self, command_repository, test_session, test_session_1):
         """Test timing out a command."""
         command = await command_repository.create_command(
-            session_id=str(uuid4()),
+            session_id=str(test_session_1.id),
             command="sleep 60"
         )
         await command_repository.start_command_execution(command.id)
@@ -364,7 +364,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_search_commands_basic(self, command_repository, test_user, sample_commands):
         """Test basic command search."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         commands = await command_repository.search_commands(
             criteria={"user_id": str(test_user.id)}
         )
@@ -374,7 +374,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_search_commands_with_query(self, command_repository, test_user, sample_commands):
         """Test command search with text query."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         commands = await command_repository.search_commands(
             criteria={"user_id": str(test_user.id)},
             query="docker"
@@ -387,7 +387,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_search_commands_date_range(self, command_repository, test_user, sample_commands):
         """Test command search with date range."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         now = datetime.now()
         hour_ago = now - timedelta(hours=1)
         
@@ -402,7 +402,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_search_commands_duration_filter(self, command_repository, test_user, sample_commands):
         """Test command search with duration filters."""
-        commands = await sample_commands
+        commands = sample_commands
         # First complete some commands with known durations
         for cmd in commands[:2]:
             if cmd.status != "success":
@@ -424,7 +424,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_search_commands_output_filters(self, command_repository, test_user, sample_commands):
         """Test command search with output filters."""
-        commands = await sample_commands
+        commands = sample_commands
         # Add output to a command
         cmd = commands[0]
         await command_repository.complete_command_execution(
@@ -444,7 +444,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_search_commands_error_filter(self, command_repository, test_user, sample_commands):
         """Test command search with error filter."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         commands = await command_repository.search_commands(
             criteria={"user_id": str(test_user.id)},
             has_error=True
@@ -457,7 +457,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_search_commands_output_contains(self, command_repository, test_user, sample_commands):
         """Test command search with output content filter."""
-        commands = await sample_commands
+        commands = sample_commands
         # Add specific output to a command
         cmd = commands[0]
         await command_repository.complete_command_execution(
@@ -474,7 +474,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_search_commands_sorting(self, command_repository, test_user, sample_commands):
         """Test command search with sorting."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         commands_desc = await command_repository.search_commands(
             criteria={"user_id": str(test_user.id)},
             sort_by="created_at",
@@ -494,7 +494,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_get_user_commands_with_session(self, command_repository, test_user, sample_commands):
         """Test retrieving user commands with session info."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         commands = await command_repository.get_user_commands_with_session(
             test_user.id, include_session_info=True
         )
@@ -506,14 +506,14 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_count_user_commands(self, command_repository, test_user, sample_commands):
         """Test counting user commands."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         count = await command_repository.count_user_commands(test_user.id)
         assert count >= 5
 
     @pytest.mark.asyncio
     async def test_count_commands_with_criteria(self, command_repository, test_user, sample_commands):
         """Test counting commands with criteria."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         count = await command_repository.count_commands_with_criteria({
             "user_id": str(test_user.id),
             "status": "success"
@@ -523,14 +523,14 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_get_user_commands(self, command_repository, test_user, sample_commands):
         """Test getting all user commands."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         commands = await command_repository.get_user_commands(test_user.id)
         assert len(commands) >= 5
 
     @pytest.mark.asyncio
     async def test_get_session_command_stats(self, command_repository, test_user, sample_commands):
         """Test getting command statistics by session."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         stats = await command_repository.get_session_command_stats(test_user.id)
         
         assert len(stats) >= 2  # At least 2 sessions
@@ -543,7 +543,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_get_user_commands_since(self, command_repository, test_user, sample_commands):
         """Test getting user commands since a date."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         hour_ago = datetime.now() - timedelta(hours=1)
         commands = await command_repository.get_user_commands_since(test_user.id, hour_ago)
         
@@ -554,7 +554,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_get_user_recent_commands(self, command_repository, test_user, sample_commands):
         """Test getting recent user commands."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         commands = await command_repository.get_user_recent_commands(test_user.id)
         
         assert len(commands) >= 5
@@ -562,7 +562,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_get_commands_by_type(self, command_repository, test_user, sample_commands):
         """Test getting commands by type."""
-        commands = await sample_commands
+        commands = sample_commands
         # Commands should have been classified during creation
         first_cmd = commands[0]
         if first_cmd.command_type:
@@ -572,11 +572,11 @@ class TestCommandRepositoryComprehensive:
             assert len(commands) >= 1
 
     @pytest.mark.asyncio
-    async def test_get_ai_suggested_commands(self, command_repository, test_user, test_session):
+    async def test_get_ai_suggested_commands(self, command_repository, test_user, test_session, test_session_1):
         """Test getting AI-suggested commands."""
         # Create an AI-suggested command
         command = await command_repository.create_command(
-            session_id=str(uuid4()),
+            session_id=str(test_session_1.id),
             command="ls -la",
             was_ai_suggested=True
         )
@@ -592,7 +592,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_get_failed_commands(self, command_repository, test_user, sample_commands):
         """Test getting failed commands."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         failed_commands = await command_repository.get_failed_commands(
             user_id=str(test_user.id)
         )
@@ -604,7 +604,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_get_command_stats(self, command_repository, test_user, sample_commands):
         """Test getting command execution statistics."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         stats = await command_repository.get_command_stats(user_id=str(test_user.id))
         
         assert "total_commands" in stats
@@ -620,7 +620,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_get_top_commands(self, command_repository, test_user, sample_commands):
         """Test getting most frequently used commands."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         top_commands = await command_repository.get_top_commands(
             user_id=str(test_user.id)
         )
@@ -632,11 +632,11 @@ class TestCommandRepositoryComprehensive:
             assert cmd_data["usage_count"] >= 1
 
     @pytest.mark.asyncio
-    async def test_cleanup_old_commands(self, command_repository, test_session):
+    async def test_cleanup_old_commands(self, command_repository, test_session, test_session_1):
         """Test cleaning up old commands."""
         # Create an old command by manually setting the date
         old_command = Command(
-            session_id=str(uuid4()),
+            session_id=str(test_session_1.id),
             command="old command"
         )
         old_command.created_at = datetime.now() - timedelta(days=100)
@@ -650,17 +650,17 @@ class TestCommandRepositoryComprehensive:
         assert deleted_count >= 1
 
     @pytest.mark.asyncio
-    async def test_cleanup_old_commands_keep_successful(self, command_repository, test_session):
+    async def test_cleanup_old_commands_keep_successful(self, command_repository, test_session, test_session_1):
         """Test cleaning up old commands while keeping successful ones."""
         # Create old successful and failed commands
         old_success = Command(
-            session_id=str(uuid4()),
+            session_id=str(test_session_1.id),
             command="old success",
             status="success",
             exit_code=0
         )
         old_failed = Command(
-            session_id=str(uuid4()),
+            session_id=str(test_session_1.id),
             command="old failed",
             status="error",
             exit_code=1
@@ -683,7 +683,7 @@ class TestCommandRepositoryComprehensive:
     @pytest.mark.asyncio
     async def test_get_recent_commands(self, command_repository, test_user, sample_commands):
         """Test getting recent commands for a user."""
-        await sample_commands  # Ensure sample commands are created
+        sample_commands  # Ensure sample commands are created
         recent_commands = await command_repository.get_recent_commands(
             str(test_user.id), hours=24
         )

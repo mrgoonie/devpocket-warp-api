@@ -64,7 +64,9 @@ class TestCommandService:
             id=uuid4(),
             user_id=sample_user.id,
             device_id="test-device",
-            device_type="web"
+            device_type="web",
+            name="Test Session",
+            session_type="ssh"
         )
 
     @pytest_asyncio.fixture
@@ -79,8 +81,15 @@ class TestCommandService:
                 status="completed",
                 exit_code=0,
                 output=f"test {i}\n",
-                created_at=datetime.utcnow() - timedelta(hours=i)
+                stdout=f"test {i}\n",
+                stderr=None,
+                created_at=datetime.utcnow() - timedelta(hours=i),
+                executed_at=datetime.utcnow() - timedelta(hours=i),
+                execution_time=1.5,
+                working_directory="/home/user"
             )
+            # Mock the session relationship
+            cmd.session = sample_session
             commands.append(cmd)
         return commands
 
@@ -155,7 +164,7 @@ class TestCommandService:
     async def test_get_command_history_pagination(self, command_service, sample_user, sample_commands):
         """Test command history with pagination."""
         page_commands = sample_commands[:2]
-        command_service.command_repo.get_user_command_history.return_value = page_commands
+        command_service.command_repo.get_user_commands_with_session.return_value = page_commands
         command_service.command_repo.count_user_commands.return_value = len(sample_commands)
 
         result = await command_service.get_command_history(
@@ -164,8 +173,8 @@ class TestCommandService:
             limit=2
         )
 
-        assert len(result["commands"]) == 2
-        assert result["total"] == len(sample_commands)
+        assert len(result.entries) == 2
+        assert result.total == len(sample_commands)
 
     async def test_search_commands_basic(self, command_service, sample_user, sample_commands):
         """Test basic command search functionality."""

@@ -239,7 +239,9 @@ class CommandService:
                 detail="Failed to search commands",
             ) from e
 
-    async def get_command_details(self, user_id: str, command_id: str) -> CommandResponse:
+    async def get_command_details(
+        self, user_id: str, command_id: str
+    ) -> CommandResponse:
         """Get detailed command information."""
         try:
             command = await self.command_repo.get_by_id(command_id)

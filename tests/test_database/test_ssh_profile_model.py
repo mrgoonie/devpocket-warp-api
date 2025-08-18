@@ -31,7 +31,7 @@ class TestSSHProfileModel:
     @pytest.mark.asyncio
     async def test_ssh_profile_creation(self, test_session, sample_user):
         """Test SSH profile creation with basic attributes."""
-        user = await sample_user
+        user = sample_user
         profile = SSHProfile(
             user_id=user.id,
             name="Test Server",
@@ -54,7 +54,7 @@ class TestSSHProfileModel:
     @pytest.mark.asyncio
     async def test_ssh_profile_model_attributes(self, test_session, sample_user):
         """Test that SSH profile model has expected attributes."""
-        user = await sample_user
+        user = sample_user
         profile = SSHProfile(
             user_id=user.id,
             name="Test Server",
@@ -83,7 +83,7 @@ class TestSSHProfileModel:
     @pytest.mark.asyncio
     async def test_ssh_profile_defaults(self, test_session, sample_user):
         """Test SSH profile default values."""
-        user = await sample_user
+        user = sample_user
         profile = SSHProfile(
             user_id=user.id,
             name="Test Server",
@@ -107,7 +107,7 @@ class TestSSHProfileModel:
     @pytest.mark.asyncio
     async def test_ssh_profile_string_representation(self, test_session, sample_user):
         """Test SSH profile string representation."""
-        user = await sample_user
+        user = sample_user
         profile = SSHProfile(
             user_id=user.id,
             name="Test Server",
@@ -123,7 +123,7 @@ class TestSSHProfileModel:
     @pytest.mark.asyncio
     async def test_ssh_profile_methods(self, test_session, sample_user):
         """Test SSH profile methods."""
-        user = await sample_user
+        user = sample_user
         profile = SSHProfile(
             user_id=user.id,
             name="Test Server",
