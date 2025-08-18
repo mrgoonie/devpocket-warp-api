@@ -366,3 +366,45 @@ class SyncDataRepository(BaseRepository[SyncData]):
             }
 
         return export_data
+
+    async def get_by_sync_key(
+        self, user_id: str | PyUUID, sync_key: str
+    ) -> SyncData | None:
+        """Get sync data by sync key."""
+        result = await self.session.execute(
+            select(SyncData).where(
+                and_(SyncData.user_id == user_id, SyncData.sync_key == sync_key)
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def get_conflicts_by_type(
+        self, user_id: str | PyUUID, sync_type: str
+    ) -> list[SyncData]:
+        """Get all conflicts for a specific sync type."""
+        result = await self.session.execute(
+            select(SyncData).where(
+                and_(
+                    SyncData.user_id == user_id,
+                    SyncData.sync_type == sync_type,
+                    SyncData.conflict_data.is_not(None),
+                    SyncData.resolved_at.is_(None),
+                )
+            )
+        )
+        return list(result.scalars().all())
+
+    async def get_by_sync_type(
+        self, user_id: str | PyUUID, sync_type: str
+    ) -> list[SyncData]:
+        """Get all sync data for a specific type."""
+        result = await self.session.execute(
+            select(SyncData).where(
+                and_(
+                    SyncData.user_id == user_id,
+                    SyncData.sync_type == sync_type,
+                    SyncData.is_deleted.is_(False),
+                )
+            )
+        )
+        return list(result.scalars().all())

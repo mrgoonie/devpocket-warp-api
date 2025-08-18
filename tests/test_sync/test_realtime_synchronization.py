@@ -81,9 +81,13 @@ class TestSyncService:
     async def test_sync_data_create(self, sync_service, sample_sync_data):
         """Test creating new sync data."""
         # Arrange
-        user_id = "user-123"
+        import uuid
+        user_id = str(uuid.uuid4())
 
-        with patch.object(sync_service, "sync_repository") as mock_repo:
+        from unittest.mock import AsyncMock
+        with patch.object(sync_service, "sync_repository", new_callable=AsyncMock) as mock_repo:
+            # Set sync_repo to None to ensure only sync_repository is used
+            sync_service.sync_repo = None
             mock_repo.create.return_value = SyncData(
                 **sample_sync_data, user_id=user_id
             )
@@ -100,7 +104,8 @@ class TestSyncService:
     async def test_sync_data_conflict_detection(self, sync_service, sample_sync_data):
         """Test detecting sync conflicts."""
         # Arrange
-        user_id = "user-123"
+        import uuid
+        user_id = str(uuid.uuid4())
         existing_data = sample_sync_data.copy()
         existing_data["version"] = 2
         existing_data["source_device_id"] = "device-789"
@@ -123,18 +128,18 @@ class TestSyncService:
         # Arrange
         local_data = {
             "sync_type": "user_settings",
+            "modified_at": "2025-08-16T10:00:00Z",  # Earlier timestamp - local is older
             "data": {
                 "theme": "dark",
                 "font_size": 14,
-                "modified_at": "2025-08-16T10:00:00Z",
             },
         }
         remote_data = {
             "sync_type": "user_settings",
+            "modified_at": "2025-08-16T11:00:00Z",  # Later timestamp - remote is newer
             "data": {
                 "theme": "light",
                 "font_size": 16,
-                "modified_at": "2025-08-16T11:00:00Z",
             },
         }
 
@@ -189,11 +194,13 @@ class TestSyncService:
     async def test_sync_queue_processing(self, sync_service):
         """Test processing sync queue for offline devices."""
         # Arrange
-        user_id = "user-123"
+        import uuid
+        user_id = str(uuid.uuid4())
         device_id = "device-456"
 
-        with patch.object(sync_service, "sync_repository") as mock_repo:
-            mock_repo.get_pending_sync.return_value = [
+        from unittest.mock import AsyncMock
+        with patch.object(sync_service, "sync_repo", new_callable=AsyncMock) as mock_repo:
+            mock_repo.get_sync_changes_since.return_value = [
                 SyncData(sync_type="command_history", data={"command": "ls"}),
                 SyncData(sync_type="ssh_profile", data={"name": "server1"}),
             ]
