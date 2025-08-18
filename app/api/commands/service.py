@@ -14,7 +14,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import logger
 from app.models.command import Command
-from app.models.user import User
 from app.repositories.command import CommandRepository
 from app.repositories.session import SessionRepository
 
@@ -89,7 +88,7 @@ class CommandService:
 
     async def get_command_history(
         self,
-        user: User,
+        user_id: str,
         session_id: str | None = None,
         offset: int = 0,
         limit: int = 100,
@@ -98,7 +97,7 @@ class CommandService:
         try:
             # Get commands with session information
             commands = await self.command_repo.get_user_commands_with_session(
-                user.id, offset=offset, limit=limit
+                user_id, offset=offset, limit=limit
             )
 
             # Convert to history entries
@@ -136,7 +135,7 @@ class CommandService:
                 entries.append(entry)
 
             # Get total count
-            total = await self.command_repo.count_user_commands(user.id)
+            total = await self.command_repo.count_user_commands(user_id)
 
             return CommandHistoryResponse(
                 entries=entries,
@@ -154,12 +153,12 @@ class CommandService:
             ) from e
 
     async def search_commands(
-        self, user: User, search_request: CommandSearchRequest
+        self, user_id: str, search_request: CommandSearchRequest
     ) -> tuple[list[CommandResponse], int]:
         """Search commands with advanced filters."""
         try:
             # Build search criteria
-            criteria: dict[str, Any] = {"user_id": user.id}
+            criteria: dict[str, Any] = {"user_id": user_id}
 
             if search_request.session_id:
                 criteria["session_id"] = search_request.session_id
@@ -240,12 +239,12 @@ class CommandService:
                 detail="Failed to search commands",
             ) from e
 
-    async def get_command_details(self, user: User, command_id: str) -> CommandResponse:
+    async def get_command_details(self, user_id: str, command_id: str) -> CommandResponse:
         """Get detailed command information."""
         try:
             command = await self.command_repo.get_by_id(command_id)
 
-            if not command or command.user_id != user.id:
+            if not command or str(command.user_id) != user_id:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Command not found",
@@ -295,12 +294,12 @@ class CommandService:
                 detail="Failed to get command details",
             ) from e
 
-    async def delete_command(self, user: User, command_id: str) -> bool:
+    async def delete_command(self, user_id: str, command_id: str) -> bool:
         """Delete a command from history."""
         try:
             command = await self.command_repo.get_by_id(command_id)
 
-            if not command or command.user_id != user.id:
+            if not command or str(command.user_id) != user_id:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Command not found",
@@ -309,7 +308,7 @@ class CommandService:
             await self.command_repo.delete(command_id)
             await self.session.commit()
 
-            logger.info(f"Command deleted: {command_id} by user {user.username}")
+            logger.info(f"Command deleted: {command_id} by user {user_id}")
             return True
 
         except HTTPException:
@@ -322,12 +321,12 @@ class CommandService:
                 detail="Failed to delete command",
             ) from e
 
-    async def get_usage_stats(self, user: User) -> CommandUsageStats:
+    async def get_usage_stats(self, user_id: str) -> CommandUsageStats:
         """Get comprehensive command usage statistics."""
         try:
             # Get all user commands for analysis
             all_commands = await self.command_repo.get_user_commands(
-                user.id,
+                user_id,
                 offset=0,
                 limit=10000,  # Reasonable limit for stats
             )
@@ -450,12 +449,12 @@ class CommandService:
             ) from e
 
     async def get_session_command_stats(
-        self, user: User, _session_id: str | None = None
+        self, user_id: str, _session_id: str | None = None
     ) -> list[SessionCommandStats]:
         """Get command statistics grouped by session."""
         try:
             # Get sessions with command counts
-            sessions_data = await self.command_repo.get_session_command_stats(user.id)
+            sessions_data = await self.command_repo.get_session_command_stats(user_id)
 
             stats = []
             for session_data in sessions_data:
@@ -481,14 +480,14 @@ class CommandService:
             ) from e
 
     async def get_frequent_commands(
-        self, user: User, days: int = 30, min_usage: int = 3
+        self, user_id: str, days: int = 30, min_usage: int = 3
     ) -> FrequentCommandsResponse:
         """Get frequently used commands with analysis."""
         try:
             # Get commands from the specified time period
             cutoff_date = datetime.now(UTC) - timedelta(days=days)
             commands = await self.command_repo.get_user_commands_since(
-                user.id, since=cutoff_date
+                user_id, since=cutoff_date
             )
 
             if not commands:
@@ -544,7 +543,7 @@ class CommandService:
             ) from e
 
     async def get_command_suggestions(
-        self, user: User, request: CommandSuggestionRequest
+        self, user_id: str, request: CommandSuggestionRequest
     ) -> list[CommandSuggestion]:
         """Get command suggestions based on context."""
         try:
@@ -552,7 +551,7 @@ class CommandService:
 
             # Get user's command history for context
             recent_commands = await self.command_repo.get_user_recent_commands(
-                user.id, limit=100
+                user_id, limit=100
             )
 
             # Analyze context and generate suggestions
@@ -604,7 +603,7 @@ class CommandService:
                 detail="Failed to generate command suggestions",
             ) from e
 
-    async def get_command_metrics(self, user: User) -> CommandMetrics:
+    async def get_command_metrics(self, user_id: str) -> CommandMetrics:
         """Get real-time command execution metrics."""
         try:
             now = datetime.now(UTC)
@@ -613,7 +612,7 @@ class CommandService:
 
             # Get recent commands for analysis
             recent_commands = await self.command_repo.get_user_commands_since(
-                user.id, since=yesterday
+                user_id, since=yesterday
             )
 
             # Calculate metrics
