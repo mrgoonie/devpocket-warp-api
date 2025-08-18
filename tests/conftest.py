@@ -205,7 +205,14 @@ async def test_db_engine():
         echo=False,
         future=True,
         poolclass=StaticPool,
-        connect_args={"server_settings": {"jit": "off"}},
+        connect_args={
+            "server_settings": {
+                "jit": "off",
+                "statement_timeout": "30s",
+                "lock_timeout": "10s",
+                "idle_in_transaction_session_timeout": "30s",
+            }
+        },
     )
 
     # Tables already exist from migrations - no need to create them
@@ -231,35 +238,35 @@ async def test_db_engine():
 
 @pytest_asyncio.fixture
 async def test_session(test_db_engine) -> AsyncGenerator[AsyncSession, None]:
-    """Create a fresh database session for each test with transaction isolation."""
+    """Create a fresh database session for each test with proper transaction isolation."""
+    connection = await test_db_engine.connect()
+    transaction = await connection.begin()
+    
     async_session_factory = sessionmaker(
-        test_db_engine, class_=AsyncSession, expire_on_commit=False
+        bind=connection, class_=AsyncSession, expire_on_commit=False
     )
 
     async with async_session_factory() as session:
-        # Start a nested transaction (savepoint) that will be rolled back after the test
-        transaction = await session.begin()
-
         try:
-            # Critical: Ensure we flush any initial operations to establish the transaction
-            await session.execute(text("SELECT 1"))
+            # Start a savepoint for the test
+            savepoint = await connection.begin_nested()
             
             # Clear any existing test data at the start of each test
             await _clear_test_data_in_session(session)
+            await session.flush()
             
             yield session
             
-            # Don't commit in tests - let the test cleanup handle rollback
         except Exception:
-            # Rollback on any exception
-            if transaction.is_active:
-                await transaction.rollback()
+            # Rollback the savepoint on any exception
+            await savepoint.rollback()
             raise
         finally:
-            # Always rollback to ensure test isolation
-            if transaction.is_active:
-                await transaction.rollback()
+            # Always close the session
             await session.close()
+            # Rollback the main transaction to ensure test isolation
+            await transaction.rollback()
+            await connection.close()
 
 
 @pytest_asyncio.fixture
@@ -281,66 +288,93 @@ async def test_redis() -> AsyncGenerator[aioredis.Redis, None]:
     await redis_client.close()
 
 
-@pytest.fixture
-def mock_redis() -> MagicMock:
-    """Create a mocked Redis client for unit tests with proper isolation."""
-    mock_redis = MagicMock()
+class MockRedisClient:
+    """Enhanced mock Redis client with proper state isolation."""
     
-    # Create a fresh storage for each test to simulate Redis isolation
-    redis_storage = {}
+    def __init__(self):
+        self._storage = {}
+        self._ttl_storage = {}
+        self._pubsub_channels = {}
+        
+    async def get(self, key):
+        return self._storage.get(key)
     
-    async def mock_get(key):
-        return redis_storage.get(key)
-    
-    async def mock_set(key, value, ex=None, px=None, nx=False, xx=False):
-        if nx and key in redis_storage:
+    async def set(self, key, value, ex=None, px=None, nx=False, xx=False):
+        if nx and key in self._storage:
             return False
-        if xx and key not in redis_storage:
+        if xx and key not in self._storage:
             return False
-        redis_storage[key] = value
+        self._storage[key] = str(value)
+        if ex:
+            self._ttl_storage[key] = ex
         return True
     
-    async def mock_delete(*keys):
+    async def delete(self, *keys):
         deleted = 0
         for key in keys:
-            if key in redis_storage:
-                del redis_storage[key]
+            if key in self._storage:
+                del self._storage[key]
+                self._ttl_storage.pop(key, None)
                 deleted += 1
         return deleted
     
-    async def mock_exists(key):
-        return key in redis_storage
+    async def exists(self, key):
+        return key in self._storage
     
-    async def mock_flushall():
-        redis_storage.clear()
+    async def flushall(self):
+        self._storage.clear()
+        self._ttl_storage.clear()
+        self._pubsub_channels.clear()
         return True
     
-    async def mock_incr(key):
-        current = int(redis_storage.get(key, 0))
-        redis_storage[key] = str(current + 1)
-        return current + 1
+    async def incr(self, key):
+        current = int(self._storage.get(key, 0))
+        new_value = current + 1
+        self._storage[key] = str(new_value)
+        return new_value
     
-    async def mock_expire(key, seconds):
-        # For testing, we'll just track that expire was called
-        return key in redis_storage
-
-    # Mock common Redis operations with proper state management
-    mock_redis.get = mock_get
-    mock_redis.set = mock_set
-    mock_redis.delete = mock_delete
-    mock_redis.exists = mock_exists
-    mock_redis.ping = AsyncMock(return_value=True)
-    mock_redis.flushall = mock_flushall
-    mock_redis.close = AsyncMock()
-    mock_redis.incr = mock_incr
-    mock_redis.expire = mock_expire
+    async def expire(self, key, seconds):
+        if key in self._storage:
+            self._ttl_storage[key] = seconds
+            return True
+        return False
     
-    # Additional methods that might be used in rate limiting
-    mock_redis.setex = AsyncMock(return_value=True)
-    mock_redis.ttl = AsyncMock(return_value=-1)
-    mock_redis.keys = AsyncMock(return_value=[])
+    async def setex(self, key, seconds, value):
+        self._storage[key] = str(value)
+        self._ttl_storage[key] = seconds
+        return True
+    
+    async def ttl(self, key):
+        return self._ttl_storage.get(key, -1)
+    
+    async def keys(self, pattern="*"):
+        if pattern == "*":
+            return list(self._storage.keys())
+        # Simple pattern matching for testing
+        import fnmatch
+        return [k for k in self._storage.keys() if fnmatch.fnmatch(k, pattern)]
+    
+    async def ping(self):
+        return True
+    
+    async def close(self):
+        pass
+    
+    def pubsub(self):
+        """Return a mock pubsub object."""
+        from unittest.mock import AsyncMock
+        mock_pubsub = AsyncMock()
+        mock_pubsub.subscribe = AsyncMock()
+        mock_pubsub.unsubscribe = AsyncMock()
+        mock_pubsub.publish = AsyncMock(return_value=1)
+        mock_pubsub.get_message = AsyncMock(return_value=None)
+        return mock_pubsub
 
-    return mock_redis
+
+@pytest.fixture
+def mock_redis() -> MockRedisClient:
+    """Create a mocked Redis client for unit tests with proper isolation."""
+    return MockRedisClient()
 
 
 @pytest_asyncio.fixture

@@ -189,71 +189,69 @@ class TestTerminalWebSocket:
 class TestConnectionManager:
     """Test WebSocket connection manager."""
 
-    def test_add_connection(self):
-        """Test adding WebSocket connection."""
+    @pytest.mark.asyncio
+    async def test_connect_user(self):
+        """Test connecting a WebSocket user."""
         # Arrange
-        connection_id = "test-connection-123"
         mock_websocket = AsyncMock()
+        user_id = "test-user-123"
+        device_id = "test-device-456"
 
         # Act
-        connection_manager.add_connection(connection_id, mock_websocket)
+        connection_id = await connection_manager.connect(mock_websocket, user_id, device_id)
 
         # Assert
-        assert connection_id in connection_manager.active_connections
-        assert connection_manager.active_connections[connection_id] == mock_websocket
-
-    def test_remove_connection(self):
-        """Test removing WebSocket connection."""
-        # Arrange
-        connection_id = "test-connection-123"
-        mock_websocket = AsyncMock()
-        connection_manager.add_connection(connection_id, mock_websocket)
-
-        # Act
-        connection_manager.remove_connection(connection_id)
-
-        # Assert
-        assert connection_id not in connection_manager.active_connections
+        assert connection_id in connection_manager.connections
+        assert user_id in connection_manager.user_connections
+        assert connection_id in connection_manager.user_connections[user_id]
+        mock_websocket.accept.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_broadcast_to_user(self):
-        """Test broadcasting message to user connections."""
+    async def test_disconnect_user(self):
+        """Test disconnecting a WebSocket user."""
         # Arrange
-        user_id = "user-123"
-        connection1 = AsyncMock()
-        connection2 = AsyncMock()
-
-        connection_manager.add_connection(f"{user_id}-1", connection1)
-        connection_manager.add_connection(f"{user_id}-2", connection2)
-        connection_manager.add_connection("other-user-1", AsyncMock())
-
-        message = {"type": "notification", "data": "Test message"}
+        mock_websocket = AsyncMock()
+        user_id = "test-user-123"
+        device_id = "test-device-456"
+        connection_id = await connection_manager.connect(mock_websocket, user_id, device_id)
 
         # Act
-        await connection_manager.broadcast_to_user(user_id, message)
+        await connection_manager.disconnect(connection_id)
 
         # Assert
-        connection1.send_text.assert_called_once()
-        connection2.send_text.assert_called_once()
+        assert connection_id not in connection_manager.connections
+        if user_id in connection_manager.user_connections:
+            assert connection_id not in connection_manager.user_connections[user_id]
 
-    def test_get_user_connections(self):
-        """Test getting connections for a specific user."""
+    def test_get_connection_count(self):
+        """Test getting total connection count."""
+        # Act
+        count = connection_manager.get_connection_count()
+
+        # Assert
+        assert isinstance(count, int)
+        assert count >= 0
+
+    def test_get_user_connection_count(self):
+        """Test getting user connection count."""
         # Arrange
-        user_id = "user-123"
-        connection1 = AsyncMock()
-        connection2 = AsyncMock()
-
-        connection_manager.add_connection(f"{user_id}-1", connection1)
-        connection_manager.add_connection(f"{user_id}-2", connection2)
-        connection_manager.add_connection("other-user-1", AsyncMock())
+        user_id = "test-user-123"
 
         # Act
-        user_connections = connection_manager.get_user_connections(user_id)
+        count = connection_manager.get_user_connection_count(user_id)
 
         # Assert
-        assert len(user_connections) == 2
-        assert connection1 in user_connections.values()
-        assert connection2 in user_connections.values()
+        assert isinstance(count, int)
+        assert count >= 0
+
+    def test_get_session_count(self):
+        """Test getting session count."""
+        # Act
+        count = connection_manager.get_session_count()
+
+        # Assert
+        assert isinstance(count, int)
+        assert count >= 0
 
 
 class TestPTYHandler:

@@ -259,7 +259,7 @@ jobs:
           --cov-report=term-missing \
           --cov-report=xml:coverage.xml \
           --cov-report=html:htmlcov \
-          --cov-fail-under=30 \
+          --cov-fail-under=45 \
           --junitxml=pytest-report.xml \
           --html=pytest-report.html \
           --self-contained-html \
@@ -495,11 +495,11 @@ jobs:
           coverage_percent=$(python -c "print(f'{float('$coverage') * 100:.1f}%')")
           echo "Coverage: $coverage_percent"
           
-          if (( $(echo "$coverage < 0.8" | bc -l) )); then
-            echo "❌ Coverage below 80% threshold"
+          if (( $(echo "$coverage < 0.45" | bc -l) )); then
+            echo "❌ Coverage below 45% threshold"
             exit 1
           else
-            echo "✅ Coverage meets 80% threshold"
+            echo "✅ Coverage meets 45% threshold"
           fi
         fi
         

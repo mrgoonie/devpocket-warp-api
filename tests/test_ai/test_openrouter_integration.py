@@ -9,19 +9,13 @@ Tests AI service functionality with OpenRouter API mocking including:
 - Error handling and rate limiting
 """
 
+from datetime import UTC, datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
 import pytest
 
-from app.api.ai.schemas import (
-    CommandExplanationRequest,
-    CommandExplanationResponse,
-    CommandSuggestionRequest,
-    CommandSuggestionResponse,
-)
-from app.api.ai.service import AIService
-from app.services.openrouter import OpenRouterService
+from app.services.openrouter import AIResponse, OpenRouterService
 
 
 class TestOpenRouterService:
@@ -51,23 +45,34 @@ class TestOpenRouterService:
             mock_client = AsyncMock()
             mock_client_class.return_value.__aenter__.return_value = mock_client
 
-            mock_response = MagicMock()
-            mock_response.status_code = 200
-            mock_response.json.return_value = {"data": [{"id": "claude-3-haiku"}]}
-            mock_client.get.return_value = mock_response
+            # Mock models response
+            models_response = MagicMock()
+            models_response.status_code = 200
+            models_response.json.return_value = {"data": [{"id": "gpt-3.5-turbo"}]}
+            
+            # Mock auth/key response
+            auth_response = MagicMock()
+            auth_response.status_code = 200
+            auth_response.json.return_value = {
+                "data": {
+                    "label": "Test API Key",
+                    "usage": 1000,
+                    "limit": 10000,
+                    "is_free_tier": False
+                }
+            }
+            
+            mock_client.get.side_effect = [models_response, auth_response]
 
             # Act
-            is_valid = await openrouter_service.validate_api_key(mock_api_key)
+            result = await openrouter_service.validate_api_key(mock_api_key)
 
             # Assert
-            assert is_valid
-            mock_client.get.assert_called_once_with(
-                "/api/v1/models",
-                headers={
-                    "Authorization": f"Bearer {mock_api_key}",
-                    "Content-Type": "application/json",
-                },
-            )
+            assert result["valid"] is True
+            assert result["models_available"] == 1
+            assert result["account_info"]["label"] == "Test API Key"
+            assert result["account_info"]["usage"] == 1000
+            assert "timestamp" in result
 
     @pytest.mark.asyncio
     async def test_validate_api_key_invalid(self, openrouter_service, mock_api_key):
@@ -79,20 +84,23 @@ class TestOpenRouterService:
 
             mock_response = MagicMock()
             mock_response.status_code = 401
+            mock_response.text = "Unauthorized"
             mock_client.get.return_value = mock_response
 
             # Act
-            is_valid = await openrouter_service.validate_api_key(mock_api_key)
+            result = await openrouter_service.validate_api_key(mock_api_key)
 
             # Assert
-            assert not is_valid
+            assert result["valid"] is False
+            assert "error" in result
+            assert "401" in result["error"]
 
     @pytest.mark.asyncio
-    async def test_generate_command_success(self, openrouter_service, mock_api_key):
-        """Test successful command generation."""
+    async def test_suggest_command_success(self, openrouter_service, mock_api_key):
+        """Test successful command suggestion."""
         # Arrange
-        prompt = "list all files in the current directory"
-        expected_command = "ls -la"
+        description = "list all files in the current directory"
+        context = {"working_directory": "/home/user", "operating_system": "linux"}
 
         with patch("httpx.AsyncClient") as mock_client_class:
             mock_client = AsyncMock()
@@ -102,8 +110,12 @@ class TestOpenRouterService:
             mock_response.status_code = 200
             mock_response.json.return_value = {
                 "choices": [
-                    {"message": {"content": f"```bash\n{expected_command}\n```"}}
+                    {
+                        "message": {"content": "Use `ls -la` to list all files"},
+                        "finish_reason": "stop"
+                    }
                 ],
+                "model": "gpt-3.5-turbo",
                 "usage": {
                     "prompt_tokens": 50,
                     "completion_tokens": 10,
@@ -113,13 +125,17 @@ class TestOpenRouterService:
             mock_client.post.return_value = mock_response
 
             # Act
-            result = await openrouter_service.generate_command(
-                prompt=prompt, api_key=mock_api_key, model="claude-3-haiku"
+            result = await openrouter_service.suggest_command(
+                api_key=mock_api_key,
+                description=description,
+                context=context
             )
 
             # Assert
-            assert result["command"] == expected_command
-            assert "usage" in result
+            assert isinstance(result, AIResponse)
+            assert result.content == "Use `ls -la` to list all files"
+            assert result.model == "gpt-3.5-turbo"
+            assert result.usage["total_tokens"] == 60
             mock_client.post.assert_called_once()
 
     @pytest.mark.asyncio
