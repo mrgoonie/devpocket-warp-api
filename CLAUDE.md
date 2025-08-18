@@ -80,10 +80,11 @@ When implementation begins:
 ### General
 - Update existing docs (Markdown files) in `./docs` directory before any code refactoring
 - Add new docs (Markdown files) to `./docs` directory after new feature implementation (do not create duplicated docs)
-- use `context7` mcp tools for docs of plugins/packages
-- use `senera` mcp tools for semantic retrieval and editing capabilities
-- use `psql` bash command to query database for debugging
-- whenever you want to see the whole code base, use this command: `repomix` and read the output summary file.
+- Use `context7` mcp tools for docs of plugins/packages
+- Use `senera` mcp tools for semantic retrieval and editing capabilities
+- Use `psql` bash command to query database for debugging
+- Whenever you want to understand the whole code base, use this command: [`repomix`](https://repomix.com/guide/usage) and read the output summary file.
+- Create a plan with TODO tasks in `./plans` directory, follow and update it as you go.
 
 ### Environment Setup
 - Use docker compose for development environment

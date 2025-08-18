@@ -11,9 +11,11 @@ Run code linting and all tests (similar to GitHub Actions test) to test all the 
 
 ## Workflow
 You must follow this workflow strictly:
-- start with the `project-orchestrator` agent to review the issues and provide a fix plan
-- proceed to implement with `backend-system-architect` agent, when the implementation is finished, test again to make sure everything work properly
-- if there are any other issues, use `expert-debugger` agent to debug and fix them.
-- when everything is done, use `project-orchestrator` agent to review the implementation, run the tests again to make sure everything work properly
-- if everything is good to go, use `api-docs-specialist` agent to update the API documentation if needed, it will report to `project-orchestrator` agent to close the task
-- finally use `project-orchestrator` agent to commit and push all the code
+- Start with the `project-orchestrator` agent to review the issues and provide a fix plan (Markdown file) with TODO tasks in `./plans` directory, proceed delegate this plan to implement with `backend-system-architect` agent to handle.
+- `backend-system-architect` agent receives the plan and start to implement, when the implementation is finished:
+  * Delegate to `test-automator` agent with the plan Markdown file to write tests, and test again to make sure everything work properly.
+  * If there are any other issues, use `expert-debugger` agent to debug and fix them.
+- When everything is done, use `project-orchestrator` agent to review the implementation, run the tests again to make sure everything work properly:
+  * If everything is good to go, use `api-docs-specialist` agent to update the API documentation if needed, it will report to `project-orchestrator` agent to update the original plan (in `./plans`) and close the task. 
+  * If there are any other issues, update the original plan (in `./plans`) and delegate to `backend-system-architect` agent to fix them.
+- Finally use `project-orchestrator` agent to commit and push all the code, then summarize everything and report to the user.
