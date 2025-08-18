@@ -2,7 +2,8 @@
 description: Implement a feature
 ---
 
-Start implementing this task: $ARGUMENTS
+Start implementing this task: 
+ $ARGUMENTS
 
 ## Workflow
 
