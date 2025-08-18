@@ -21,6 +21,15 @@ class CommandRepository(BaseRepository[Command]):
     def __init__(self, session: AsyncSession):
         super().__init__(Command, session)
 
+    async def get_by_id(self, id: str | PyUUID) -> Command | None:
+        """Get command by ID with session relationship loaded."""
+        result = await self.session.execute(
+            select(Command)
+            .options(selectinload(Command.session))
+            .where(Command.id == id)
+        )
+        return result.scalar_one_or_none()
+
     async def get_session_commands(
         self,
         session_id: str,

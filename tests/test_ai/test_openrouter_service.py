@@ -457,3 +457,219 @@ class TestOpenRouterService:
         assert "find . -name '*.txt'" in prompt
         assert "slow" in prompt
         assert "daily" in prompt
+
+    # Additional comprehensive method tests to boost coverage
+    async def test_make_completion_request_edge_cases(self, openrouter_service, mock_api_key):
+        """Test completion request with various edge cases."""
+        # Test with empty response
+        with patch("httpx.AsyncClient") as mock_client:
+            mock_response = MagicMock()
+            mock_response.status_code = 200
+            mock_response.json.return_value = {
+                "choices": [],
+                "model": "test-model",
+                "usage": {"prompt_tokens": 10, "completion_tokens": 0, "total_tokens": 10}
+            }
+            
+            mock_client.return_value.__aenter__.return_value.post = AsyncMock(
+                return_value=mock_response
+            )
+            
+            with patch("time.time", side_effect=[1000.0, 1001.0]):
+                with pytest.raises(Exception, match="No response choices"):
+                    await openrouter_service._make_completion_request(
+                        api_key=mock_api_key,
+                        model="test-model", 
+                        system_prompt="Test",
+                        user_prompt="Test",
+                        use_case="test"
+                    )
+
+    async def test_make_completion_request_json_error(self, openrouter_service, mock_api_key):
+        """Test completion request with JSON decode error."""
+        with patch("httpx.AsyncClient") as mock_client:
+            mock_response = MagicMock()
+            mock_response.status_code = 200
+            mock_response.json.side_effect = ValueError("Invalid JSON")
+            mock_response.text = "Invalid JSON response"
+            
+            mock_client.return_value.__aenter__.return_value.post = AsyncMock(
+                return_value=mock_response
+            )
+            
+            with pytest.raises(Exception, match="Invalid response format"):
+                await openrouter_service._make_completion_request(
+                    api_key=mock_api_key,
+                    model="test-model",
+                    system_prompt="Test", 
+                    user_prompt="Test",
+                    use_case="test"
+                )
+
+    async def test_rate_limit_edge_cases(self, openrouter_service, mock_api_key):
+        """Test rate limiting edge cases."""
+        # Test with API key not in rate limits
+        openrouter_service._rate_limits = {}
+        result = await openrouter_service._check_rate_limit(mock_api_key)
+        assert result is True
+        assert mock_api_key in openrouter_service._rate_limits
+
+        # Test boundary conditions
+        now = datetime.now(UTC)
+        # Add exactly rate_limit_requests entries within the window
+        openrouter_service._rate_limits[mock_api_key] = [
+            now - timedelta(seconds=30) for _ in range(openrouter_service._rate_limit_requests - 1)
+        ]
+        
+        result = await openrouter_service._check_rate_limit(mock_api_key)
+        assert result is True  # Should still pass (49 out of 50)
+        
+        # Now add one more to hit the limit
+        result = await openrouter_service._check_rate_limit(mock_api_key)
+        assert result is False  # Should fail (50 out of 50)
+
+    def test_prompt_generation_comprehensive(self, openrouter_service):
+        """Test all prompt generation methods comprehensively."""
+        # Test all system prompt methods exist and return strings
+        system_prompts = [
+            openrouter_service._get_command_suggestion_prompt(),
+            openrouter_service._get_command_explanation_prompt(),
+            openrouter_service._get_error_analysis_prompt(),
+            openrouter_service._get_optimization_prompt()
+        ]
+        
+        for prompt in system_prompts:
+            assert isinstance(prompt, str)
+            assert len(prompt) > 50  # Should be substantial prompts
+            assert "assistant" in prompt.lower() or "expert" in prompt.lower()
+
+    def test_user_prompt_building_comprehensive(self, openrouter_service):
+        """Test user prompt building with various contexts."""
+        # Test command request with minimal context
+        prompt = openrouter_service._build_command_request_prompt("test", {})
+        assert "test" in prompt
+        
+        # Test command request with full context
+        full_context = {
+            "working_directory": "/home/user/project",
+            "previous_commands": ["git clone", "cd project", "npm install"],
+            "operating_system": "linux",
+            "shell": "bash",
+            "user_level": "intermediate",
+            "environment": {"NODE_ENV": "development"}
+        }
+        
+        prompt = openrouter_service._build_command_request_prompt("run tests", full_context)
+        assert "run tests" in prompt
+        assert "/home/user/project" in prompt
+        assert "npm install" in prompt
+        assert "linux" in prompt
+        assert "bash" in prompt
+        assert "intermediate" in prompt
+
+    def test_service_state_management(self, openrouter_service):
+        """Test service state management."""
+        # Test initial state
+        assert openrouter_service._rate_limits == {}
+        
+        # Test that rate limits are properly tracked
+        test_key = "test-key"
+        import asyncio
+        asyncio.run(openrouter_service._check_rate_limit(test_key))
+        
+        assert test_key in openrouter_service._rate_limits
+        assert len(openrouter_service._rate_limits[test_key]) == 1
+
+    async def test_model_configuration_usage(self, openrouter_service, mock_api_key, mock_completion_response):
+        """Test that different model configurations are used correctly."""
+        with patch.object(openrouter_service, "_make_completion_request") as mock_request:
+            mock_request.return_value = AIResponse(
+                content="Test",
+                model="test-model",
+                usage={"total_tokens": 10},
+                finish_reason="stop",
+                response_time_ms=1000,
+                timestamp=datetime.now(UTC)
+            )
+            
+            with patch.object(openrouter_service, "_check_rate_limit", return_value=True):
+                # Test each method uses its configured model
+                await openrouter_service.suggest_command(mock_api_key, "test")
+                mock_request.assert_called()
+                call_args = mock_request.call_args[1]
+                assert call_args["model"] == openrouter_service.models["command_suggestion"]
+                
+                await openrouter_service.explain_command(mock_api_key, "ls")
+                call_args = mock_request.call_args[1]
+                assert call_args["model"] == openrouter_service.models["command_explanation"]
+                
+                await openrouter_service.explain_error(mock_api_key, "error", "message")
+                call_args = mock_request.call_args[1]
+                assert call_args["model"] == openrouter_service.models["error_analysis"]
+
+    async def test_context_handling_variations(self, openrouter_service):
+        """Test context handling variations in prompt building."""
+        # Test with None context
+        prompt = openrouter_service._build_command_request_prompt("test command", None)
+        assert "test command" in prompt
+        
+        # Test with empty context
+        prompt = openrouter_service._build_command_request_prompt("test command", {})
+        assert "test command" in prompt
+        
+        # Test with partial context
+        partial_context = {"working_directory": "/tmp"}
+        prompt = openrouter_service._build_command_request_prompt("test command", partial_context)
+        assert "test command" in prompt
+        assert "/tmp" in prompt
+
+    def test_model_defaults_and_overrides(self, openrouter_service):
+        """Test model defaults and override functionality."""
+        # Test that all default models are set
+        expected_types = ["command_suggestion", "command_explanation", "error_analysis", "optimization", "general"]
+        for model_type in expected_types:
+            assert model_type in openrouter_service.models
+            assert isinstance(openrouter_service.models[model_type], str)
+            assert len(openrouter_service.models[model_type]) > 0
+
+    async def test_error_handling_comprehensive(self, openrouter_service, mock_api_key):
+        """Test comprehensive error handling scenarios."""
+        with patch("httpx.AsyncClient") as mock_client:
+            # Test various HTTP status codes
+            for status_code in [400, 401, 403, 404, 429, 500, 502, 503]:
+                mock_response = MagicMock()
+                mock_response.status_code = status_code
+                mock_response.text = f"HTTP {status_code} error"
+                
+                mock_client.return_value.__aenter__.return_value.post = AsyncMock(
+                    return_value=mock_response
+                )
+                
+                with pytest.raises(Exception):
+                    await openrouter_service._make_completion_request(
+                        api_key=mock_api_key,
+                        model="test-model",
+                        system_prompt="Test",
+                        user_prompt="Test",
+                        use_case="test"
+                    )
+
+    async def test_timeout_configurations(self, openrouter_service, mock_api_key):
+        """Test timeout configuration handling."""
+        assert openrouter_service.timeout == 30.0
+        assert openrouter_service.max_retries == 2
+        
+        # Test that timeout is used in HTTP requests
+        with patch("httpx.AsyncClient") as mock_client:
+            mock_client.return_value.__aenter__.return_value.post = AsyncMock(
+                side_effect=httpx.TimeoutException("Timeout")
+            )
+            
+            with pytest.raises(Exception, match="Request timeout"):
+                await openrouter_service._make_completion_request(
+                    api_key=mock_api_key,
+                    model="test-model", 
+                    system_prompt="Test",
+                    user_prompt="Test",
+                    use_case="test"
+                )

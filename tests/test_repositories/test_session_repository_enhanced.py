@@ -231,9 +231,22 @@ class TestSessionRepositoryEnhanced:
         )
         assert len(sessions_asc) >= 4
         
-        # Ensure different order
+        # Verify sorting by checking created_at timestamps
+        if len(sessions_desc) > 1:
+            # Descending: first created_at >= second created_at
+            assert sessions_desc[0].created_at >= sessions_desc[1].created_at
+        
+        if len(sessions_asc) > 1:
+            # Ascending: first created_at <= second created_at
+            assert sessions_asc[0].created_at <= sessions_asc[1].created_at
+        
+        # If we have different timestamps, ensure different order
         if len(sessions_desc) > 1 and len(sessions_asc) > 1:
-            assert sessions_desc[0].id != sessions_asc[0].id
+            desc_timestamps = [s.created_at for s in sessions_desc]
+            asc_timestamps = [s.created_at for s in sessions_asc]
+            # Only check order difference if timestamps are actually different
+            if desc_timestamps[0] != desc_timestamps[-1]:
+                assert sessions_desc[0].id != sessions_asc[0].id
 
     @pytest.mark.asyncio
     async def test_count_sessions_with_criteria(self, session_repository, test_user, sample_sessions):

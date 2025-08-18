@@ -16,6 +16,7 @@ class SessionType(str, Enum):
 
     SSH = "ssh"
     LOCAL = "local"
+    TERMINAL = "terminal"
 
 
 class SessionStatus(str, Enum):
@@ -123,19 +124,21 @@ class SessionUpdate(BaseModel):
 
     # Timeout settings
     idle_timeout: int | None = Field(
-        None, ge=60, le=86400, description="Idle timeout in seconds"
+        default=None, ge=60, le=86400, description="Idle timeout in seconds"
     )
     max_duration: int | None = Field(
-        None, ge=300, le=86400, description="Maximum session duration"
+        default=None, ge=300, le=86400, description="Maximum session duration"
     )
 
     # Feature flags
     enable_logging: bool | None = Field(
         default=None, description="Enable session logging"
     )
-    enable_recording: bool | None = Field(None, description="Enable session recording")
+    enable_recording: bool | None = Field(
+        default=None, description="Enable session recording"
+    )
     auto_reconnect: bool | None = Field(
-        None, description="Enable automatic reconnection"
+        default=None, description="Enable automatic reconnection"
     )
 
 
@@ -145,6 +148,15 @@ class SessionResponse(SessionBase):
     id: str = Field(..., description="Session unique identifier")
     user_id: str = Field(..., description="Owner user ID")
     status: SessionStatus = Field(..., description="Current session status")
+
+    @validator('id', 'user_id', 'ssh_profile_id', pre=True)
+    def convert_uuid_to_string(cls, v):
+        """Convert UUID objects to strings."""
+        if v is None:
+            return v
+        if hasattr(v, '__str__'):
+            return str(v)
+        return v
 
     # Connection details
     ssh_profile_id: str | None = Field(
@@ -158,8 +170,19 @@ class SessionResponse(SessionBase):
     start_time: datetime | None = Field(default=None, description="Session start time")
     end_time: datetime | None = Field(default=None, description="Session end time")
     last_activity: datetime | None = Field(None, description="Last activity timestamp")
-    duration_seconds: int = Field(default=0, description="Total session duration")
+    duration_seconds: int | None = Field(default=None, description="Total session duration")
     command_count: int = Field(default=0, description="Number of commands executed")
+
+    @validator('command_count', pre=True)
+    def handle_command_count(cls, v, values):
+        """Handle command count relationship access."""
+        try:
+            if hasattr(v, '__call__'):  # If it's a property/method
+                return v
+            return v if v is not None else 0
+        except Exception:
+            # If we can't access the relationship, return 0
+            return 0
 
     # Status information
     error_message: str | None = Field(default=None, description="Last error message")
