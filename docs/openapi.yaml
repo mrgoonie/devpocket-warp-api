@@ -783,6 +783,163 @@ components:
           format: date-time
           description: Last update timestamp
           example: "2023-01-01T12:00:00Z"
+          
+    SyncDataResponse:
+      type: object
+      required:
+        - data
+        - sync_timestamp
+        - total_items
+        - device_count
+      properties:
+        data:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: object
+          description: Synchronized data organized by type
+          example:
+            ssh_profiles:
+              - id: "profile-1"
+                name: "Production Server"
+                host: "prod.example.com"
+            settings:
+              - key: "theme"
+                value: "dark"
+        sync_timestamp:
+          type: string
+          format: date-time
+          description: Current sync operation timestamp
+          example: "2023-01-01T12:00:00Z"
+        total_items:
+          type: integer
+          description: Total number of items synchronized
+          example: 15
+        conflicts:
+          type: array
+          items:
+            $ref: '#/components/schemas/SyncConflict'
+          description: Any conflicts detected during sync
+        device_count:
+          type: integer
+          description: Total number of devices for this user
+          example: 3
+        conflict_type:
+          type: string
+          nullable: true
+          description: Type of conflict if any detected
+          
+    SyncStats:
+      type: object
+      required:
+        - total_syncs
+        - successful_syncs
+        - failed_syncs
+        - active_devices
+        - total_conflicts
+        - resolved_conflicts
+      properties:
+        total_syncs:
+          type: integer
+          description: Total sync operations performed
+          example: 156
+        successful_syncs:
+          type: integer
+          description: Number of successful sync operations
+          example: 148
+        failed_syncs:
+          type: integer
+          description: Number of failed sync attempts
+          example: 8
+        last_sync:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of last sync operation
+          example: "2023-01-01T12:00:00Z"
+        active_devices:
+          type: integer
+          description: Number of currently active devices
+          example: 3
+        total_conflicts:
+          type: integer
+          description: Total conflicts encountered
+          example: 12
+        resolved_conflicts:
+          type: integer
+          description: Number of conflicts successfully resolved
+          example: 10
+          
+    SyncConflict:
+      type: object
+      required:
+        - conflict_id
+        - conflict_type
+        - data_type
+        - local_data
+        - remote_data
+        - timestamp
+      properties:
+        conflict_id:
+          type: string
+          description: Unique identifier for the conflict
+          example: "conflict-abc-123"
+        conflict_type:
+          type: string
+          enum: [version_mismatch, concurrent_modification, data_corruption, schema_mismatch]
+          description: Type of synchronization conflict
+          example: "concurrent_modification"
+        data_type:
+          type: string
+          enum: [ssh_profiles, commands, settings, ai_preferences]
+          description: Type of data that has the conflict
+          example: "ssh_profiles"
+        local_data:
+          type: object
+          description: Local version of the conflicted data
+          additionalProperties: true
+        remote_data:
+          type: object
+          description: Remote version of the conflicted data
+          additionalProperties: true
+        local_timestamp:
+          type: string
+          format: date-time
+          description: When the local data was last modified
+          example: "2023-01-01T12:00:00Z"
+        remote_timestamp:
+          type: string
+          format: date-time
+          description: When the remote data was last modified
+          example: "2023-01-01T12:01:00Z"
+        timestamp:
+          type: string
+          format: date-time
+          description: When the conflict was detected
+          example: "2023-01-01T12:02:00Z"
+        device_info:
+          type: object
+          properties:
+            local_device_id:
+              type: string
+              example: "device-abc123"
+            local_device_name:
+              type: string
+              example: "MacBook Pro"
+            remote_device_id:
+              type: string
+              example: "device-xyz789"
+            remote_device_name:
+              type: string
+              example: "iPhone 15"
+        resolution_options:
+          type: array
+          items:
+            type: string
+            enum: [local, remote, merge, manual]
+          description: Available resolution strategies for this conflict
+          example: ["local", "remote", "merge"]
 
   responses:
     UnauthorizedError:
@@ -2663,7 +2820,7 @@ paths:
           $ref: '#/components/responses/UnauthorizedError'
 
   # Synchronization endpoints
-  /api/sync/status:
+  /api/sync/data:
     get:
       tags:
         - Synchronization

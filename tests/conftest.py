@@ -52,58 +52,83 @@ TEST_REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6380")
 
 
 async def _cleanup_test_data(engine):
-    """Clear all test data while preserving database schema."""
-    try:
-        async with engine.begin() as conn:
-            # Get all table names from the current schema
-            result = await conn.execute(
-                text(
-                    """
-                SELECT tablename FROM pg_tables
-                WHERE schemaname = 'public'
-                AND tablename != 'alembic_version'
-                ORDER BY tablename DESC
-            """
-                )
-            )
-            tables = [row[0] for row in result.fetchall()]
-
-            if tables:
-                # Disable foreign key checks temporarily for faster cleanup
-                await conn.execute(text("SET session_replication_role = replica;"))
+    """Clear all test data while preserving database schema with enhanced isolation."""
+    import asyncio
+    
+    max_retries = 3
+    retry_delay = 0.1
+    
+    for attempt in range(max_retries):
+        try:
+            async with engine.begin() as conn:
+                # Add session-level timeout to prevent hanging
+                await conn.execute(text("SET statement_timeout = '30s';"))
                 
-                # Use CASCADE truncation to handle foreign key constraints
-                table_list = ", ".join(tables)
-                await conn.execute(
-                    text(f"TRUNCATE TABLE {table_list} RESTART IDENTITY CASCADE")
-                )
-                
-                # Re-enable foreign key checks
-                await conn.execute(text("SET session_replication_role = DEFAULT;"))
-
-                # Reset sequences for primary keys - simplified approach
-                await conn.execute(
+                # Get all table names from the current schema
+                result = await conn.execute(
                     text(
                         """
-                    DO $$
-                    DECLARE
-                        seq_record RECORD;
-                    BEGIN
-                        FOR seq_record IN
-                            SELECT sequence_name
-                            FROM information_schema.sequences
-                            WHERE sequence_schema = 'public'
-                        LOOP
-                            EXECUTE 'SELECT setval(''' || seq_record.sequence_name || ''', 1, false)';
-                        END LOOP;
-                    END
-                    $$;
-                    """
+                    SELECT tablename FROM pg_tables
+                    WHERE schemaname = 'public'
+                    AND tablename != 'alembic_version'
+                    ORDER BY tablename DESC
+                """
                     )
                 )
-    except Exception as e:
-        # Log error but don't fail - cleanup is best effort
-        print(f"Warning: Test data cleanup failed: {e}")
+                tables = [row[0] for row in result.fetchall()]
+
+                if tables:
+                    # Enhanced cleanup with explicit transaction isolation
+                    await conn.execute(text("SET session_replication_role = replica;"))
+                    await conn.execute(text("SET lock_timeout = '10s';"))
+                    
+                    # Use CASCADE truncation to handle foreign key constraints
+                    table_list = ", ".join(tables)
+                    await conn.execute(
+                        text(f"TRUNCATE TABLE {table_list} RESTART IDENTITY CASCADE")
+                    )
+                    
+                    # Re-enable foreign key checks
+                    await conn.execute(text("SET session_replication_role = DEFAULT;"))
+                    await conn.execute(text("RESET lock_timeout;"))
+
+                    # Reset sequences for primary keys with error handling
+                    await conn.execute(
+                        text(
+                            """
+                        DO $$
+                        DECLARE
+                            seq_record RECORD;
+                        BEGIN
+                            FOR seq_record IN
+                                SELECT sequence_name
+                                FROM information_schema.sequences
+                                WHERE sequence_schema = 'public'
+                            LOOP
+                                BEGIN
+                                    EXECUTE 'SELECT setval(''' || seq_record.sequence_name || ''', 1, false)';
+                                EXCEPTION WHEN OTHERS THEN
+                                    -- Continue if sequence reset fails
+                                    NULL;
+                                END;
+                            END LOOP;
+                        END
+                        $$;
+                        """
+                        )
+                    )
+                    
+                # Commit transaction explicitly
+                await conn.commit()
+                break  # Success, exit retry loop
+                
+        except Exception as e:
+            if attempt < max_retries - 1:
+                print(f"Warning: Test data cleanup attempt {attempt + 1} failed: {e}. Retrying...")
+                await asyncio.sleep(retry_delay * (2 ** attempt))  # Exponential backoff
+            else:
+                print(f"Error: Test data cleanup failed after {max_retries} attempts: {e}")
+                # Don't raise - cleanup failures shouldn't break tests
 
 
 async def _clear_test_data_in_session(session):
@@ -377,16 +402,22 @@ def user_data() -> dict:
     import uuid
     import random
     import threading
-
+    import os
+    
     # Generate highly unique identifiers to prevent conflicts between tests
+    # Include process ID for multi-process testing and nanosecond precision
     unique_id = str(uuid.uuid4())[:8]
-    timestamp = str(int(time.time() * 1000000))[-8:]  # Microsecond precision
+    process_id = str(os.getpid())[-4:]  # Process isolation for parallel workers
+    timestamp = str(int(time.time_ns()))[-12:]  # Nanosecond precision 
     thread_id = str(threading.current_thread().ident)[-4:]  # Thread isolation
-    random_suffix = str(random.randint(10000, 99999))
-
+    random_suffix = str(random.randint(100000, 999999))
+    
+    # Create ultra-unique identifier that includes all isolation factors
+    ultra_unique = f"{unique_id}_{process_id}_{timestamp}_{thread_id}_{random_suffix}"
+    
     return {
-        "email": f"test_{unique_id}_{timestamp}_{thread_id}_{random_suffix}@example.com",
-        "username": f"test_{unique_id}_{timestamp}"[:30],  # Ensure max 30 chars
+        "email": f"test_{ultra_unique}@example.com",
+        "username": f"test_{ultra_unique}"[:30],  # Ensure max 30 chars
         "password": "SecurePassword123!",
         "full_name": f"Test User {unique_id}",
     }

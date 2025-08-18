@@ -12,6 +12,11 @@ This document provides a comprehensive overview of all DevPocket API endpoints. 
 - ✅ New AI service endpoints added
 - ✅ Enhanced security with account locking
 - ✅ WebSocket protocol fully documented
+- ✅ **NEW**: Complete sync services architecture implemented
+- ✅ **NEW**: Multi-device synchronization with conflict resolution
+- ✅ **NEW**: Real-time sync notifications via WebSocket/Redis PubSub
+- ✅ **NEW**: Command, SSH Profile, and Settings sync services
+- ✅ **NEW**: Advanced conflict resolution strategies
 
 ---
 
@@ -172,6 +177,64 @@ components:
           type: string
         details:
           type: object
+          
+    SyncConflict:
+      type: object
+      required:
+        - conflict_id
+        - conflict_type
+        - local_data
+        - remote_data
+        - timestamp
+      properties:
+        conflict_id:
+          type: string
+          description: Unique identifier for the conflict
+        conflict_type:
+          type: string
+          enum: [version_mismatch, concurrent_modification, data_corruption, schema_mismatch]
+          description: Type of synchronization conflict
+        data_type:
+          type: string
+          enum: [ssh_profiles, commands, settings, ai_preferences]
+          description: Type of data that has the conflict
+        local_data:
+          type: object
+          description: Local version of the conflicted data
+          additionalProperties: true
+        remote_data:
+          type: object
+          description: Remote version of the conflicted data
+          additionalProperties: true
+        local_timestamp:
+          type: string
+          format: date-time
+          description: When the local data was last modified
+        remote_timestamp:
+          type: string
+          format: date-time
+          description: When the remote data was last modified
+        timestamp:
+          type: string
+          format: date-time
+          description: When the conflict was detected
+        device_info:
+          type: object
+          properties:
+            local_device_id:
+              type: string
+            local_device_name:
+              type: string
+            remote_device_id:
+              type: string
+            remote_device_name:
+              type: string
+        resolution_options:
+          type: array
+          items:
+            type: string
+            enum: [local, remote, merge, manual]
+          description: Available resolution strategies for this conflict
 
 paths:
   # ============================================================================
@@ -724,73 +787,105 @@ paths:
   # SYNC ENDPOINTS
   # ============================================================================
   
-  /api/sync/commands:
-    post:
+  /api/sync/data:
+    get:
       tags:
         - Sync
-      summary: Sync commands across devices
-      operationId: syncCommands
+      summary: Get synchronization data
+      operationId: getSyncData
       security:
         - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                commands:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/Command'
-                last_sync:
-                  type: string
-                  format: date-time
+      parameters:
+        - name: data_types
+          in: query
+          required: true
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [ssh_profiles, sessions, commands, settings, ai_preferences, all]
+          description: Types of data to synchronize
+        - name: device_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Unique device identifier
+        - name: device_name
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Human-readable device name
+        - name: last_sync_timestamp
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Last synchronization timestamp
+        - name: include_deleted
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Include deleted items in sync
       responses:
         '200':
-          description: Commands synced
+          description: Sync data retrieved successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  synced:
+                  data:
+                    type: object
+                    additionalProperties:
+                      type: array
+                      items:
+                        type: object
+                    description: Synchronized data by type
+                  sync_timestamp:
+                    type: string
+                    format: date-time
+                    description: Current sync timestamp
+                  total_items:
                     type: integer
+                    description: Total items synchronized
                   conflicts:
                     type: array
                     items:
                       type: object
-                      
-  /api/sync/settings:
-    get:
-      tags:
-        - Sync
-      summary: Get synced settings
-      operationId: getSyncedSettings
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: Settings retrieved
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  theme:
-                    type: string
-                  font_size:
+                      properties:
+                        conflict_id:
+                          type: string
+                        conflict_type:
+                          type: string
+                          enum: [version_mismatch, concurrent_modification, data_corruption]
+                        local_data:
+                          type: object
+                        remote_data:
+                          type: object
+                        timestamp:
+                          type: string
+                          format: date-time
+                    description: Synchronization conflicts requiring resolution
+                  device_count:
                     type: integer
-                  shortcuts:
-                    type: object
-                  ai_preferences:
-                    type: object
-                    
-    put:
+                    description: Number of devices for this user
+                  conflict_type:
+                    type: string
+                    nullable: true
+                    description: Type of conflict if any
+        '403':
+          description: Sync not available for current subscription tier
+        '429':
+          description: Sync rate limit exceeded
+          
+    post:
       tags:
         - Sync
-      summary: Update synced settings
-      operationId: updateSyncedSettings
+      summary: Upload synchronization data
+      operationId: uploadSyncData
       security:
         - bearerAuth: []
       requestBody:
@@ -799,9 +894,149 @@ paths:
           application/json:
             schema:
               type: object
+              description: Synchronization data payload
+              additionalProperties: true
+              example:
+                ssh_profiles:
+                  - id: "profile-1"
+                    name: "Production Server"
+                    host: "prod.example.com"
+                    username: "deploy"
+                    modified_at: "2023-01-01T12:00:00Z"
+                settings:
+                  theme: "dark"
+                  terminal_font_size: 14
+                  ai_model_preference: "claude-3-haiku"
+                device_id: "device-abc123"
+                sync_timestamp: "2023-01-01T12:00:00Z"
       responses:
         '200':
-          description: Settings updated
+          description: Sync data uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Sync data uploaded successfully"
+                  timestamp:
+                    type: string
+                    format: date-time
+                  conflicts_detected:
+                    type: array
+                    items:
+                      type: object
+                    description: Any conflicts that need resolution
+        '409':
+          description: Sync conflicts detected - manual resolution required
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Sync conflicts detected"
+                  conflicts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SyncConflict'
+  
+  /api/sync/stats:
+    get:
+      tags:
+        - Sync
+      summary: Get synchronization statistics
+      operationId: getSyncStats
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Sync statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_syncs:
+                    type: integer
+                    description: Total sync operations performed
+                  successful_syncs:
+                    type: integer
+                    description: Number of successful syncs
+                  failed_syncs:
+                    type: integer
+                    description: Number of failed sync attempts
+                  last_sync:
+                    type: string
+                    format: date-time
+                    nullable: true
+                    description: Timestamp of last sync operation
+                  active_devices:
+                    type: integer
+                    description: Number of currently active devices
+                  total_conflicts:
+                    type: integer
+                    description: Total conflicts encountered
+                  resolved_conflicts:
+                    type: integer
+                    description: Number of conflicts successfully resolved
+                    
+  /api/sync/conflicts/{conflict_id}/resolve:
+    post:
+      tags:
+        - Sync
+      summary: Resolve synchronization conflict
+      operationId: resolveSyncConflict
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: conflict_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique conflict identifier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - resolution
+              properties:
+                resolution:
+                  type: string
+                  enum: [local, remote, merge]
+                  description: "Resolution strategy: local (keep local data), remote (use remote data), merge (combine both)"
+                resolved_data:
+                  type: object
+                  nullable: true
+                  description: Resolved data when using merge strategy
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Conflict resolved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Conflict resolved successfully"
+                  resolution_method:
+                    type: string
+                    description: Method used to resolve the conflict
+                  final_data:
+                    type: object
+                    description: Final synchronized data after resolution
+        '404':
+          description: Conflict not found
+        '400':
+          description: Invalid resolution strategy
           
   # ============================================================================
   # USER ENDPOINTS

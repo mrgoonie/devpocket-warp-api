@@ -483,25 +483,46 @@ class TestTokenTimingAttacks:
     def test_password_verification_timing_consistency(self):
         """Test that password verification takes consistent time."""
         import time
+        import statistics
 
         correct_password = "TestPassword123!"
         wrong_password = "WrongPassword456!"
         password_hash = hash_password(correct_password)
 
-        # Measure time for correct password
-        start_time = time.time()
-        verify_password(correct_password, password_hash)
-        correct_time = time.time() - start_time
+        # Run multiple iterations to get more stable measurements
+        correct_times = []
+        wrong_times = []
+        iterations = 10
+        
+        # Warm up the CPU to get more consistent measurements
+        for _ in range(3):
+            verify_password(correct_password, password_hash)
+            verify_password(wrong_password, password_hash)
 
-        # Measure time for wrong password
-        start_time = time.time()
-        verify_password(wrong_password, password_hash)
-        wrong_time = time.time() - start_time
+        for _ in range(iterations):
+            # Measure time for correct password
+            start_time = time.perf_counter()  # More precise than time.time()
+            verify_password(correct_password, password_hash)
+            correct_times.append(time.perf_counter() - start_time)
 
-        # Times should be roughly similar (within reasonable tolerance)
-        # This is a basic check - bcrypt inherently provides timing attack protection
-        time_diff = abs(correct_time - wrong_time)
-        assert time_diff < 0.1  # Allow 100ms difference
+            # Measure time for wrong password
+            start_time = time.perf_counter()
+            verify_password(wrong_password, password_hash)
+            wrong_times.append(time.perf_counter() - start_time)
+
+        # Use median times to reduce impact of outliers
+        correct_median = statistics.median(correct_times)
+        wrong_median = statistics.median(wrong_times)
+        
+        # Calculate relative difference as percentage instead of absolute time
+        if max(correct_median, wrong_median) > 0:
+            relative_diff = abs(correct_median - wrong_median) / max(correct_median, wrong_median)
+            # Allow 50% relative difference - bcrypt timing can vary but should be in same order of magnitude
+            assert relative_diff < 0.5, f"Timing difference too large: {relative_diff:.3f} (correct: {correct_median:.4f}s, wrong: {wrong_median:.4f}s)"
+        
+        # Ensure both operations take reasonable time (not too fast, indicating no actual work)
+        assert correct_median > 0.001, f"Password verification too fast: {correct_median:.4f}s"
+        assert wrong_median > 0.001, f"Password verification too fast: {wrong_median:.4f}s"  # Allow 100ms difference
 
     def test_token_verification_timing_consistency(self):
         """Test that token verification takes consistent time."""

@@ -55,6 +55,9 @@ class SyncDataResponse(BaseModel):
         default=[], description="Synchronization conflicts"
     )
     device_count: int = Field(..., description="Number of devices for this user")
+    conflict_type: str | None = Field(
+        default=None, description="Type of conflict if any"
+    )
 
 
 class SyncConflictResolution(BaseModel):
@@ -87,10 +90,12 @@ class DeviceInfo(BaseModel):
 class DeviceRegistration(BaseModel):
     """Schema for device registration."""
 
+    device_id: str | None = Field(default=None, description="Device ID")
     device_name: str = Field(..., max_length=100, description="Device name")
     device_type: str = Field(..., description="Device type")
     os_info: str | None = Field(default=None, description="OS information")
     app_version: str | None = Field(default=None, description="App version")
+    sync_enabled: bool = Field(default=True, description="Sync enabled status")
 
 
 class SyncStats(BaseModel):

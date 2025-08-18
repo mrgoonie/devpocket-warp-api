@@ -6,6 +6,7 @@ import factory
 import factory.fuzzy
 import uuid
 import time
+import random
 from faker import Faker
 
 from app.auth.security import hash_password
@@ -15,17 +16,25 @@ fake = Faker()
 
 
 def _generate_unique_email():
-    """Generate a unique email with timestamp and UUID."""
+    """Generate a unique email with timestamp, process ID, and UUID."""
+    import os
     unique_id = str(uuid.uuid4())[:8]
-    timestamp = str(int(time.time() * 1000000))[-8:]  # Microsecond precision
-    return f"test_{unique_id}_{timestamp}@example.com"
+    process_id = str(os.getpid())[-4:]  # Process isolation for parallel workers
+    timestamp = str(int(time.time_ns()))[-12:]  # Nanosecond precision
+    random_suffix = str(random.randint(100000, 999999))
+    ultra_unique = f"{unique_id}_{process_id}_{timestamp}_{random_suffix}"
+    return f"test_{ultra_unique}@example.com"
 
 
 def _generate_unique_username():
-    """Generate a unique username with timestamp and UUID."""
+    """Generate a unique username with timestamp, process ID, and UUID."""
+    import os
     unique_id = str(uuid.uuid4())[:8]
-    timestamp = str(int(time.time() * 1000000))[-8:]  # Microsecond precision
-    return f"user_{unique_id}_{timestamp}"[:30]  # Ensure max 30 chars
+    process_id = str(os.getpid())[-4:]  # Process isolation for parallel workers
+    timestamp = str(int(time.time_ns()))[-12:]  # Nanosecond precision
+    random_suffix = str(random.randint(100000, 999999))
+    ultra_unique = f"{unique_id}_{process_id}_{timestamp}_{random_suffix}"
+    return f"test_{ultra_unique}"[:30]  # Ensure max 30 chars  # Ensure max 30 chars
 
 
 class UserFactory(factory.Factory):

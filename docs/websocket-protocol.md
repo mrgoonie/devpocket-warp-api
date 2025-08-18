@@ -442,6 +442,124 @@ Synchronize command history across devices.
 }
 ```
 
+### 4. Multi-Device Sync Notifications
+
+Real-time synchronization notifications for multi-device sync events.
+
+#### Subscribe to Sync Notifications
+
+```json
+{
+  "type": "sync_subscribe",
+  "data": {
+    "data_types": ["ssh_profiles", "settings", "commands"],
+    "device_id": "device-abc123"
+  }
+}
+```
+
+#### Sync Data Available Notification
+
+```json
+{
+  "type": "sync_data_available",
+  "data": {
+    "sync_id": "sync-uuid-123",
+    "data_types": ["ssh_profiles", "settings"],
+    "source_device": {
+      "device_id": "device-xyz789",
+      "device_name": "iPhone 15"
+    },
+    "changes_count": 3,
+    "timestamp": "2023-01-01T12:00:00Z",
+    "auto_sync": true
+  }
+}
+```
+
+#### Sync Conflict Notification
+
+```json
+{
+  "type": "sync_conflict",
+  "data": {
+    "conflict_id": "conflict-uuid-456",
+    "conflict_type": "concurrent_modification",
+    "data_type": "ssh_profiles",
+    "affected_item": {
+      "id": "profile-123",
+      "name": "Production Server"
+    },
+    "devices": [
+      {
+        "device_id": "device-abc123",
+        "device_name": "MacBook Pro",
+        "modified_at": "2023-01-01T12:00:00Z"
+      },
+      {
+        "device_id": "device-xyz789",
+        "device_name": "iPhone 15",
+        "modified_at": "2023-01-01T12:01:00Z"
+      }
+    ],
+    "requires_manual_resolution": true
+  }
+}
+```
+
+#### Sync Progress Update
+
+```json
+{
+  "type": "sync_progress",
+  "data": {
+    "sync_id": "sync-uuid-123",
+    "status": "in_progress",
+    "progress": {
+      "completed": 15,
+      "total": 20,
+      "current_operation": "syncing_ssh_profiles"
+    },
+    "estimated_completion": "2023-01-01T12:05:00Z"
+  }
+}
+```
+
+#### Sync Completed Notification
+
+```json
+{
+  "type": "sync_completed",
+  "data": {
+    "sync_id": "sync-uuid-123",
+    "status": "success",
+    "synced_data": {
+      "ssh_profiles": 5,
+      "settings": 8,
+      "commands": 10
+    },
+    "conflicts_resolved": 1,
+    "duration_ms": 2500,
+    "timestamp": "2023-01-01T12:05:00Z"
+  }
+}
+```
+
+#### Device Connected/Disconnected
+
+```json
+{
+  "type": "device_status",
+  "data": {
+    "device_id": "device-xyz789",
+    "device_name": "iPhone 15",
+    "status": "connected",
+    "last_seen": "2023-01-01T12:00:00Z",
+    "sync_enabled": true
+  }
+}
+```
+
 ## Connection Lifecycle
 
 ### 1. Connection Flow
